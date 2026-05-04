@@ -1,0 +1,111 @@
+"""Anthropic适配器"""
+
+from typing import Any, AsyncGenerator, Optional
+
+from pm_workstation.model_router.base import LLMBackend, LLMConfig, LLMMessage, LLMResponse
+
+
+class AnthropicAdapter(LLMBackend):
+    """Anthropic Claude LLM适配器"""
+    
+    def __init__(self, config: LLMConfig):
+        super().__init__(config)
+        self._client = None
+    
+    def _get_client(self):
+        """获取Anthropic客户端"""
+        if self._client is None:
+            from anthropic import AsyncAnthropic
+            
+            client_kwargs = {
+                "api_key": self.config.api_key,
+            }
+            if self.config.base_url:
+                client_kwargs["base_url"] = self.config.base_url
+            
+            self._client = AsyncAnthropic(**client_kwargs)
+        
+        return self._client
+    
+    async def chat(
+        self,
+        messages: list[LLMMessage],
+        **kwargs: Any,
+    ) -> LLMResponse:
+        """发送聊天请求到Anthropic"""
+        client = self._get_client()
+        
+        # Anthropic API需要分离system消息
+        system_message = None
+        chat_messages = []
+        
+        for msg in messages:
+            if msg.role == "system":
+                system_message = msg.content
+            else:
+                chat_messages.append({
+                    "role": msg.role,
+                    "content": msg.content,
+                })
+        
+        response = await client.messages.create(
+            model=self.config.model,
+            system=system_message,
+            messages=chat_messages,
+            temperature=self.config.temperature,
+            max_tokens=self.config.max_tokens,
+            top_p=self.config.top_p,
+            **kwargs,
+        )
+        
+        return LLMResponse(
+            content=response.content[0].text if response.content else "",
+            model=self.config.model,
+            usage={
+                "prompt_tokens": response.usage.input_tokens,
+                "completion_tokens": response.usage.output_tokens,
+                "total_tokens": response.usage.input_tokens + response.usage.output_tokens,
+            },
+            finish_reason=response.stop_reason,
+        )
+    
+    async def chat_stream(
+        self,
+        messages: list[LLMMessage],
+        **kwargs: Any,
+    ) -> AsyncGenerator[str, None]:
+        """发送流式聊天请求到Anthropic"""
+        client = self._get_client()
+        
+        # 分离system消息
+        system_message = None
+        chat_messages = []
+        
+        for msg in messages:
+            if msg.role == "system":
+                system_message = msg.content
+            else:
+                chat_messages.append({
+                    "role": msg.role,
+                    "content": msg.content,
+                })
+        
+        async with client.messages.stream(
+            model=self.config.model,
+            system=system_message,
+            messages=chat_messages,
+            temperature=self.config.temperature,
+            max_tokens=self.config.max_tokens,
+            top_p=self.config.top_p,
+            **kwargs,
+        ) as stream:
+            async for text in stream.text_stream:
+                yield text
+    
+    def get_model_name(self) -> str:
+        """获取模型名称"""
+        return f"anthropic:{self.config.model}"
+    
+    def is_available(self) -> bool:
+        """检查模型是否可用"""
+        return bool(self.config.api_key)
