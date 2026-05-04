@@ -5,7 +5,9 @@ from pm_workstation.storage.factory import get_storage
 from pm_workstation.storage.local import LocalStorage
 from pm_workstation.storage.message_queue import MessageQueue
 from pm_workstation.storage.minio import MinIOStorage
+from pm_workstation.storage.parallel_coordinator import ParallelCoordinator, ParallelTaskGroup
 from pm_workstation.storage.redis_config import RedisConfig, redis_config
+from pm_workstation.storage.task_dispatcher import Task, TaskDispatcher, TaskStatus, TaskType
 
 __all__ = [
     "StorageBackend",
@@ -16,4 +18,10 @@ __all__ = [
     "MessageQueue",
     "RedisConfig",
     "redis_config",
+    "Task",
+    "TaskDispatcher",
+    "TaskStatus",
+    "TaskType",
+    "ParallelCoordinator",
+    "ParallelTaskGroup",
 ]
