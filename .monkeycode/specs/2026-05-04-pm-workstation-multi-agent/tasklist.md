@@ -53,10 +53,10 @@ Updated: 2026-05-04
 - [x] 编写推理逻辑单元测试
 
 ### 3.3 结构化数据输出
-- [ ] 实现ClarificationGenerator（澄清问题生成器）
-- [ ] 实现StructuredRequirement序列化
-- [ ] 实现推理路径记录
-- [ ] 编写输出格式化单元测试
+- [x] 实现ClarificationGenerator（澄清问题生成器）
+- [x] 实现StructuredRequirement序列化
+- [x] 实现推理路径记录
+- [x] 编写输出格式化单元测试
 
 ## Task 4: 数据总线 (Data Bus)
 
