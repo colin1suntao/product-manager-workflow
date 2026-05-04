@@ -92,16 +92,16 @@ Updated: 2026-05-04
 ## Task 6: 文档Agent (Documentation Generation Agent)
 
 ### 6.1 PRD模板引擎
-- [ ] 设计PRD文档模板
-- [ ] 实现TemplateEngine
-- [ ] 实现DocumentStructureGenerator
-- [ ] 编写模板引擎单元测试
+- [x] 设计PRD文档模板
+- [x] 实现TemplateEngine
+- [x] 实现DocumentStructureGenerator
+- [x] 编写模板引擎单元测试
 
 ### 6.2 文档生成
-- [ ] 实现ContentGenerator
-- [ ] 实现TerminologyConsistencyChecker
-- [ ] 实现MarkdownFormatter
-- [ ] 编写文档生成单元测试
+- [x] 实现ContentGenerator
+- [x] 实现TerminologyConsistencyChecker
+- [x] 实现MarkdownFormatter
+- [x] 编写文档生成单元测试
 
 ## Task 7: 校验Agent (Verification Agent)
 
