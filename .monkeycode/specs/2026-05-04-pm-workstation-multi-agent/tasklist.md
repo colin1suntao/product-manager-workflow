@@ -46,11 +46,11 @@ Updated: 2026-05-04
 - [x] 编写解析器单元测试
 
 ### 3.2 长链推理核心
-- [ ] 实现RuleDecomposer（业务规则拆解器）
-- [ ] 实现规则树生成
-- [ ] 实现BranchAnalyzer（操作分支分析器）
-- [ ] 实现GapDetector（逻辑疏漏检测器）
-- [ ] 编写推理逻辑单元测试
+- [x] 实现RuleDecomposer（业务规则拆解器）
+- [x] 实现规则树生成
+- [x] 实现BranchAnalyzer（操作分支分析器）
+- [x] 实现GapDetector（逻辑疏漏检测器）
+- [x] 编写推理逻辑单元测试
 
 ### 3.3 结构化数据输出
 - [ ] 实现ClarificationGenerator（澄清问题生成器）
