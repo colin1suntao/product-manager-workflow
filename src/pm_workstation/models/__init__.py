@@ -1,5 +1,17 @@
 """数据模型模块"""
 
+from pm_workstation.models.component import (
+    Component,
+    ComponentCategory,
+    ComponentMatchRequest,
+    ComponentMeta,
+    ComponentSearchRequest,
+    ComponentSearchResult,
+    ComponentStatus,
+    ComponentUploadRequest,
+    ComponentVersion,
+    ComponentVersionInfo,
+)
 from pm_workstation.models.core import (
     Action,
     Attribute,
@@ -24,6 +36,16 @@ __all__ = [
     "Attribute",
     "Branch",
     "BusinessEntity",
+    "Component",
+    "ComponentCategory",
+    "ComponentMatchRequest",
+    "ComponentMeta",
+    "ComponentSearchRequest",
+    "ComponentSearchResult",
+    "ComponentStatus",
+    "ComponentUploadRequest",
+    "ComponentVersion",
+    "ComponentVersionInfo",
     "Condition",
     "EdgeCase",
     "FlowStep",
