@@ -82,12 +82,12 @@ Updated: 2026-05-04
 - [x] 编写组件库单元测试
 
 ### 5.2 原型生成核心
-- [ ] 实现PageStructureGenerator（页面结构生成器）
-- [ ] 实现ComponentMatcher（组件匹配器）
-- [ ] 实现InteractionConfigurator（交互配置器）
-- [ ] 实现StyleConsistencyChecker（样式一致性检查器）
-- [ ] 实现HTMLGenerator（HTML/CSS/JS代码生成器）
-- [ ] 编写生成逻辑单元测试
+- [x] 实现PageStructureGenerator（页面结构生成器）
+- [x] 实现ComponentMatcher（组件匹配器）
+- [x] 实现InteractionConfigurator（交互配置器）
+- [x] 实现StyleConsistencyChecker（样式一致性检查器）
+- [x] 实现HTMLGenerator（HTML/CSS/JS代码生成器）
+- [x] 编写生成逻辑单元测试
 
 ## Task 6: 文档Agent (Documentation Generation Agent)
 
