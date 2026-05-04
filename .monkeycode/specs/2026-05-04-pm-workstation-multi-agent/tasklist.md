@@ -40,10 +40,10 @@ Updated: 2026-05-04
 ## Task 3: 需求解析Agent (Requirement Analysis Agent)
 
 ### 3.1 需求解析基础
-- [ ] 实现RequirementParser（需求文本解析器）
-- [ ] 实现业务实体提取
-- [ ] 实现角色识别
-- [ ] 编写解析器单元测试
+- [x] 实现RequirementParser（需求文本解析器）
+- [x] 实现业务实体提取
+- [x] 实现角色识别
+- [x] 编写解析器单元测试
 
 ### 3.2 长链推理核心
 - [ ] 实现RuleDecomposer（业务规则拆解器）
