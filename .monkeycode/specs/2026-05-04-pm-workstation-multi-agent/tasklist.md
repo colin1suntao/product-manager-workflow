@@ -12,9 +12,9 @@ Updated: 2026-05-04
 - [x] 创建README.md和开发指南
 
 ### 1.2 基础数据模型定义
-- [ ] 实现核心数据模型（WorkflowRun, BusinessEntity, RuleTree等）
-- [ ] 实现数据验证和序列化
-- [ ] 编写数据模型单元测试
+- [x] 实现核心数据模型（WorkflowRun, BusinessEntity, RuleTree等）
+- [x] 实现数据验证和序列化
+- [x] 编写数据模型单元测试
 
 ### 1.3 数据库与存储配置
 - [ ] 配置SQLAlchemy ORM
