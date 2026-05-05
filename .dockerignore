@@ -1,0 +1,43 @@
+# 版本控制
+.git
+.gitignore
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+.pytest_cache
+.mypy_cache
+
+# 虚拟环境
+.venv
+venv
+env
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# 测试
+tests/
+.coverage
+htmlcov/
+
+# 文档
+docs/
+.monkeycode/
+
+# 前端
+frontend/
+
+# 数据
+data/
+
+# 日志
+*.log
+
+# 临时文件
+*.tmp
+*.bak
