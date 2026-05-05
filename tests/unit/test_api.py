@@ -4,6 +4,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from pm_workstation.api.app import create_app
+from pm_workstation.auth.jwt import create_access_token
 
 
 @pytest.fixture
@@ -17,7 +18,8 @@ def client():
 @pytest.fixture
 def auth_headers():
     """创建认证请求头"""
-    return {"X-User-ID": "test-user-001"}
+    token = create_access_token("test-user-001")
+    return {"Authorization": f"Bearer {token}"}
 
 
 class TestHealthCheck:
@@ -55,13 +57,13 @@ class TestWorkflowAPI:
         assert response.status_code == 422
 
     def test_start_workflow_missing_auth(self, client):
-        """测试缺少认证信息时使用默认用户"""
+        """测试缺少认证信息时返回 401"""
         response = client.post(
             "/api/v1/workflows",
             json={"requirement_text": "测试"},
         )
-        # 现在允许匿名访问，使用默认用户
-        assert response.status_code == 200
+        # JWT 认证要求必须提供 Token
+        assert response.status_code == 401
 
     def test_get_workflow_status(self, client, auth_headers):
         """测试查询工作流状态"""
@@ -88,10 +90,11 @@ class TestWorkflowAPI:
     def test_get_workflow_status_access_denied(self, client, auth_headers):
         """测试访问其他用户的工作流"""
         # 创建用户 A 的工作流
+        user_a_token = create_access_token("user-a")
         create_response = client.post(
             "/api/v1/workflows",
             json={"requirement_text": "测试"},
-            headers={"X-User-ID": "user-a"},
+            headers={"Authorization": f"Bearer {user_a_token}"},
         )
         workflow_id = create_response.json()["id"]
 

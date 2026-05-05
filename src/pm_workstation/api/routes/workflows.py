@@ -5,7 +5,7 @@
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from pm_workstation.api.dependencies import get_current_user, get_workflow_manager
+from pm_workstation.api.dependencies import get_workflow_manager
 from pm_workstation.api.schemas import (
     DeliverablesResponse,
     PauseWorkflowRequest,
@@ -14,6 +14,7 @@ from pm_workstation.api.schemas import (
     WorkflowListResponse,
     WorkflowResponse,
 )
+from pm_workstation.auth.dependencies import get_current_user
 from pm_workstation.orchestrator.workflow_manager import WorkflowManager
 
 router = APIRouter(prefix="/workflows")

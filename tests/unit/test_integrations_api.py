@@ -4,6 +4,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from pm_workstation.api.app import create_app
+from pm_workstation.auth.jwt import create_access_token
 
 
 @pytest.fixture
@@ -17,7 +18,8 @@ def client():
 @pytest.fixture
 def auth_headers():
     """创建认证请求头"""
-    return {"X-User-ID": "test-user-001"}
+    token = create_access_token("test-user-001")
+    return {"Authorization": f"Bearer {token}"}
 
 
 class TestIntegrationConfigAPI:

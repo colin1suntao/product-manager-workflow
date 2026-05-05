@@ -9,7 +9,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 
-from pm_workstation.api.dependencies import get_current_user
+from pm_workstation.auth.dependencies import get_current_user
 from pm_workstation.integrations.models import (
     IntegrationConfig,
     IntegrationType,

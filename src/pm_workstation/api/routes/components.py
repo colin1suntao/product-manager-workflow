@@ -8,7 +8,7 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
-from pm_workstation.api.dependencies import get_current_user
+from pm_workstation.auth.dependencies import get_current_user
 from pm_workstation.models.component import (
     Component,
     ComponentCategory,

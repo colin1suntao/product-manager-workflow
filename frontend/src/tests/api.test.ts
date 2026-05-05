@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { workflowApi, componentApi, integrationApi } from "@/lib/api";
+import { setTokens, clearTokens } from "@/lib/auth";
 
 // Mock fetch globally
 const mockFetch = vi.fn();
@@ -7,10 +8,12 @@ global.fetch = mockFetch;
 
 beforeEach(() => {
   mockFetch.mockReset();
+  clearTokens();
 });
 
 describe("workflowApi", () => {
-  it("should list workflows", async () => {
+  it("should list workflows with auth token", async () => {
+    setTokens("test-access-token", "test-refresh-token");
     const mockData = {
       total: 2,
       runs: [
@@ -31,7 +34,7 @@ describe("workflowApi", () => {
       expect.objectContaining({
         headers: expect.objectContaining({
           "Content-Type": "application/json",
-          "X-User-ID": "frontend-user",
+          "Authorization": "Bearer test-access-token",
         }),
       }),
     );

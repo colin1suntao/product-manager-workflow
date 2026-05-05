@@ -53,6 +53,12 @@ class Settings(BaseSettings):
     llm_max_retries: int = 3
     external_api_max_retries: int = 5
     
+    # JWT 认证配置
+    jwt_secret_key: str = "your-secret-key-change-in-production"
+    jwt_algorithm: str = "HS256"
+    access_token_expire_minutes: int = 15
+    refresh_token_expire_days: int = 7
+    
     def save(self):
         """保存配置到.env文件"""
         env_path = Path(".env")
