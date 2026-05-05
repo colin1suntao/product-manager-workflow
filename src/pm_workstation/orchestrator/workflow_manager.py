@@ -22,15 +22,17 @@ class WorkflowManager:
     管理工作流的生命周期，提供启动、暂停、恢复、查询等接口。
     """
 
-    def __init__(self) -> None:
+    def __init__(self, llm_handler=None) -> None:
         self._runs: dict[str, WorkflowRun] = {}
-        self._app = create_workflow_app()
+        self._llm_handler = llm_handler
+        self._app = create_workflow_app(llm_handler=llm_handler)
 
     def start_workflow(
         self,
         user_id: str,
         requirement_text: str,
         workflow_id: Optional[str] = None,
+        llm_provider_id: Optional[str] = None,
     ) -> WorkflowRun:
         """启动新的工作流
 

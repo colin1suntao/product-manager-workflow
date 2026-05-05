@@ -18,7 +18,7 @@ class WorkflowNodes:
     """
 
     @staticmethod
-    def parsing_node(state: WorkflowState) -> dict:
+    def parsing_node(state: WorkflowState, llm_handler=None) -> dict:
         """需求解析节点 (PARSING -> PARSED)
 
         将原始需求文本解析为结构化需求。
@@ -26,10 +26,19 @@ class WorkflowNodes:
         state.update_status(WorkflowStatus.PARSING)
 
         try:
-            # 在实际实现中，这里会调用 RequirementParser
-            # 目前模拟解析过程
             if not state.workflow_run.requirement_text:
                 raise ValueError("需求文本为空")
+
+            if llm_handler:
+                # 使用真实 LLM 进行需求解析
+                import json
+
+                from pm_workstation.agents.requirement_parser import RequirementParser
+                from pm_workstation.model_router.base import LLMMessage
+
+                parser = RequirementParser(llm_handler=llm_handler)
+                result = parser.parse(state.workflow_run.requirement_text)
+                state.structured_requirement = result
 
             # 如果存在澄清问题，进入等待用户输入
             if state.clarification_questions:
@@ -156,7 +165,7 @@ def should_handle_pause(state: WorkflowState) -> Literal["pause", "continue"]:
     return "continue"
 
 
-def build_workflow_graph() -> StateGraph:
+def build_workflow_graph(llm_handler=None) -> StateGraph:
     """构建工作流图
 
     定义完整的状态转换流程：
@@ -169,7 +178,7 @@ def build_workflow_graph() -> StateGraph:
     workflow = StateGraph(WorkflowState)
 
     # 添加节点
-    workflow.add_node("parse", WorkflowNodes.parsing_node)
+    workflow.add_node("parse", lambda state: WorkflowNodes.parsing_node(state, llm_handler))
     workflow.add_node("generate", WorkflowNodes.generating_node)
     workflow.add_node("verify", WorkflowNodes.verifying_node)
     workflow.add_node("complete", WorkflowNodes.completing_node)
@@ -217,11 +226,14 @@ def build_workflow_graph() -> StateGraph:
     return workflow
 
 
-def create_workflow_app() -> object:
+def create_workflow_app(llm_handler=None) -> object:
     """创建并编译工作流应用
+
+    Args:
+        llm_handler: LLM 处理器实例，用于需求解析等 AI 驱动节点
 
     Returns:
         编译后的 LangGraph 应用
     """
-    graph = build_workflow_graph()
+    graph = build_workflow_graph(llm_handler=llm_handler)
     return graph.compile()

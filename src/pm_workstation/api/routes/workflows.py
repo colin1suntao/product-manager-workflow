@@ -46,9 +46,20 @@ async def start_workflow(
 
     接收原始需求文本，创建并启动一个新的工作流。
     """
+    # 获取 LLM 处理器
+    llm_handler = None
+    if request.llm_provider_id:
+        from pm_workstation.api.routes.llm import _provider_store
+        from pm_workstation.llm.factory import LLMFactory
+
+        config = await _provider_store.get_config(request.llm_provider_id)
+        if config:
+            llm_handler = LLMFactory.create_adapter(config)
+
     run = manager.start_workflow(
         user_id=user_id,
         requirement_text=request.requirement_text,
+        llm_provider_id=request.llm_provider_id,
     )
     return _convert_run_to_response(run)
 

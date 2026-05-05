@@ -14,6 +14,7 @@ from pm_workstation.models.core import WorkflowStatus
 class StartWorkflowRequest(BaseModel):
     """启动工作流请求"""
     requirement_text: str = Field(..., description="原始需求文本", min_length=1)
+    llm_provider_id: Optional[str] = Field(default=None, description="LLM Provider ID")
 
 
 class WorkflowResponse(BaseModel):
@@ -58,3 +59,59 @@ class ErrorResponse(BaseModel):
     """错误响应"""
     detail: str = Field(..., description="错误详情")
     code: Optional[str] = Field(default=None, description="错误代码")
+
+
+# --- LLM Provider 相关 Schema ---
+
+class LLMProviderConfigCreate(BaseModel):
+    """创建 LLM Provider 配置请求"""
+    name: str = Field(..., description="显示名称", min_length=1, max_length=100)
+    provider_type: str = Field(..., description="提供商类型 (openai/anthropic/custom)")
+    api_key: str = Field(..., description="API Key", min_length=1)
+    base_url: Optional[str] = Field(default=None, description="API Base URL", max_length=500)
+    default_model: str = Field(..., description="默认模型名称", min_length=1, max_length=100)
+    is_active: bool = Field(default=True, description="是否启用")
+    is_default: bool = Field(default=False, description="是否为默认 Provider")
+
+
+class LLMProviderConfigUpdate(BaseModel):
+    """更新 LLM Provider 配置请求"""
+    name: Optional[str] = Field(default=None, description="显示名称", min_length=1, max_length=100)
+    api_key: Optional[str] = Field(default=None, description="API Key", min_length=1)
+    base_url: Optional[str] = Field(default=None, description="API Base URL", max_length=500)
+    default_model: Optional[str] = Field(default=None, description="默认模型名称", min_length=1, max_length=100)
+    is_active: Optional[bool] = Field(default=None, description="是否启用")
+    is_default: Optional[bool] = Field(default=None, description="是否为默认 Provider")
+
+
+class LLMProviderConfigResponse(BaseModel):
+    """LLM Provider 配置响应"""
+    id: str
+    name: str
+    provider_type: str
+    api_key: str
+    base_url: Optional[str]
+    default_model: str
+    is_active: bool
+    is_default: bool
+    created_at: str
+    updated_at: str
+
+
+class LLMProviderListResponse(BaseModel):
+    """LLM Provider 列表响应"""
+    providers: list[dict] = Field(..., description="Provider 列表")
+    total: int = Field(..., description="总数")
+
+
+class LLMTestRequest(BaseModel):
+    """LLM 连通性测试请求"""
+    prompt: Optional[str] = Field(default=None, description="测试提示词")
+
+
+class LLMTestResponse(BaseModel):
+    """LLM 连通性测试响应"""
+    success: bool = Field(..., description="是否成功")
+    response_time_ms: int = Field(..., description="响应时间 (毫秒)")
+    model: str = Field(..., description="模型名称")
+    message: str = Field(..., description="测试消息")

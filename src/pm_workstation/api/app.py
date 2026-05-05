@@ -23,6 +23,7 @@ def create_app() -> FastAPI:
     from pm_workstation.api.routes.auth import router as auth_router
     from pm_workstation.api.routes.components import router as components_router
     from pm_workstation.api.routes.integrations import router as integrations_router
+    from pm_workstation.api.routes.llm import router as llm_router
     from pm_workstation.api.routes.workflows import router as workflows_router
 
     app = FastAPI(
@@ -34,6 +35,7 @@ def create_app() -> FastAPI:
 
     # 注册路由
     app.include_router(auth_router, prefix="/api/v1", tags=["认证"])
+    app.include_router(llm_router, prefix="/api/v1", tags=["LLM 配置"])
     app.include_router(workflows_router, prefix="/api/v1", tags=["工作流"])
     app.include_router(components_router, prefix="/api/v1", tags=["组件库"])
     app.include_router(integrations_router, prefix="/api/v1", tags=["集成配置"])
