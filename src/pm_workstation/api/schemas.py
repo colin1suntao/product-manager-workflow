@@ -109,6 +109,27 @@ class LLMTestRequest(BaseModel):
     prompt: Optional[str] = Field(default=None, description="测试提示词")
 
 
+class LLMQuickTestRequest(BaseModel):
+    """快速连通性测试请求（无需保存配置）"""
+    provider_type: str = Field(..., description="提供商类型 (openai/anthropic/custom)")
+    api_key: str = Field(..., description="API Key", min_length=1)
+    base_url: Optional[str] = Field(default=None, description="API Base URL", max_length=500)
+    default_model: Optional[str] = Field(default=None, description="模型名称", max_length=100)
+
+
+class LLMModelListRequest(BaseModel):
+    """获取模型列表请求"""
+    provider_type: str = Field(..., description="提供商类型 (openai/anthropic/custom)")
+    api_key: str = Field(..., description="API Key", min_length=1)
+    base_url: Optional[str] = Field(default=None, description="API Base URL", max_length=500)
+
+
+class LLMModelListResponse(BaseModel):
+    """模型列表响应"""
+    models: list[dict] = Field(..., description="模型列表")
+    total: int = Field(..., description="模型总数")
+
+
 class LLMTestResponse(BaseModel):
     """LLM 连通性测试响应"""
     success: bool = Field(..., description="是否成功")

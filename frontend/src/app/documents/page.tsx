@@ -15,7 +15,7 @@ export default function DocumentsPage() {
     async function fetchRuns() {
       try {
         const data = await workflowApi.list();
-        const withDocs = data.runs.filter(
+        const withDocs = data.workflows.filter(
           (r) => r.document_url && ["completed", "verifying", "fixing"].includes(r.status),
         );
         setRuns(withDocs);

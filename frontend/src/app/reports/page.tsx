@@ -52,7 +52,7 @@ export default function ReportsPage() {
     async function fetchRuns() {
       try {
         const data = await workflowApi.list();
-        const withReport = data.runs.filter((r) =>
+        const withReport = data.workflows.filter((r) =>
           ["completed", "verifying", "fixing"].includes(r.status),
         );
         setRuns(withReport);

@@ -9,6 +9,7 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  allowedDevOrigins: ["3000-006fa7e427cb494c.monkeycode-ai.online"],
 };
 
 export default nextConfig;

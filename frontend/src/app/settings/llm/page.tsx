@@ -1,9 +1,12 @@
 "use client";
 
 import { useState, useEffect, FormEvent } from "react";
+import { useRouter } from "next/navigation";
 import { llmApi, LLMProvider, LLMProviderCreate, LLMTestResult } from "@/lib/llm";
+import { isAuthenticated } from "@/lib/auth";
 
 const PROVIDER_PRESETS: { type: "openai" | "anthropic" | "custom"; name: string; model: string; url?: string }[] = [
+  { type: "custom", name: "", model: "", url: "" },
   { type: "openai", name: "OpenAI", model: "gpt-4o" },
   { type: "anthropic", name: "Anthropic Claude", model: "claude-3-5-sonnet-20241022" },
   { type: "custom", name: "DeepSeek", model: "deepseek-chat", url: "https://api.deepseek.com/v1" },
@@ -14,11 +17,16 @@ const PROVIDER_PRESETS: { type: "openai" | "anthropic" | "custom"; name: string;
 ];
 
 export default function LLMSettingsPage() {
+  const router = useRouter();
   const [providers, setProviders] = useState<LLMProvider[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [testResult, setTestResult] = useState<LLMTestResult | null>(null);
   const [loading, setLoading] = useState(false);
+  const [testingConn, setTestingConn] = useState(false);
+  const [fetchingModels, setFetchingModels] = useState(false);
+  const [availableModels, setAvailableModels] = useState<{ id: string }[]>([]);
+  const [authError, setAuthError] = useState<string | null>(null);
   const [form, setForm] = useState<LLMProviderCreate>({
     name: "",
     provider_type: "openai",
@@ -27,16 +35,32 @@ export default function LLMSettingsPage() {
     default_model: "",
   });
 
+  const [mounted, setMounted] = useState(false);
+
   useEffect(() => {
-    loadProviders();
+    setMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
+    if (!isAuthenticated()) {
+      router.push("/auth/login");
+      return;
+    }
+    loadProviders();
+  }, [mounted]);
 
   const loadProviders = async () => {
     try {
       const data = await llmApi.list();
       setProviders(data.providers);
     } catch (e) {
-      console.error("Failed to load providers", e);
+      const msg = e instanceof Error ? e.message : "";
+      if (msg.includes("401") || msg.includes("认证")) {
+        router.push("/auth/login");
+      } else {
+        console.error("Failed to load providers", e);
+      }
     }
   };
 
@@ -54,7 +78,12 @@ export default function LLMSettingsPage() {
       setForm({ name: "", provider_type: "openai", api_key: "", base_url: "", default_model: "" });
       await loadProviders();
     } catch (e) {
-      console.error("Failed to save provider", e);
+      const msg = e instanceof Error ? e.message : "";
+      if (msg.includes("401") || msg.includes("认证")) {
+        router.push("/auth/login");
+      } else {
+        console.error("Failed to save provider", e);
+      }
     } finally {
       setLoading(false);
     }
@@ -66,7 +95,12 @@ export default function LLMSettingsPage() {
       await llmApi.delete(id);
       await loadProviders();
     } catch (e) {
-      console.error("Failed to delete provider", e);
+      const msg = e instanceof Error ? e.message : "";
+      if (msg.includes("401") || msg.includes("认证")) {
+        router.push("/auth/login");
+      } else {
+        console.error("Failed to delete provider", e);
+      }
     }
   };
 
@@ -76,7 +110,12 @@ export default function LLMSettingsPage() {
       const result = await llmApi.test(id);
       setTestResult(result);
     } catch (e) {
-      setTestResult({ success: false, response_time_ms: 0, model: "", message: e instanceof Error ? e.message : "测试失败" });
+      const msg = e instanceof Error ? e.message : "测试失败";
+      if (msg.includes("401") || msg.includes("认证")) {
+        router.push("/auth/login");
+      } else {
+        setTestResult({ success: false, response_time_ms: 0, model: "", message: msg });
+      }
     }
   };
 
@@ -85,18 +124,82 @@ export default function LLMSettingsPage() {
       await llmApi.setDefault(id);
       await loadProviders();
     } catch (e) {
-      console.error("Failed to set default", e);
+      const msg = e instanceof Error ? e.message : "";
+      if (msg.includes("401") || msg.includes("认证")) {
+        router.push("/auth/login");
+      } else {
+        console.error("Failed to set default", e);
+      }
     }
   };
 
   const applyPreset = (preset: typeof PROVIDER_PRESETS[0]) => {
     setForm({
-      name: preset.name,
+      name: preset.name || "",
       provider_type: preset.type,
       api_key: "",
       base_url: preset.url || "",
-      default_model: preset.model,
+      default_model: preset.model || "",
     });
+    setAvailableModels([]);
+  };
+
+  const handleQuickTest = async () => {
+    if (!form.api_key) {
+      alert("请先填写 API Key");
+      return;
+    }
+    setTestingConn(true);
+    setTestResult(null);
+    try {
+      const result = await llmApi.quickTest({
+        provider_type: form.provider_type,
+        api_key: form.api_key,
+        base_url: form.base_url || undefined,
+        default_model: form.default_model || undefined,
+      });
+      setTestResult(result);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "测试失败";
+      if (msg.includes("401") || msg.includes("认证")) {
+        setAuthError("登录已过期，请重新登录");
+        router.push("/auth/login");
+      } else {
+        setTestResult({ success: false, response_time_ms: 0, model: "", message: msg });
+      }
+    } finally {
+      setTestingConn(false);
+    }
+  };
+
+  const handleFetchModels = async () => {
+    if (!form.api_key) {
+      alert("请先填写 API Key");
+      return;
+    }
+    setFetchingModels(true);
+    try {
+      const data = await llmApi.listModels({
+        provider_type: form.provider_type,
+        api_key: form.api_key,
+        base_url: form.base_url || undefined,
+      });
+      setAvailableModels(data.models);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "获取模型列表失败";
+      if (msg.includes("401") || msg.includes("认证")) {
+        setAuthError("登录已过期，请重新登录");
+        router.push("/auth/login");
+      } else {
+        alert(msg);
+      }
+    } finally {
+      setFetchingModels(false);
+    }
+  };
+
+  const handleSelectModel = (modelId: string) => {
+    setForm({ ...form, default_model: modelId });
   };
 
   return (
@@ -112,6 +215,18 @@ export default function LLMSettingsPage() {
           </button>
         </div>
 
+        {authError && (
+          <div className="mb-6 p-4 rounded-lg bg-yellow-50 border border-yellow-200">
+            <p className="text-yellow-800 font-medium">{authError}</p>
+            <button
+              onClick={() => router.push("/auth/login")}
+              className="mt-2 text-sm text-yellow-700 underline hover:text-yellow-900"
+            >
+              前往登录
+            </button>
+          </div>
+        )}
+
         {showForm && (
           <div className="bg-white rounded-lg shadow p-6 mb-6">
             <h2 className="text-lg font-semibold mb-4">{editingId ? "编辑 Provider" : "添加 Provider"}</h2>
@@ -119,16 +234,24 @@ export default function LLMSettingsPage() {
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">快速选择预设配置</label>
               <div className="flex flex-wrap gap-2">
-                {PROVIDER_PRESETS.map((preset) => (
-                  <button
-                    key={preset.name}
-                    type="button"
-                    onClick={() => applyPreset(preset)}
-                    className="px-3 py-1 text-sm border border-gray-300 rounded-full hover:bg-gray-100"
-                  >
-                    {preset.name}
-                  </button>
-                ))}
+                {PROVIDER_PRESETS.map((preset, idx) => {
+                  const label = idx === 0 ? "第三方自定义" : preset.name;
+                  return (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => applyPreset(preset)}
+                      className={`px-3 py-1 text-sm border rounded-full hover:bg-gray-100 ${
+                        idx === 0
+                          ? "border-blue-300 bg-blue-50 text-blue-700 font-medium"
+                          : "border-gray-300"
+                      }`}
+                    >
+                      {idx === 0 && "+ "}
+                      {label}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
@@ -170,14 +293,13 @@ export default function LLMSettingsPage() {
                 />
               </div>
 
-              {form.provider_type === "custom" && (
+              {(form.provider_type === "custom" || form.base_url) && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Base URL</label>
                   <input
                     type="text"
                     value={form.base_url || ""}
                     onChange={(e) => setForm({ ...form, base_url: e.target.value })}
-                    required={form.provider_type === "custom"}
                     className="w-full px-4 py-2 border border-gray-300 rounded-md"
                     placeholder="https://api.example.com/v1"
                   />
@@ -186,14 +308,44 @@ export default function LLMSettingsPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">默认模型</label>
+                <div className="flex gap-2">
+                  <select
+                    value={form.default_model}
+                    onChange={(e) => setForm({ ...form, default_model: e.target.value })}
+                    className="flex-1 px-4 py-2 border border-gray-300 rounded-md"
+                  >
+                    <option value="">选择模型...</option>
+                    {availableModels.map((m) => (
+                      <option key={m.id} value={m.id}>{m.id}</option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={handleFetchModels}
+                    disabled={fetchingModels || !form.api_key}
+                    className="px-4 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-100 disabled:opacity-50 whitespace-nowrap"
+                  >
+                    {fetchingModels ? "获取中..." : "获取模型列表"}
+                  </button>
+                </div>
                 <input
                   type="text"
                   value={form.default_model}
                   onChange={(e) => setForm({ ...form, default_model: e.target.value })}
-                  required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md"
-                  placeholder="gpt-4o"
+                  className="w-full mt-2 px-4 py-2 border border-gray-300 rounded-md"
+                  placeholder="或手动输入模型名称，如 gpt-4o"
                 />
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={handleQuickTest}
+                  disabled={testingConn || !form.api_key}
+                  className="px-4 py-2 text-sm border border-green-300 text-green-700 rounded-md hover:bg-green-50 disabled:opacity-50"
+                >
+                  {testingConn ? "测试中..." : "测试连接"}
+                </button>
               </div>
 
               <div className="flex gap-2">

@@ -1,7 +1,9 @@
 """OpenAI适配器"""
 
+import os
 from typing import Any, AsyncGenerator, Optional
 
+import httpx
 from pm_workstation.model_router.base import LLMBackend, LLMConfig, LLMMessage, LLMResponse
 
 
@@ -17,11 +19,25 @@ class OpenAIAdapter(LLMBackend):
         if self._client is None:
             from openai import AsyncOpenAI
             
+            # 配置 HTTP 客户端，支持代理和超时
+            timeout = httpx.Timeout(
+                connect=30.0,
+                read=120.0,
+                write=30.0,
+                pool=30.0,
+            )
+            
+            # 构建 proxy 配置
+            proxy_url = os.environ.get("HTTPS_PROXY") or os.environ.get("HTTP_PROXY")
+            
             client_kwargs = {
                 "api_key": self.config.api_key,
+                "timeout": timeout,
             }
             if self.config.base_url:
                 client_kwargs["base_url"] = self.config.base_url
+            if proxy_url:
+                client_kwargs["http_client"] = httpx.AsyncClient(proxy=proxy_url, timeout=timeout)
             
             self._client = AsyncOpenAI(**client_kwargs)
         

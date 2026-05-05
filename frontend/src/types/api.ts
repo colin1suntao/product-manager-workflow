@@ -16,22 +16,27 @@ export type WorkflowStatus =
 /** 工作流运行 */
 export interface WorkflowRun {
   id: string;
-  title: string;
+  user_id: string;
+  title?: string;
+  requirement_text?: string;
   status: WorkflowStatus;
   created_at: string;
   updated_at: string;
-  completed_steps: number;
-  total_steps: number;
+  completed_steps?: number;
+  total_steps?: number;
+  structured_require?: Record<string, unknown> | null;
   prototype_url?: string;
+  prd_document_url?: string;
   document_url?: string;
   report_url?: string;
   error?: string;
+  error_message?: string;
 }
 
 /** 工作流列表响应 */
 export interface WorkflowListResponse {
   total: number;
-  runs: WorkflowRun[];
+  workflows: WorkflowRun[];
 }
 
 /** 工作流创建请求 */

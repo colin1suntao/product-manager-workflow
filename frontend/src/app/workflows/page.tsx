@@ -41,7 +41,7 @@ export default function WorkflowsPage() {
     try {
       const params = filterStatus ? { status: filterStatus } : undefined;
       const data = await workflowApi.list(params);
-      setRuns(data.runs);
+      setRuns(data.workflows || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : "加载失败");
     } finally {
@@ -93,7 +93,7 @@ export default function WorkflowsPage() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">流程监控</h1>
+        <h1 className="text-2xl font-bold">工作流管理</h1>
         <div className="flex items-center gap-3">
           <select
             value={filterStatus}

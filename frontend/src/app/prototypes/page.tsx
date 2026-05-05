@@ -14,7 +14,7 @@ export default function PrototypesPage() {
     async function fetchRuns() {
       try {
         const data = await workflowApi.list();
-        const withPrototypes = data.runs.filter(
+        const withPrototypes = data.workflows.filter(
           (r) => r.prototype_url && ["completed", "verifying", "fixing"].includes(r.status),
         );
         setRuns(withPrototypes);
