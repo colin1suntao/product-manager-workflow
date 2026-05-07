@@ -5,13 +5,16 @@ from httpx import ASGITransport, AsyncClient
 
 from pm_workstation.api.app import create_app
 from pm_workstation.auth.jwt import create_access_token
-from pm_workstation.api.routes.llm import _provider_store
+from pm_workstation.llm.provider_store import LLMProviderStore
 
 
 @pytest.fixture
 def app():
     app = create_app()
     app.state.workflow_manager = type("MockWM", (), {})()  # Mock workflow manager
+    # Ensure the provider store is instantiated for tests if not already present
+    if not hasattr(app.state, "provider_store"):
+        app.state.provider_store = LLMProviderStore()
     return app
 
 
@@ -22,9 +25,9 @@ def auth_headers():
 
 
 @pytest.fixture(autouse=True)
-def clear_store():
+def clear_store(app):
     """每个测试前清空 provider store"""
-    _provider_store._configs.clear()
+    app.state.provider_store._configs.clear()
     yield
 
 
