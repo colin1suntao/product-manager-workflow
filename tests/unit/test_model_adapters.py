@@ -302,10 +302,11 @@ class TestAdapterIntegration:
         # 验证客户端创建时使用base_url
         with patch("openai.AsyncOpenAI") as mock_openai:
             adapter._get_client()
-            mock_openai.assert_called_once_with(
-                api_key="test-key",
-                base_url="https://api.openai-proxy.com/v1",
-            )
+            # 验证关键参数
+            call_kwargs = mock_openai.call_args[1]
+            assert call_kwargs["api_key"] == "test-key"
+            assert call_kwargs["base_url"] == "https://api.openai-proxy.com/v1"
+            assert "timeout" in call_kwargs
     
     def test_anthropic_config_with_base_url(self):
         """测试Anthropic配置base_url"""
@@ -319,10 +320,11 @@ class TestAdapterIntegration:
         # 验证客户端创建时使用base_url
         with patch("anthropic.AsyncAnthropic") as mock_anthropic:
             adapter._get_client()
-            mock_anthropic.assert_called_once_with(
-                api_key="test-key",
-                base_url="https://api.anthropic-proxy.com",
-            )
+            # 验证关键参数
+            call_kwargs = mock_anthropic.call_args[1]
+            assert call_kwargs["api_key"] == "test-key"
+            assert call_kwargs["base_url"] == "https://api.anthropic-proxy.com"
+            assert "timeout" in call_kwargs
     
     @pytest.mark.asyncio
     async def test_multiple_chat_calls(self):

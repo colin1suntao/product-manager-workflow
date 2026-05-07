@@ -9,13 +9,15 @@ from httpx import ASGITransport, AsyncClient
 from pm_workstation.api.app import create_app
 from pm_workstation.auth.jwt import create_access_token
 from pm_workstation.orchestrator.workflow_manager import WorkflowManager
-from pm_workstation.llm.provider_store import _provider_store
+from pm_workstation.llm.provider_store import LLMProviderStore
 
 
 @pytest.fixture
 def app():
     app = create_app()
     app.state.workflow_manager = WorkflowManager()
+    if not hasattr(app.state, "provider_store"):
+        app.state.provider_store = LLMProviderStore()
     return app
 
 
@@ -26,10 +28,8 @@ def auth_headers():
 
 
 @pytest.fixture(autouse=True)
-def clear_store():
-    from pm_workstation.api.routes.llm import _provider_store as api_store
-    api_store._configs.clear()
-    _provider_store._configs.clear()
+def clear_store(app):
+    app.state.provider_store._configs.clear()
     yield
 
 

@@ -3,7 +3,18 @@
 import pytest
 
 from pm_workstation.llm.models import LLMProviderConfig, LLMProviderType
-from pm_workstation.llm.provider_store import LLMProviderStore
+from pm_workstation.llm.provider_store import LLMProviderStore, PERSISTENCE_FILE
+
+
+@pytest.fixture(autouse=True)
+def clear_cache():
+    """在每个测试前清理缓存文件"""
+    import os
+    if os.path.exists(PERSISTENCE_FILE):
+        os.remove(PERSISTENCE_FILE)
+    yield
+    if os.path.exists(PERSISTENCE_FILE):
+        os.remove(PERSISTENCE_FILE)
 
 
 @pytest.fixture

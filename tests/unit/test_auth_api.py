@@ -1,5 +1,6 @@
 """Auth API 路由测试"""
 
+import uuid
 import pytest
 from httpx import ASGITransport, AsyncClient
 
@@ -11,16 +12,21 @@ def app():
     return create_app()
 
 
+@pytest.fixture
+def unique_email():
+    return f"test-{uuid.uuid4().hex[:8]}@example.com"
+
+
 @pytest.mark.asyncio
-async def test_register_new_user(app):
+async def test_register_new_user(app, unique_email):
     async with AsyncClient(transport=ASGITransport(app), base_url="http://test") as client:
         response = await client.post("/api/v1/auth/register", json={
-            "email": "test@example.com",
+            "email": unique_email,
             "password": "password123",
         })
     assert response.status_code == 200
     data = response.json()
-    assert data["email"] == "test@example.com"
+    assert data["email"] == unique_email
     assert "id" in data
 
 

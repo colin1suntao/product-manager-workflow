@@ -4,12 +4,23 @@
 使用模拟的 LLM 响应来测试整个工作流编排。
 """
 
+import os
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
 from pm_workstation.models.core import WorkflowRun, WorkflowStatus
-from pm_workstation.orchestrator.workflow_manager import WorkflowManager
+from pm_workstation.orchestrator.workflow_manager import WorkflowManager, PERSISTENCE_FILE
+
+
+@pytest.fixture(autouse=True)
+def clear_workflow_cache():
+    """在每个测试前清理工作流缓存文件"""
+    if os.path.exists(PERSISTENCE_FILE):
+        os.remove(PERSISTENCE_FILE)
+    yield
+    if os.path.exists(PERSISTENCE_FILE):
+        os.remove(PERSISTENCE_FILE)
 
 
 @pytest.fixture

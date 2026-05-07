@@ -3,6 +3,7 @@
 测试完整的认证流程：注册 -> 登录 -> API访问 -> 刷新Token -> 登出 -> Token失效
 """
 
+import uuid
 import pytest
 from httpx import ASGITransport, AsyncClient
 
@@ -21,19 +22,20 @@ def app():
 @pytest.mark.asyncio
 async def test_full_auth_flow(app):
     """完整认证流程测试"""
+    email = f"e2e-{uuid.uuid4().hex[:8]}@example.com"
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         # 1. 注册
         reg_resp = await client.post("/api/v1/auth/register", json={
-            "email": "e2e@example.com",
+            "email": email,
             "password": "e2e-password-123",
         })
         assert reg_resp.status_code == 200
         user_data = reg_resp.json()
-        assert user_data["email"] == "e2e@example.com"
+        assert user_data["email"] == email
 
         # 2. 登录
         login_resp = await client.post("/api/v1/auth/login", json={
-            "email": "e2e@example.com",
+            "email": email,
             "password": "e2e-password-123",
         })
         assert login_resp.status_code == 200
@@ -76,14 +78,15 @@ async def test_full_auth_flow(app):
 @pytest.mark.asyncio
 async def test_password_change_flow(app):
     """密码修改流程测试"""
+    email = f"pwd-change-{uuid.uuid4().hex[:8]}@example.com"
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         # 注册并登录
         await client.post("/api/v1/auth/register", json={
-            "email": "pwd-change@example.com",
+            "email": email,
             "password": "old-password-123",
         })
         login_resp = await client.post("/api/v1/auth/login", json={
-            "email": "pwd-change@example.com",
+            "email": email,
             "password": "old-password-123",
         })
         access_token = login_resp.json()["access_token"]
@@ -98,14 +101,14 @@ async def test_password_change_flow(app):
 
         # 使用新密码登录
         new_login_resp = await client.post("/api/v1/auth/login", json={
-            "email": "pwd-change@example.com",
+            "email": email,
             "password": "new-password-456",
         })
         assert new_login_resp.status_code == 200
 
         # 旧密码无法登录
         old_login_resp = await client.post("/api/v1/auth/login", json={
-            "email": "pwd-change@example.com",
+            "email": email,
             "password": "old-password-123",
         })
         assert old_login_resp.status_code == 401
