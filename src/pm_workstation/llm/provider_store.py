@@ -5,11 +5,9 @@
 
 import json
 import os
-from datetime import datetime, timezone
-from typing import Dict, List, Optional
+from datetime import UTC, datetime
 
-from pm_workstation.llm.models import LLMProviderConfig, LLMProviderType
-
+from pm_workstation.llm.models import LLMProviderConfig
 
 PERSISTENCE_FILE = os.path.join(os.path.dirname(__file__), ".provider_cache.json")
 
@@ -18,7 +16,7 @@ class LLMProviderStore:
     """LLM Provider 配置存储"""
 
     def __init__(self):
-        self._configs: Dict[str, LLMProviderConfig] = {}
+        self._configs: dict[str, LLMProviderConfig] = {}
         self._load_from_file()
 
     def _persistence_path(self) -> str:
@@ -29,7 +27,7 @@ class LLMProviderStore:
         if not os.path.exists(path):
             return
         try:
-            with open(path, "r") as f:
+            with open(path) as f:
                 data = json.load(f)
             for item in data:
                 config = LLMProviderConfig(**item)
@@ -60,12 +58,12 @@ class LLMProviderStore:
             for c in self._configs.values():
                 c.is_default = False
 
-        config.updated_at = datetime.now(timezone.utc)
+        config.updated_at = datetime.now(UTC)
         self._configs[config.id] = config
         self._save_to_file()
         return config
 
-    async def get_config(self, config_id: str) -> Optional[LLMProviderConfig]:
+    async def get_config(self, config_id: str) -> LLMProviderConfig | None:
         """通过 ID 获取配置
 
         Args:
@@ -76,7 +74,7 @@ class LLMProviderStore:
         """
         return self._configs.get(config_id)
 
-    async def list_configs(self) -> List[LLMProviderConfig]:
+    async def list_configs(self) -> list[LLMProviderConfig]:
         """列出所有配置
 
         Returns:
@@ -84,7 +82,7 @@ class LLMProviderStore:
         """
         return list(self._configs.values())
 
-    async def update_config(self, config_id: str, updates: dict) -> Optional[LLMProviderConfig]:
+    async def update_config(self, config_id: str, updates: dict) -> LLMProviderConfig | None:
         """更新配置
 
         Args:
@@ -108,7 +106,7 @@ class LLMProviderStore:
             if hasattr(config, key):
                 setattr(config, key, value)
 
-        config.updated_at = datetime.now(timezone.utc)
+        config.updated_at = datetime.now(UTC)
         self._save_to_file()
         return config
 
@@ -127,7 +125,7 @@ class LLMProviderStore:
             return True
         return False
 
-    async def get_default_config(self) -> Optional[LLMProviderConfig]:
+    async def get_default_config(self) -> LLMProviderConfig | None:
         """获取默认配置
 
         Returns:
@@ -158,7 +156,7 @@ class LLMProviderStore:
         for c in self._configs.values():
             c.is_default = c.id == config_id
 
-        config.updated_at = datetime.now(timezone.utc)
+        config.updated_at = datetime.now(UTC)
         self._save_to_file()
         return True
 

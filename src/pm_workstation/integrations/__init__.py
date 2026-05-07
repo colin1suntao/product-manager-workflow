@@ -5,8 +5,8 @@
 
 from pm_workstation.integrations.adapters.base import (
     BaseIntegrationAdapter,
-    SyncResult,
     SyncDataType,
+    SyncResult,
 )
 from pm_workstation.integrations.adapters.registry import get_adapter
 from pm_workstation.integrations.models import (

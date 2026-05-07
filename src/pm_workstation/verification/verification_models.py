@@ -1,11 +1,11 @@
 """原型校验相关数据模型"""
 
-from enum import Enum
+from enum import StrEnum
 
 from pydantic import BaseModel, Field
 
 
-class IssueSeverity(str, Enum):
+class IssueSeverity(StrEnum):
     """问题严重程度"""
     CRITICAL = "critical"  # 阻断性问题
     MAJOR = "major"        # 重要问题
@@ -13,7 +13,7 @@ class IssueSeverity(str, Enum):
     INFO = "info"          # 提示信息
 
 
-class IssueType(str, Enum):
+class IssueType(StrEnum):
     """问题类型"""
     MISSING_PAGE = "missing_page"              # 缺失页面
     MISSING_ELEMENT = "missing_element"         # 缺失页面元素
@@ -45,7 +45,7 @@ class CoverageResult(BaseModel):
     page_coverage_rate: float = Field(..., description="页面覆盖率 (0.0 - 1.0)")
     missing_pages: list[str] = Field(default_factory=list, description="缺失的页面ID列表")
     extra_pages: list[str] = Field(default_factory=list, description="多余的页面ID列表")
-    
+
     total_elements_required: int = Field(default=0, description="需求要求的元素总数")
     elements_generated: int = Field(default=0, description="实际生成的元素数")
     element_coverage_rate: float = Field(default=0.0, description="元素覆盖率 (0.0 - 1.0)")

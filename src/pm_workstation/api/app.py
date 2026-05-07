@@ -1,9 +1,8 @@
 """FastAPI 应用配置"""
 
-import asyncio
 import os
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-from typing import AsyncGenerator, Optional
 
 from fastapi import FastAPI
 from fastapi.responses import FileResponse
@@ -18,7 +17,7 @@ from pm_workstation.orchestrator.workflow_manager import WorkflowManager
 ARTIFACTS_DIR = os.path.join(os.path.dirname(__file__), "..", "artifacts")
 
 
-def _build_llm_handler(provider_config) -> Optional[FallbackHandler]:
+def _build_llm_handler(provider_config) -> FallbackHandler | None:
     """从 LLM Provider 配置构建 llm_handler
 
     Args:

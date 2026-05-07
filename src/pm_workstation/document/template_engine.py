@@ -5,7 +5,7 @@
 
 import re
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -25,7 +25,7 @@ class TemplateSection(BaseModel):
     level: int = Field(default=2, description="标题级别 (1=H1, 2=H2, ...)")
     content_template: str = Field(..., description="内容模板（支持变量占位符）")
     variables: list[TemplateVariable] = Field(default_factory=list, description="使用的变量")
-    condition: Optional[str] = Field(default=None, description="渲染条件")
+    condition: str | None = Field(default=None, description="渲染条件")
     children: list["TemplateSection"] = Field(default_factory=list, description="子段落")
 
 
@@ -42,135 +42,135 @@ class PRDTemplate(BaseModel):
 
 class TemplateEngine:
     """PRD模板引擎
-    
+
     负责加载模板、渲染变量、条件渲染和生成最终文档。
     """
-    
+
     def __init__(self):
         self._templates: dict[str, PRDTemplate] = {}
         self._register_default_templates()
-    
+
     def register_template(self, template: PRDTemplate):
         """注册模板
-        
+
         Args:
             template: PRD模板
         """
         self._templates[template.id] = template
-    
-    def get_template(self, template_id: str) -> Optional[PRDTemplate]:
+
+    def get_template(self, template_id: str) -> PRDTemplate | None:
         """获取模板
-        
+
         Args:
             template_id: 模板ID
-            
+
         Returns:
             PRD模板，不存在时返回None
         """
         return self._templates.get(template_id)
-    
+
     def list_templates(self) -> list[PRDTemplate]:
         """列出所有模板
-        
+
         Returns:
             模板列表
         """
         return list(self._templates.values())
-    
+
     def render(
         self,
         template_id: str,
         context: dict[str, Any],
     ) -> str:
         """渲染模板
-        
+
         Args:
             template_id: 模板ID
             context: 渲染上下文（变量值映射）
-            
+
         Returns:
             渲染后的文档字符串
         """
         template = self.get_template(template_id)
         if not template:
             raise ValueError(f"Template '{template_id}' not found")
-        
+
         sections_content = []
         for section in template.sections:
             rendered = self._render_section(section, context)
             if rendered:
                 sections_content.append(rendered)
-        
+
         return "\n\n".join(sections_content)
-    
+
     def render_section(
         self,
         section: TemplateSection,
         context: dict[str, Any],
-    ) -> Optional[str]:
+    ) -> str | None:
         """渲染单个段落
-        
+
         Args:
             section: 模板段落
             context: 渲染上下文
-            
+
         Returns:
             渲染后的段落内容，条件不满足时返回None
         """
         return self._render_section(section, context)
-    
+
     def get_required_variables(self, template_id: str) -> list[TemplateVariable]:
         """获取模板所需的变量列表
-        
+
         Args:
             template_id: 模板ID
-            
+
         Returns:
             必需变量列表
         """
         template = self.get_template(template_id)
         if not template:
             return []
-        
+
         variables = []
         self._collect_variables(template.sections, variables)
         return variables
-    
+
     def _render_section(
         self,
         section: TemplateSection,
         context: dict[str, Any],
-    ) -> Optional[str]:
+    ) -> str | None:
         """递归渲染段落"""
         # 检查条件
         if section.condition and not self._evaluate_condition(section.condition, context):
             return None
-        
+
         # 生成标题
         heading_prefix = "#" * section.level
         title = self._substitute_variables(section.title, context)
-        
+
         # 渲染内容
         content = self._substitute_variables(section.content_template, context)
-        
+
         # 渲染子段落
         children_content = []
         for child in section.children:
             rendered_child = self._render_section(child, context)
             if rendered_child:
                 children_content.append(rendered_child)
-        
+
         # 组合段落
         parts = [f"{heading_prefix} {title}"]
         if content.strip():
             parts.append(content)
         parts.extend(children_content)
-        
+
         return "\n\n".join(parts)
-    
+
     def _substitute_variables(self, text: str, context: dict[str, Any]) -> str:
         """替换模板变量
-        
+
         支持格式: {{variable_name}} 和 {{variable_name|default_value}}
         """
         def replace_var(match):
@@ -178,21 +178,21 @@ class TemplateEngine:
             parts = var_expr.split("|", 1)
             var_name = parts[0].strip()
             default = parts[1].strip() if len(parts) > 1 else ""
-            
+
             value = context.get(var_name, "")
             if not value and default:
                 value = default
             return str(value)
-        
+
         return re.sub(r'\{\{([^}]+)\}\}', replace_var, text)
-    
+
     def _evaluate_condition(self, condition: str, context: dict[str, Any]) -> bool:
         """评估渲染条件
-        
+
         支持简单条件: "has_entities", "has_flows", "entity_count > 0"
         """
         condition = condition.strip()
-        
+
         # 布尔变量检查: has_xxx -> check context.get("has_xxx")
         if condition.startswith("has_"):
             # 先尝试直接查找
@@ -202,18 +202,18 @@ class TemplateEngine:
             # 再尝试去掉 has_ 前缀
             var_name = condition[4:]
             return bool(context.get(var_name))
-        
+
         # 比较表达式
         match = re.match(r'(\w+)\s*([><=!]+)\s*(\w+)', condition)
         if match:
             var_name, operator, value_str = match.groups()
             var_value = context.get(var_name, 0)
-            
+
             try:
                 value = int(value_str)
             except ValueError:
                 value = value_str
-            
+
             if operator == ">":
                 return var_value > value
             elif operator == ">=":
@@ -226,9 +226,9 @@ class TemplateEngine:
                 return var_value == value
             elif operator == "!=":
                 return var_value != value
-        
+
         return True
-    
+
     def _collect_variables(
         self,
         sections: list[TemplateSection],
@@ -242,7 +242,7 @@ class TemplateEngine:
                     seen.add(var.name)
                     variables.append(var)
             self._collect_variables(section.children, variables)
-    
+
     def _register_default_templates(self):
         """注册默认PRD模板"""
         prd_template = PRDTemplate(
@@ -344,9 +344,9 @@ class TemplateEngine:
                 ),
             ],
         )
-        
+
         self.register_template(prd_template)
-        
+
         # 简化模板
         simple_template = PRDTemplate(
             id="prd-simple",
@@ -375,5 +375,5 @@ class TemplateEngine:
                 ),
             ],
         )
-        
+
         self.register_template(simple_template)

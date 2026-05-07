@@ -3,12 +3,11 @@
 管理所有集成适配器的注册和获取。
 """
 
-from typing import Type
 
 from pm_workstation.integrations.adapters.base import BaseIntegrationAdapter
 from pm_workstation.integrations.models import IntegrationConfig, IntegrationType
 
-_adapter_registry: dict[IntegrationType, Type[BaseIntegrationAdapter]] = {}
+_adapter_registry: dict[IntegrationType, type[BaseIntegrationAdapter]] = {}
 
 
 def register_adapter(
@@ -22,7 +21,7 @@ def register_adapter(
     Returns:
         装饰器函数
     """
-    def decorator(adapter_cls: Type[BaseIntegrationAdapter]) -> Type[BaseIntegrationAdapter]:
+    def decorator(adapter_cls: type[BaseIntegrationAdapter]) -> type[BaseIntegrationAdapter]:
         _adapter_registry[integration_type] = adapter_cls
         return adapter_cls
     return decorator
@@ -68,11 +67,11 @@ def auto_discover_adapters() -> None:
     导入所有适配器子模块以触发装饰器注册。
     """
     from pm_workstation.integrations.adapters import (  # noqa: F401
-        jira_adapter,
-        trello_adapter,
         feishu_adapter,
         figma_adapter,
-        sketch_adapter,
         github_adapter,
         gitlab_adapter,
+        jira_adapter,
+        sketch_adapter,
+        trello_adapter,
     )

@@ -3,20 +3,19 @@
 提供用户注册、登录、Token 刷新、登出和密码修改功能。
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException
 
+from pm_workstation.api.dependencies import get_db_session
 from pm_workstation.auth.dependencies import get_current_user
 from pm_workstation.auth.jwt import create_access_token, create_refresh_token, verify_refresh_token
 from pm_workstation.auth.models import (
     LoginRequest,
-    LogoutRequest,
     PasswordChange,
     TokenPair,
     UserCreate,
     UserResponse,
 )
-from pm_workstation.auth.user_store import UserStore, hash_password, verify_password
-from pm_workstation.api.dependencies import get_db_session
+from pm_workstation.auth.user_store import UserStore, verify_password
 
 router = APIRouter(prefix="/auth", tags=["认证"])
 

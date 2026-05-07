@@ -14,6 +14,7 @@ from pm_workstation.storage.task_dispatcher import Task, TaskDispatcher, TaskSta
 __all__ = [
     "ComponentStore",
     "InMemoryComponentStore",
+    "LocalStorage",
     "MessageQueue",
     "MinIOStorage",
     "ParallelCoordinator",
@@ -26,6 +27,5 @@ __all__ = [
     "TaskStatus",
     "TaskType",
     "get_storage",
-    "local_storage",
     "redis_config",
 ]

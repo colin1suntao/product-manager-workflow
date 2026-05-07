@@ -4,7 +4,6 @@
 """
 
 from datetime import datetime
-from typing import Optional
 
 from pm_workstation.integrations.models import (
     IntegrationConfig,
@@ -25,11 +24,11 @@ class IntegrationStore:
         self._configs[config.id] = config
         return config
 
-    def get_config(self, config_id: str) -> Optional[IntegrationConfig]:
+    def get_config(self, config_id: str) -> IntegrationConfig | None:
         """获取集成配置"""
         return self._configs.get(config_id)
 
-    def update_config(self, config_id: str, **kwargs) -> Optional[IntegrationConfig]:
+    def update_config(self, config_id: str, **kwargs) -> IntegrationConfig | None:
         """更新集成配置"""
         config = self._configs.get(config_id)
         if not config:
@@ -51,7 +50,7 @@ class IntegrationStore:
 
     def list_configs(
         self,
-        integration_type: Optional[IntegrationType] = None,
+        integration_type: IntegrationType | None = None,
         enabled_only: bool = False,
     ) -> list[IntegrationConfig]:
         """列出集成配置"""
@@ -77,11 +76,11 @@ class SyncTaskStore:
         self._tasks[task.id] = task
         return task
 
-    def get_task(self, task_id: str) -> Optional[SyncTask]:
+    def get_task(self, task_id: str) -> SyncTask | None:
         """获取同步任务"""
         return self._tasks.get(task_id)
 
-    def update_task(self, task_id: str, **kwargs) -> Optional[SyncTask]:
+    def update_task(self, task_id: str, **kwargs) -> SyncTask | None:
         """更新同步任务"""
         task = self._tasks.get(task_id)
         if not task:
@@ -95,9 +94,9 @@ class SyncTaskStore:
 
     def list_tasks(
         self,
-        integration_id: Optional[str] = None,
-        workflow_id: Optional[str] = None,
-        status: Optional[SyncStatus] = None,
+        integration_id: str | None = None,
+        workflow_id: str | None = None,
+        status: SyncStatus | None = None,
     ) -> list[SyncTask]:
         """列出同步任务"""
         tasks = list(self._tasks.values())

@@ -4,7 +4,6 @@
 """
 
 import uuid
-from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
@@ -32,7 +31,7 @@ class IntegrationConfigRequest(BaseModel):
     api_key: str = ""
     api_secret: str = ""
     access_token: str = ""
-    settings: Optional[dict] = None
+    settings: dict | None = None
 
 
 class SyncTaskRequest(BaseModel):
@@ -40,7 +39,7 @@ class SyncTaskRequest(BaseModel):
 
     direction: str = "import"
     workflow_id: str = ""
-    source_data: Optional[dict] = None
+    source_data: dict | None = None
 
 
 @router.post("/configs", response_model=dict, summary="创建集成配置")
@@ -87,7 +86,7 @@ async def create_integration_config(
 
 @router.get("/configs", response_model=dict, summary="列出集成配置")
 async def list_integration_configs(
-    integration_type: Optional[str] = Query(default=None, description="集成类型过滤"),
+    integration_type: str | None = Query(default=None, description="集成类型过滤"),
     enabled_only: bool = Query(default=False, description="仅显示启用的配置"),
     user_id: str = Depends(get_current_user),
 ) -> dict:
@@ -236,9 +235,9 @@ async def create_sync_task(
 
 @router.get("/sync-tasks", response_model=dict, summary="列出同步任务")
 async def list_sync_tasks(
-    integration_id: Optional[str] = Query(default=None, description="集成配置ID过滤"),
-    workflow_id: Optional[str] = Query(default=None, description="工作流ID过滤"),
-    status: Optional[str] = Query(default=None, description="状态过滤"),
+    integration_id: str | None = Query(default=None, description="集成配置ID过滤"),
+    workflow_id: str | None = Query(default=None, description="工作流ID过滤"),
+    status: str | None = Query(default=None, description="状态过滤"),
     user_id: str = Depends(get_current_user),
 ) -> dict:
     """列出同步任务"""

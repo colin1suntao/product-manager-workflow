@@ -1,10 +1,9 @@
 """澄清问题生成器"""
 
-from typing import Optional
 
 from pydantic import BaseModel
 
-from pm_workstation.model_router.base import LLMBackend, LLMMessage, LLMResponse
+from pm_workstation.model_router.base import LLMBackend, LLMMessage
 from pm_workstation.models.core import Question
 
 
@@ -23,28 +22,28 @@ class ClarificationResponse(BaseModel):
 
 class ClarificationGenerator:
     """澄清问题生成器 - 生成需要用户确认的问题"""
-    
+
     def __init__(self, llm_handler: LLMBackend):
         """初始化澄清问题生成器
-        
+
         Args:
             llm_handler: LLM处理器
         """
         self.llm_handler = llm_handler
-    
+
     async def generate(
         self,
         requirement_text: str,
-        ambiguous_parts: Optional[list[str]] = None,
-        missing_info: Optional[list[str]] = None,
+        ambiguous_parts: list[str] | None = None,
+        missing_info: list[str] | None = None,
     ) -> list[Question]:
         """生成澄清问题
-        
+
         Args:
             requirement_text: 原始需求文本
             ambiguous_parts: 歧义部分列表
             missing_info: 缺失信息列表
-            
+
         Returns:
             澄清问题列表
         """
@@ -53,27 +52,27 @@ class ClarificationGenerator:
             ambiguous_parts=ambiguous_parts or [],
             missing_info=missing_info or [],
         )
-        
+
         prompt = self._build_prompt(request)
-        
+
         response = await self.llm_handler.chat([
             LLMMessage(role="system", content=self._get_system_prompt()),
             LLMMessage(role="user", content=prompt),
         ])
-        
+
         return self._parse_questions(response.content)
-    
+
     async def generate_from_analysis(
         self,
         requirement_text: str,
         analysis_result: str,
     ) -> list[Question]:
         """基于分析结果生成澄清问题
-        
+
         Args:
             requirement_text: 原始需求文本
             analysis_result: 分析结果
-            
+
         Returns:
             澄清问题列表
         """
@@ -86,14 +85,14 @@ class ClarificationGenerator:
 {analysis_result}
 
 请识别分析中不确定的部分，生成具体的澄清问题。"""
-        
+
         response = await self.llm_handler.chat([
             LLMMessage(role="system", content=self._get_system_prompt()),
             LLMMessage(role="user", content=prompt),
         ])
-        
+
         return self._parse_questions(response.content)
-    
+
     def _get_system_prompt(self) -> str:
         """获取系统提示词"""
         return """你是一个需求澄清专家，擅长从模糊或不完整的需求中识别歧义和缺失信息，并生成清晰的澄清问题。
@@ -110,21 +109,21 @@ class ClarificationGenerator:
 - options: 可选答案列表（如果适用）
 
 请以JSON数组格式输出问题列表。"""
-    
+
     def _build_prompt(self, request: ClarificationRequest) -> str:
         """构建提示词"""
         parts = []
-        
+
         if request.ambiguous_parts:
             parts.append("歧义部分：")
             for part in request.ambiguous_parts:
                 parts.append(f"- {part}")
-        
+
         if request.missing_info:
             parts.append("缺失信息：")
             for info in request.missing_info:
                 parts.append(f"- {info}")
-        
+
         return f"""请针对以下需求生成澄清问题：
 
 需求描述：
@@ -133,20 +132,20 @@ class ClarificationGenerator:
 {chr(10).join(parts)}
 
 请生成具体的澄清问题，帮助完善需求。"""
-    
+
     def _parse_questions(self, content: str) -> list[Question]:
         """解析问题响应"""
         import json
-        
+
         json_str = self._extract_json(content)
         data = json.loads(json_str)
-        
+
         return [Question(**q) for q in data]
-    
+
     def _extract_json(self, content: str) -> str:
         """从响应中提取JSON"""
         content = content.strip()
-        
+
         if "```json" in content:
             start = content.index("```json") + 7
             end = content.index("```", start)
@@ -155,5 +154,5 @@ class ClarificationGenerator:
             start = content.index("```") + 3
             end = content.index("```", start)
             return content[start:end].strip()
-        
+
         return content

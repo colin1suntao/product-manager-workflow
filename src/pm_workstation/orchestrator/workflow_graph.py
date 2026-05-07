@@ -4,7 +4,7 @@
 """
 
 import asyncio
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Literal
 
 from langgraph.graph import END, START, StateGraph
@@ -97,21 +97,21 @@ class WorkflowNodes:
 
         print(f"[LLM] Starting {task} call...")
         start_time = time.time()
-        
+
         thread = threading.Thread(target=_run_async, daemon=True)
         thread.start()
         thread.join(timeout=90)  # 90秒超时（原型和PRD各90秒，加上parsing 60秒，总计不超过3分钟）
 
         elapsed = time.time() - start_time
-        
+
         if thread.is_alive():
             print(f"[LLM] {task} call timed out after {elapsed:.1f}s")
             raise TimeoutError(f"LLM {task} call timed out after {elapsed:.1f}s")
-        
+
         if result_holder["error"]:
             print(f"[LLM] {task} call failed after {elapsed:.1f}s: {result_holder['error']}")
             raise result_holder["error"]
-        
+
         print(f"[LLM] {task} call completed in {elapsed:.1f}s")
         return result_holder["value"]
 
@@ -130,11 +130,10 @@ class WorkflowNodes:
 
             if llm_handler:
                 # 使用 LLM 生成原型和文档，超时则回退到简单模板
-                llm_ok = True
 
                 # 生成原型（90 秒超时）
                 try:
-                    print(f"[GeneratingNode] Calling LLM for prototype...")
+                    print("[GeneratingNode] Calling LLM for prototype...")
                     prototype_html = WorkflowNodes._call_llm_sync(
                         llm_handler, "prototype", req_text
                     )
@@ -142,11 +141,10 @@ class WorkflowNodes:
                         state.prototype_html = prototype_html
                 except Exception as e:
                     print(f"[GeneratingNode] Prototype generation failed: {e}")
-                    llm_ok = False
 
                 # 生成 PRD（90 秒超时，与原型并行）
                 try:
-                    print(f"[GeneratingNode] Calling LLM for PRD...")
+                    print("[GeneratingNode] Calling LLM for PRD...")
                     prd_document = WorkflowNodes._call_llm_sync(
                         llm_handler, "prd", req_text
                     )
@@ -154,7 +152,6 @@ class WorkflowNodes:
                         state.prd_document = prd_document
                 except Exception as e:
                     print(f"[GeneratingNode] PRD generation failed: {e}")
-                    llm_ok = False
 
                 # 如果 LLM 生成失败，使用简单模板兜底
                 if not state.prototype_html:
@@ -181,7 +178,6 @@ class WorkflowNodes:
     @staticmethod
     def _generate_with_llm_sync(llm_handler, requirement_text: str, structured_requirement=None) -> dict:
         """同步包装器：在同步上下文中调用异步 LLM 生成"""
-        import concurrent.futures
         import threading
 
         results = {"prototype_html": None, "prd_document": None, "error": None}
@@ -221,7 +217,7 @@ class WorkflowNodes:
     async def _generate_with_llm(llm_handler, requirement_text: str, structured_requirement=None) -> dict:
         """使用 LLM 生成原型和文档"""
         from pm_workstation.agents.huashu_prototype_generator import HuashuPrototypeGenerator
-        
+
         proto_gen = HuashuPrototypeGenerator(llm_handler=llm_handler)
         prd_gen = PRDGenerator(llm_handler=llm_handler)
 
@@ -239,7 +235,7 @@ class WorkflowNodes:
     def _generate_simple_prototype(req_text: str) -> str:
         """生成简单的 HTML 原型（无 LLM 时的兜底方案，使用 huashu-design 技术栈）"""
         title = req_text.split("\n\n")[0] if "\n\n" in req_text else req_text[:50]
-        
+
         # 分析需求文本，提取关键词
         keywords = []
         if "博客" in req_text or "blog" in req_text.lower():
@@ -250,9 +246,9 @@ class WorkflowNodes:
             keywords = ["收支记录", "分类统计", "报表导出", "预算管理"]
         else:
             keywords = ["用户管理", "数据处理", "报表分析", "系统设置"]
-        
-        sidebar_items = "".join([f'<a class="sidebar-item" href="#" onclick="showSection(\'{kw}\')"><span class="icon">{kw[0]}</span>{kw}</a>' for kw in keywords])
-        
+
+        "".join([f'<a class="sidebar-item" href="#" onclick="showSection(\'{kw}\')"><span class="icon">{kw[0]}</span>{kw}</a>' for kw in keywords])
+
         return f"""<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -265,28 +261,28 @@ class WorkflowNodes:
     <style>
         * {{ margin: 0; padding: 0; box-sizing: border-box; }}
         body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", sans-serif; background: #f5f5f5; }}
-        
+
         /* 布局 */
         .navbar {{ background: #001529; color: white; padding: 0 24px; height: 64px; display: flex; align-items: center; justify-content: space-between; position: fixed; width: 100%; top: 0; z-index: 100; }}
         .navbar .logo {{ font-size: 20px; font-weight: bold; }}
         .navbar .user-info {{ display: flex; align-items: center; gap: 16px; font-size: 14px; }}
-        
+
         .sidebar {{ width: 256px; background: white; position: fixed; top: 64px; left: 0; bottom: 0; border-right: 1px solid #e8e8e8; padding: 16px 0; overflow-y: auto; }}
         .sidebar-item {{ display: flex; align-items: center; gap: 12px; padding: 12px 24px; color: #333; text-decoration: none; transition: all 0.2s; }}
         .sidebar-item:hover {{ background: #f5f5f5; }}
         .sidebar-item.active {{ background: #e6f7ff; color: #1890ff; border-right: 3px solid #1890ff; }}
         .sidebar-item .icon {{ width: 32px; height: 32px; background: #f0f0f0; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: bold; }}
-        
+
         .main {{ margin-left: 256px; margin-top: 64px; padding: 24px; min-height: calc(100vh - 64px); }}
         .card {{ background: white; border-radius: 8px; padding: 24px; margin-bottom: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }}
         .card h2 {{ font-size: 18px; margin-bottom: 16px; color: #333; }}
         .card p {{ color: #666; line-height: 1.6; }}
-        
+
         .stats {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }}
         .stat-card {{ background: white; border-radius: 8px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }}
         .stat-card .number {{ font-size: 32px; font-weight: bold; color: #1890ff; }}
         .stat-card .label {{ font-size: 14px; color: #999; margin-top: 8px; }}
-        
+
         table {{ width: 100%; border-collapse: collapse; }}
         th {{ text-align: left; padding: 12px 16px; border-bottom: 2px solid #e8e8e8; font-weight: 600; color: #333; }}
         td {{ padding: 12px 16px; border-bottom: 1px solid #f0f0f0; color: #666; }}
@@ -297,15 +293,15 @@ class WorkflowNodes:
     <div id="root"></div>
     <script type="text/babel">
         const {{ useState }} = React;
-        
+
         const appData = {{
             title: "{title}",
             keywords: {keywords},
         }};
-        
+
         function App() {{
             const [activeSection, setActiveSection] = useState(appData.keywords[0] || '概览');
-            
+
             return (
                 <div>
                     <div className="navbar">
@@ -315,11 +311,11 @@ class WorkflowNodes:
                             <div style={{{{width: 32, height: 32, background: '#1890ff', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center'}}}}>A</div>
                         </div>
                     </div>
-                    
+
                     <div className="sidebar">
                         {{appData.keywords.map(kw => (
-                            <a 
-                                key={{kw}} 
+                            <a
+                                key={{kw}}
                                 className={{"sidebar-item " + (activeSection === kw ? 'active' : '')}}
                                 href="#"
                                 onClick={{(e) => {{e.preventDefault(); setActiveSection(kw)}}}}
@@ -329,7 +325,7 @@ class WorkflowNodes:
                             </a>
                         ))}}
                     </div>
-                    
+
                     <div className="main">
                         <div className="stats">
                             {{appData.keywords.slice(0, 4).map(kw => (
@@ -339,7 +335,7 @@ class WorkflowNodes:
                                 </div>
                             ))}}
                         </div>
-                        
+
                         <div className="card">
                             <h2>{{activeSection}}</h2>
                             <p>这是「{{activeSection}}」功能模块的原型界面。在实际开发中，这里会实现完整的交互逻辑和数据展示。</p>
@@ -368,7 +364,7 @@ class WorkflowNodes:
                 </div>
             );
         }}
-        
+
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
     </script>
@@ -379,7 +375,7 @@ class WorkflowNodes:
     def _generate_simple_prd(req_text: str) -> str:
         """生成简单的 PRD 文档（无 LLM 时的兜底方案）"""
         title = req_text.split("\n\n")[0] if "\n\n" in req_text else req_text[:50]
-        
+
         # 根据需求文本分析功能模块
         features = []
         if "博客" in req_text or "blog" in req_text.lower():
@@ -410,7 +406,7 @@ class WorkflowNodes:
                 {"name": "报表分析", "desc": "数据统计、图表展示、报表生成、趋势分析"},
                 {"name": "系统设置", "desc": "参数配置、日志管理、系统监控、数据备份"},
             ]
-        
+
         features_text = ""
         for i, f in enumerate(features):
             features_text += f"""
@@ -426,7 +422,7 @@ class WorkflowNodes:
 - 响应时间 < 2秒
 - 错误率 < 1%
 """
-        
+
         return f"""# 产品需求文档 (PRD)
 
 ## 1. 产品概述
@@ -535,7 +531,7 @@ class WorkflowNodes:
 
 ---
 *文档版本：v1.0*
-*最后更新：{datetime.now(timezone.utc).strftime('%Y-%m-%d')}*
+*最后更新：{datetime.now(UTC).strftime('%Y-%m-%d')}*
 """
 
     @staticmethod
@@ -558,7 +554,7 @@ class WorkflowNodes:
             # 校验原型
             if state.prototype_html:
                 html = state.prototype_html
-                
+
                 # 检查基本结构
                 if '<!DOCTYPE html>' not in html:
                     prototype_issues.append({
@@ -569,7 +565,7 @@ class WorkflowNodes:
                         "suggestion": "添加 <!DOCTYPE html> 声明确保浏览器正确渲染",
                         "location": "HTML头部",
                     })
-                
+
                 if '<html' not in html:
                     prototype_issues.append({
                         "id": "P002",
@@ -579,7 +575,7 @@ class WorkflowNodes:
                         "suggestion": "添加<html>标签包裹整个文档",
                         "location": "HTML结构",
                     })
-                
+
                 if '<head>' not in html:
                     prototype_issues.append({
                         "id": "P003",
@@ -589,7 +585,7 @@ class WorkflowNodes:
                         "suggestion": "添加<head>标签包含元数据和样式",
                         "location": "HTML结构",
                     })
-                
+
                 if '<meta charset' not in html:
                     prototype_issues.append({
                         "id": "P004",
@@ -599,7 +595,7 @@ class WorkflowNodes:
                         "suggestion": "添加 <meta charset='UTF-8'> 确保正确显示中文",
                         "location": "head标签内",
                     })
-                
+
                 if '<meta name="viewport"' not in html:
                     prototype_issues.append({
                         "id": "P005",
@@ -609,7 +605,7 @@ class WorkflowNodes:
                         "suggestion": "添加viewport meta标签支持响应式设计",
                         "location": "head标签内",
                     })
-                
+
                 # 检查无障碍性
                 if '<button' in html and 'aria-label' not in html:
                     prototype_issues.append({
@@ -620,7 +616,7 @@ class WorkflowNodes:
                         "suggestion": "为按钮添加aria-label属性提高可访问性",
                         "location": "button元素",
                     })
-                
+
                 if '<input' in html and 'aria-label' not in html and '<label' not in html:
                     prototype_issues.append({
                         "id": "P007",
@@ -630,7 +626,7 @@ class WorkflowNodes:
                         "suggestion": "为input添加label或aria-label",
                         "location": "input元素",
                     })
-                
+
                 # 检查样式完整性
                 if '<style>' not in html and 'style=' not in html:
                     prototype_issues.append({
@@ -641,7 +637,7 @@ class WorkflowNodes:
                         "suggestion": "建议添加CSS样式提升视觉效果",
                         "location": "HTML文档",
                     })
-                
+
                 # 检查内容完整性
                 if len(html) < 500:
                     prototype_issues.append({
@@ -665,7 +661,7 @@ class WorkflowNodes:
             # 校验文档
             if state.prd_document:
                 prd = state.prd_document
-                
+
                 # 检查文档结构
                 required_sections = ["产品概述", "功能需求", "非功能需求"]
                 for section in required_sections:
@@ -678,7 +674,7 @@ class WorkflowNodes:
                             "suggestion": f"添加'{section}'章节完善文档结构",
                             "location": "文档结构",
                         })
-                
+
                 # 检查内容丰富度
                 if len(prd) < 1000:
                     document_issues.append({
@@ -689,7 +685,7 @@ class WorkflowNodes:
                         "suggestion": "可以补充更多详细的用户故事和验收标准",
                         "location": "文档内容",
                     })
-                
+
                 # 检查是否有用户故事
                 if "用户故事" not in prd and "作为" not in prd:
                     document_issues.append({
@@ -700,7 +696,7 @@ class WorkflowNodes:
                         "suggestion": "添加用户故事帮助开发团队理解需求场景",
                         "location": "功能需求章节",
                     })
-                
+
                 # 检查是否有验收标准
                 if "验收标准" not in prd:
                     document_issues.append({
@@ -711,7 +707,7 @@ class WorkflowNodes:
                         "suggestion": "为每个功能添加明确的验收标准",
                         "location": "功能需求章节",
                     })
-                
+
                 # 检查技术架构
                 if "技术架构" not in prd and "技术栈" not in prd:
                     document_issues.append({
@@ -743,7 +739,7 @@ class WorkflowNodes:
                         proto_title = state.prototype_html[title_start:title_end].strip()
                         if proto_title in state.prd_document:
                             title_match = True
-                
+
                 if not title_match:
                     consistency_issues.append({
                         "id": "C001",
@@ -764,7 +760,7 @@ class WorkflowNodes:
             # 生成校验报告
             report = VerificationReport(
                 report_id=f"report-{state.workflow_run.id}",
-                created_at=datetime.now(timezone.utc),
+                created_at=datetime.now(UTC),
                 prototype_issues=prototype_issues,
                 document_issues=document_issues,
                 consistency_issues=consistency_issues,

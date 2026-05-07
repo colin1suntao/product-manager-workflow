@@ -6,11 +6,9 @@
 import json
 import os
 import uuid
-from datetime import datetime, timezone
-from typing import Optional
+from datetime import UTC, datetime
 
 from pm_workstation.models.core import (
-    StructuredRequirement,
     WorkflowRun,
     WorkflowStatus,
 )
@@ -42,7 +40,7 @@ class WorkflowManager:
         if not os.path.exists(path):
             return
         try:
-            with open(path, "r") as f:
+            with open(path) as f:
                 data = json.load(f)
             for item in data:
                 run = WorkflowRun(**item)
@@ -84,8 +82,8 @@ class WorkflowManager:
         self,
         user_id: str,
         requirement_text: str,
-        workflow_id: Optional[str] = None,
-        llm_provider_id: Optional[str] = None,
+        workflow_id: str | None = None,
+        llm_provider_id: str | None = None,
     ) -> WorkflowRun:
         """启动新的工作流
 
@@ -120,11 +118,11 @@ class WorkflowManager:
             return
 
         state = WorkflowState(workflow_run=run)
-        print(f"[WorkflowManager] Created initial state")
+        print("[WorkflowManager] Created initial state")
 
         try:
             # 使用 LangGraph 执行完整工作流
-            print(f"[WorkflowManager] Invoking LangGraph app...")
+            print("[WorkflowManager] Invoking LangGraph app...")
             result = self._app.invoke(state)
             print(f"[WorkflowManager] LangGraph completed, result type: {type(result)}")
 
@@ -167,10 +165,10 @@ class WorkflowManager:
             traceback.print_exc()
             run.status = WorkflowStatus.FAILED
             run.error_message = str(e)
-            run.updated_at = datetime.now(timezone.utc)
+            run.updated_at = datetime.now(UTC)
             self._save_to_file()
 
-    def get_workflow_status(self, workflow_id: str) -> Optional[WorkflowRun]:
+    def get_workflow_status(self, workflow_id: str) -> WorkflowRun | None:
         """获取工作流当前状态
 
         Args:
@@ -201,7 +199,7 @@ class WorkflowManager:
         self._save_to_file()
         return True
 
-    def resume_workflow(self, workflow_id: str, user_responses: Optional[list] = None) -> bool:
+    def resume_workflow(self, workflow_id: str, user_responses: list | None = None) -> bool:
         """恢复工作流
 
         Args:
@@ -222,7 +220,7 @@ class WorkflowManager:
         self._save_to_file()
         return True
 
-    def get_deliverables(self, workflow_id: str) -> Optional[dict]:
+    def get_deliverables(self, workflow_id: str) -> dict | None:
         """获取工作流交付物
 
         Args:
@@ -242,7 +240,7 @@ class WorkflowManager:
         }
         return deliverables
 
-    def list_workflows(self, user_id: Optional[str] = None) -> list[WorkflowRun]:
+    def list_workflows(self, user_id: str | None = None) -> list[WorkflowRun]:
         """列出工作流
 
         Args:

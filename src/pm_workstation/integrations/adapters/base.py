@@ -4,15 +4,15 @@
 """
 
 from abc import ABC, abstractmethod
-from datetime import datetime
 from dataclasses import dataclass, field
-from enum import Enum
-from typing import Any, Optional
+from datetime import datetime
+from enum import StrEnum
+from typing import Any
 
-from pm_workstation.integrations.models import IntegrationConfig, SyncDirection, SyncTask
+from pm_workstation.integrations.models import IntegrationConfig, SyncTask
 
 
-class SyncDataType(str, Enum):
+class SyncDataType(StrEnum):
     """同步数据类型"""
     REQUIREMENT = "requirement"
     TASK = "task"
@@ -33,8 +33,8 @@ class SyncItem:
     status: str = ""
     url: str = ""
     raw_data: dict[str, Any] = field(default_factory=dict)
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
     metadata: dict[str, Any] = field(default_factory=dict)
 
 
@@ -45,9 +45,9 @@ class SyncResult:
     items: list[SyncItem] = field(default_factory=list)
     total_count: int = 0
     synced_count: int = 0
-    error_message: Optional[str] = None
-    started_at: Optional[datetime] = None
-    completed_at: Optional[datetime] = None
+    error_message: str | None = None
+    started_at: datetime | None = None
+    completed_at: datetime | None = None
 
 
 class BaseIntegrationAdapter(ABC):
@@ -84,7 +84,7 @@ class BaseIntegrationAdapter(ABC):
     def import_data(
         self,
         task: SyncTask,
-        data_types: Optional[list[SyncDataType]] = None,
+        data_types: list[SyncDataType] | None = None,
     ) -> SyncResult:
         """从外部系统导入数据
 
@@ -101,7 +101,7 @@ class BaseIntegrationAdapter(ABC):
     def export_data(
         self,
         task: SyncTask,
-        data_types: Optional[list[SyncDataType]] = None,
+        data_types: list[SyncDataType] | None = None,
     ) -> SyncResult:
         """向外部系统导出数据
 
@@ -139,7 +139,7 @@ class BaseIntegrationAdapter(ABC):
             errors.append("需要配置 API 地址或 API 密钥")
         return errors
 
-    def _build_headers(self, extra: Optional[dict[str, str]] = None) -> dict[str, str]:
+    def _build_headers(self, extra: dict[str, str] | None = None) -> dict[str, str]:
         """构建请求头
 
         Args:

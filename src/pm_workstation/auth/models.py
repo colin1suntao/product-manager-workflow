@@ -1,8 +1,7 @@
 """用户模型和认证相关的 Pydantic 模型"""
 
 import uuid
-from datetime import datetime, timezone
-from typing import Optional
+from datetime import datetime
 
 from pydantic import BaseModel, EmailStr, Field, field_validator
 from sqlalchemy import Boolean, DateTime, String, func

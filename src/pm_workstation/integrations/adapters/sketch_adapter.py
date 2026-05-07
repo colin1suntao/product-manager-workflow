@@ -8,9 +8,7 @@ import json
 import logging
 import zipfile
 from datetime import datetime
-from io import BytesIO
 from pathlib import Path
-from typing import Optional
 
 from pm_workstation.integrations.adapters.base import (
     BaseIntegrationAdapter,
@@ -51,7 +49,7 @@ class SketchAdapter(BaseIntegrationAdapter):
     def import_data(
         self,
         task: SyncTask,
-        data_types: Optional[list[SyncDataType]] = None,
+        data_types: list[SyncDataType] | None = None,
     ) -> SyncResult:
         result = SyncResult(success=False, started_at=datetime.utcnow())
 
@@ -78,7 +76,7 @@ class SketchAdapter(BaseIntegrationAdapter):
     def export_data(
         self,
         task: SyncTask,
-        data_types: Optional[list[SyncDataType]] = None,
+        data_types: list[SyncDataType] | None = None,
     ) -> SyncResult:
         result = SyncResult(success=False, started_at=datetime.utcnow())
         result.error_message = "Sketch export requires the Sketch application"
@@ -118,7 +116,7 @@ class SketchAdapter(BaseIntegrationAdapter):
     def _parse_sketch_file(
         self,
         file_path: str,
-        data_types: Optional[list[SyncDataType]] = None,
+        data_types: list[SyncDataType] | None = None,
     ) -> list[SyncItem]:
         items: list[SyncItem] = []
 
@@ -148,7 +146,7 @@ class SketchAdapter(BaseIntegrationAdapter):
         self,
         node: dict,
         page_id: str,
-        data_types: Optional[list[SyncDataType]] = None,
+        data_types: list[SyncDataType] | None = None,
         parent_path: str = "",
     ) -> list[SyncItem]:
         items: list[SyncItem] = []

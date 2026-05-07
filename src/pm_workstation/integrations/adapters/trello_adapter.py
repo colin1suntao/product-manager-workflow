@@ -5,7 +5,6 @@
 
 import logging
 from datetime import datetime
-from typing import Optional
 
 try:
     import httpx
@@ -62,7 +61,7 @@ class TrelloAdapter(BaseIntegrationAdapter):
     def import_data(
         self,
         task: SyncTask,
-        data_types: Optional[list[SyncDataType]] = None,
+        data_types: list[SyncDataType] | None = None,
     ) -> SyncResult:
         result = SyncResult(success=False, started_at=datetime.utcnow())
 
@@ -106,7 +105,7 @@ class TrelloAdapter(BaseIntegrationAdapter):
     def export_data(
         self,
         task: SyncTask,
-        data_types: Optional[list[SyncDataType]] = None,
+        data_types: list[SyncDataType] | None = None,
     ) -> SyncResult:
         result = SyncResult(success=False, started_at=datetime.utcnow())
 
@@ -194,7 +193,7 @@ class TrelloAdapter(BaseIntegrationAdapter):
         title: str,
         description: str,
         list_id: str = "",
-    ) -> Optional[str]:
+    ) -> str | None:
         if not HAS_HTTPX:
             raise RuntimeError("httpx is required for Trello integration")
 
@@ -215,7 +214,7 @@ class TrelloAdapter(BaseIntegrationAdapter):
         return data.get("id")
 
     @staticmethod
-    def _parse_datetime(dt_str: Optional[str]) -> Optional[datetime]:
+    def _parse_datetime(dt_str: str | None) -> datetime | None:
         if not dt_str:
             return None
         try:

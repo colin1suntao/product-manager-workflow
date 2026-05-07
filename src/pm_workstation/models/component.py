@@ -1,13 +1,12 @@
 """组件库数据模型"""
 
 from datetime import datetime
-from enum import Enum
-from typing import Optional
+from enum import StrEnum
 
 from pydantic import BaseModel, Field
 
 
-class ComponentCategory(str, Enum):
+class ComponentCategory(StrEnum):
     """组件分类"""
     LAYOUT = "layout"
     FORM = "form"
@@ -19,7 +18,7 @@ class ComponentCategory(str, Enum):
     CUSTOM = "custom"
 
 
-class ComponentStatus(str, Enum):
+class ComponentStatus(StrEnum):
     """组件状态"""
     DRAFT = "draft"
     PUBLISHED = "published"
@@ -79,9 +78,9 @@ class ComponentVersion(BaseModel):
 class ComponentSearchRequest(BaseModel):
     """组件搜索请求"""
     query: str = Field(default="", description="搜索关键词")
-    category: Optional[ComponentCategory] = Field(default=None, description="分类过滤")
+    category: ComponentCategory | None = Field(default=None, description="分类过滤")
     tags: list[str] = Field(default_factory=list, description="标签过滤")
-    status: Optional[ComponentStatus] = Field(default=None, description="状态过滤")
+    status: ComponentStatus | None = Field(default=None, description="状态过滤")
     min_similarity: float = Field(default=0.5, ge=0.0, le=1.0, description="最低相似度阈值")
     limit: int = Field(default=10, ge=1, le=100, description="返回数量限制")
 
@@ -89,7 +88,7 @@ class ComponentSearchRequest(BaseModel):
 class ComponentSearchResult(BaseModel):
     """组件搜索结果"""
     component: Component = Field(..., description="组件信息")
-    version: Optional[ComponentVersion] = Field(default=None, description="匹配的版本")
+    version: ComponentVersion | None = Field(default=None, description="匹配的版本")
     similarity_score: float = Field(default=0.0, ge=0.0, le=1.0, description="相似度分数")
     match_reason: str = Field(default="", description="匹配原因")
 
@@ -113,5 +112,5 @@ class ComponentMatchRequest(BaseModel):
     """组件匹配请求（用于原型生成）"""
     description: str = Field(..., description="组件功能描述")
     required_props: list[str] = Field(default_factory=list, description="需要的属性")
-    category_hint: Optional[ComponentCategory] = Field(default=None, description="分类提示")
+    category_hint: ComponentCategory | None = Field(default=None, description="分类提示")
     min_similarity: float = Field(default=0.6, ge=0.0, le=1.0, description="最低相似度")

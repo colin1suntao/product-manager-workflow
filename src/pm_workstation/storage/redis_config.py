@@ -1,6 +1,5 @@
 """Redis消息队列配置"""
 
-from typing import Optional
 
 import redis.asyncio as aioredis
 
@@ -9,10 +8,10 @@ from pm_workstation.config import settings
 
 class RedisConfig:
     """Redis配置"""
-    
+
     def __init__(
         self,
-        url: Optional[str] = None,
+        url: str | None = None,
         max_connections: int = 10,
         socket_timeout: float = 5.0,
         socket_connect_timeout: float = 5.0,
@@ -23,7 +22,7 @@ class RedisConfig:
         self.socket_timeout = socket_timeout
         self.socket_connect_timeout = socket_connect_timeout
         self.retry_on_timeout = retry_on_timeout
-    
+
     def create_pool(self) -> aioredis.ConnectionPool:
         """创建连接池"""
         return aioredis.ConnectionPool.from_url(

@@ -2,15 +2,15 @@
 
 from pm_workstation.integrations.adapters.base import (
     BaseIntegrationAdapter,
-    SyncResult,
     SyncDataType,
     SyncItem,
+    SyncResult,
 )
 from pm_workstation.integrations.adapters.registry import (
-    get_adapter,
-    register_adapter,
-    list_registered_adapters,
     auto_discover_adapters,
+    get_adapter,
+    list_registered_adapters,
+    register_adapter,
 )
 
 __all__ = [

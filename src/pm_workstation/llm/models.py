@@ -1,14 +1,13 @@
 """LLM Provider 配置模型"""
 
 import uuid
-from datetime import datetime, timezone
-from enum import Enum
-from typing import Optional
+from datetime import UTC, datetime
+from enum import StrEnum
 
 from pydantic import BaseModel, Field
 
 
-class LLMProviderType(str, Enum):
+class LLMProviderType(StrEnum):
     """LLM 提供商类型"""
 
     OPENAI = "openai"
@@ -23,12 +22,12 @@ class LLMProviderConfig(BaseModel):
     name: str = Field(min_length=1, max_length=100, description="显示名称")
     provider_type: LLMProviderType = Field(description="提供商类型")
     api_key: str = Field(min_length=1, description="API Key")
-    base_url: Optional[str] = Field(default=None, max_length=500, description="API Base URL")
+    base_url: str | None = Field(default=None, max_length=500, description="API Base URL")
     default_model: str = Field(min_length=1, max_length=100, description="默认模型名称")
     is_active: bool = Field(default=True, description="是否启用")
     is_default: bool = Field(default=False, description="是否为默认 Provider")
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
     def to_display_dict(self) -> dict:
         """返回用于显示的字典（隐藏 API Key）"""

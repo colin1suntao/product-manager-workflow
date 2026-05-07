@@ -2,8 +2,8 @@
 
 from pm_workstation.verification.autofixer import AutoFixer, FixAction, FixResult
 from pm_workstation.verification.consistency_checker import (
-    ConsistencyCheckResult,
     ConsistencyChecker,
+    ConsistencyCheckResult,
     ConsistencyIssue,
 )
 from pm_workstation.verification.document_models import (

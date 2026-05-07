@@ -1,11 +1,11 @@
 """文档校验相关数据模型"""
 
-from enum import Enum
+from enum import StrEnum
 
 from pydantic import BaseModel, Field
 
 
-class DocIssueSeverity(str, Enum):
+class DocIssueSeverity(StrEnum):
     """文档问题严重程度"""
     CRITICAL = "critical"
     MAJOR = "major"
@@ -13,7 +13,7 @@ class DocIssueSeverity(str, Enum):
     INFO = "info"
 
 
-class DocIssueType(str, Enum):
+class DocIssueType(StrEnum):
     """文档问题类型"""
     FORMAT = "format"                    # 格式问题
     HEADING_HIERARCHY = "heading_hierarchy"  # 标题层级问题

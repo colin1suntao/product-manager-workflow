@@ -1,0 +1,804 @@
+[
+  {
+    "id": "wf-7e4379162845",
+    "user_id": "test-user",
+    "requirement_text": "\u521b\u5efa\u4e00\u4e2a\u7535\u5546\u5e73\u53f0\u7684\u7528\u6237\u7ba1\u7406\u7cfb\u7edf\uff0c\u5305\u62ec\u6ce8\u518c\u3001\u767b\u5f55\u3001\u6743\u9650\u7ba1\u7406\u529f\u80fd",
+    "status": "failed",
+    "created_at": "2026-05-06T03:06:08.506460Z",
+    "updated_at": "2026-05-06T03:06:08.511532Z",
+    "structured_requirement": null,
+    "prototype_url": null,
+    "prd_document_url": null,
+    "verification_report": null,
+    "verification_report_url": null,
+    "error_message": "1 validation error for WorkflowState\nverification_report.report_id\n  Field required [type=missing, input_value={'overall_score': 85, 'st...consistency_issues': []}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.13/v/missing"
+  },
+  {
+    "id": "wf-df07f850380e",
+    "user_id": "test-user",
+    "requirement_text": "\u521b\u5efa\u4e00\u4e2a\u7535\u5546\u5e73\u53f0\u7684\u7528\u6237\u7ba1\u7406\u7cfb\u7edf\uff0c\u5305\u62ec\u6ce8\u518c\u3001\u767b\u5f55\u3001\u6743\u9650\u7ba1\u7406\u529f\u80fd",
+    "status": "failed",
+    "created_at": "2026-05-06T03:06:16.942996Z",
+    "updated_at": "2026-05-06T03:06:16.947628Z",
+    "structured_requirement": null,
+    "prototype_url": null,
+    "prd_document_url": null,
+    "verification_report": null,
+    "verification_report_url": null,
+    "error_message": "1 validation error for WorkflowState\nverification_report.report_id\n  Field required [type=missing, input_value={'overall_score': 85, 'st...consistency_issues': []}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.13/v/missing"
+  },
+  {
+    "id": "wf-c1fc9001d7bc",
+    "user_id": "cfec69ac-0943-4d46-8dd5-d6aa80c231d3",
+    "requirement_text": "\u9ad8\u7aef\u5b9a\u5236\u6e38\u65c5\u884c\n\n\u6211\u60f3\u5f00\u53d1\u4e00\u4e2aAPP\uff0c\u7528\u6765\u8fdb\u884c\u65c5\u884c\u7ebf\u8def\u7684\u89c4\u5212\uff0c\u5e2e\u52a9\u7528\u6237\u751f\u6210\u51fa\u884c\u7684\u884c\u7a0b\u653b\u7565\u3002\u73b0\u5728\u9700\u8981\u8f93\u51fa\u9ad8\u4fdd\u771f\u7684\u539f\u578b\u56fe\uff0c\u8bf7\u901a\u8fc7\u4ee5\u4e0b\u65b9\u5f0f\u5e2e\u6211\u5b8c\u6210\u6240\u6709\u754c\u9762\u7684\u539f\u578b\u8bbe\u8ba1\uff0c\u5e76\u786e\u4fdd\u8fd9\u4e9b\u539f\u578b\u754c\u9762\u53ef\u4ee5\u76f4\u63a5\u7528\u4e8e\u5f00\u53d1:\n1\u3001\u7528\u6237\u4f53\u9a8c\u5206\u6790:\u5148\u5206\u6790\u8fd9\u4e2a App \u7684\u4e3b\u8981\u529f\u80fd\u548c\u7528\u6237\u9700\u6c42\uff0c\u786e\u5b9a\u6838\u5fc3\u4ea4\u4e92\u903b\u8f91\u3002\n2\u3001\u4ea7\u54c1\u754c\u9762\u89c4\u5212:\u4f5c\u4e3a\u4ea7\u54c1\u7ecf\u7406\uff0c\u5b9a\u4e49\u5173\u952e\u754c\u9762\uff0c\u786e\u4fdd\u4fe1\u606f\u67b6\u6784\u5408\u7406\uff0c\u9664\u9875\u9762\u5916\u5f39\u51fa\u6846\u3001\u83dc\u5355\u680f\u4e5f\u8fdb\u884c\u8bbe\u8ba1\u5b9e\u73b0\n2.1\u3001\u6838\u5fc3\u6a21\u5757:\n\u767b\u9646\u6ce8\u518c\u529f\u80fd(\u767b\u9646\u3001\u6ce8\u518c\u3001\u9690\u79c1\u534f\u8bae\u7b49)\n\u8def\u7ebf\u89c4\u5212\uff08\u8f93\u5165\u51fa\u53d1\u5730\u548c\u76ee\u7684\u5730\u4ee5\u53ca\u65c5\u884c\u65e5\u671f\u548c\u9884\u7b97\u89c4\u5212\u65c5\u884c\u7ebf\u8def\uff09\n\u7968\u52a1\u9884\u8ba2(\u9884\u8ba2\u673a\u7968/\u706b\u8f66\u7968/\u6c7d\u8f66\u7968,\u9884\u8ba2\u9152\u5e97,\u9884\u8ba2\u666f\u70b9\u95e8\u7968)\n\u4e2a\u4eba\u4e2d\u5fc3\uff08\u5386\u53f2\u884c\u7a0b\uff0c\u8ba2\u5355\u7ba1\u7406\uff0c\u6d88\u606f\u901a\u77e5\uff09\n\u5e95\u90e8\u5bfc\u822a\u5206\u522b\u4e3a\u8def\u7ebf\u89c4\u5212\uff0c\u7968\u52a1\u9884\u8ba2\uff0c\u4e2a\u4eba\u4e2d\u5fc3\n\n\u76ee\u6807\u7528\u6237\uff1a\u9ad8\u7aef\u5b9a\u5236\u6e38\u7528\u6237\n\n\u7ea6\u675f\u6761\u4ef6\uff1a\u8bbe\u8ba1\u98ce\u683c\u4e3a\u7b80\u7ea6\u73b0\u4ee3\u98ce\u683c\uff0c\u54c1\u724c\u4e3b\u8272\u8c03\u4e3a\u84dd\u8272\uff0c\u5b57\u4f53\u4e3a\u82f9\u65b9\uff1b\u53c2\u8003\u5e94\u7528\u4e3a\u9a6c\u8702\u7a9d\u548c\u7a77\u6e38\u7684\u5e03\u5c40\u98ce\u683c\u548c\u4fe1\u606f\u67b6\u6784\uff0c\u56fe\u7247\u7d20\u6750\u98ce\u683c:\u4fa7\u91cd\u4e8e\u4f7f\u7528\u81ea\u7136\u98ce\u5149\u548c\u4eba\u6587\u53e4\u8ff9\uff0c\u53ef\u4ee5\u4eceUnsplash\u3001Pexels\u9009\u62e9\uff1b\u5176\u4e2d\u89c4\u5212\u65c5\u884c\u7ebf\u8def\uff0c\u751f\u6210\u7684\u884c\u7a0b\u653b\u7565\u9700\u8981\u5305\u542b\u51fa\u884c\u5730\u70b9\uff0c\u65f6\u95f4\u5b89\u6392\uff0c\u6d3b\u52a8\u5efa\u8bae\uff0c\u9910\u996e\u63a8\u8350\uff0c\u4ea4\u901a\u65b9\u5f0f\uff0c\u5176\u4e2d\u9910\u996e\u63a8\u8350\u53ef\u4ee5\u53c2\u8003\u5927\u4f17\u70b9\u8bc4\uff0c\u53ef\u4ee5\u5728\u5927\u4f17\u70b9\u8bc4\u83b7\u53d6\u4fe1\u606f\u540e\u6574\u5408\u5c55\u793a\uff1b\u7968\u52a1\u3001\u9152\u5e97\u3001\u666f\u70b9\u95e8\u7968\u9884\u8ba2\u529f\u80fd\u9700\u8981\u5728APP\u5185\u95ed\u73af\u5b8c\u6210\u9884\u8ba2\uff0c\u9700\u8981\u8bbe\u8ba1\u4e00\u5957\u5b8c\u6574\u7684\u3001\u72ec\u7acb\u7684\u9884\u8ba2\u6d41\u7a0b\u754c\u9762\uff0c\u9996\u9009\u652f\u4ed8\u65b9\u5f0f\u4e3a\u4fe1\u7528\u5361\u3001\u5fae\u4fe1\u3001\u652f\u4ed8\u5b9d\uff0c\u652f\u4ed8\u73af\u8282\u6a21\u62df\u5c55\u793a\u652f\u4ed8\u6210\u529f\u6216\u5931\u8d25\u7684\u63d0\u793a\u754c\u9762\u3002\n3\u3001\u9ad8\u4fdd\u771f UI\u8bbe\u8ba1:\u4f5c\u4e3a [I\u8bbe\u8ba1\u5e08\uff0c\u8bbe\u8ba1\u8d34\u8fd1\u771f\u5b9e iOS \u8bbe\u8ba1\u89c4\u8303\u7684\u754c\u9762\uff0c\u4f7f\u7528\u73b0\u4ee3\u5316\u7684 UI\u5143\u7d20\uff0c\u4f7f\u5176\u5177\u6709\u826f\u597d\u7684\u89c6\u89c9\u4f53\u9a8c\u3002\n4\u3001HTML, \u539f\u578b\u5b9e\u73b0:\u4f7f\u7528 HTML+ Tailwind CSs\u751f\u6210\u6240\u6709\u539f\u578b\u754c\u9762\uff0c\u5e76\u4f7f\u7528FontAwesome(\u6216\u5176\u4ed6\u5f00\u6e90 UI\u7ec4\u4ef6)\u8ba9\u754c\u9762\u66f4\u52a0\u7cbe\u7f8e\u3001\u63a5\u8fd1\u771f\u5b9e\u7684 App \u8bbe\u8ba1\u62c6\u5206\u4ee3\u7801\u6587\u4ef6\uff0c\u4fdd\u6301\u7ed3\u6784\u6e05\u6670:\n5\u3001\u6bcf\u4e2a\u754c\u9762\u5e94\u4f5c\u4e3a\u72ec\u7acb\u7684 HTML \u6587\u4ef6\u5b58\u653e\uff0c\u4f8b\u5982 home.html\u3001profile.htmlsettings.html\u7b49\u3002\nindex.html \u4f5c\u4e3a\u4e3b\u5165\u53e3\uff0c\u4e0d\u76f4\u63a5\u5199\u5165\u6240\u6709\u754c\u9762\u7684 HTML \u4ee3\u7801\uff0c\u800c\u662f\u4f7f\u7528 iframe\u7684\u65b9\u5f0f\u5d4c\u5165\u8fd9\u4e9b HTML\u7247\u6bb5\uff0c\u5e76\u5c06\u6240\u6709\u9875\u9762\u76f4\u63a5\u5e73\u94fa\u5c55\u793a\u5728 index \u9875\u9762\u4e2d\uff0c\u800c\u4e0d\u662f\u8df3\u8f6c\u94fe\u63a5\u3002\n\u771f\u5b9e\u611f\u589e\u5f3a:\u754c\u9762\u5c3a\u5bf8\u5e94\u6a21\u62df iPhone 16 Pro\uff0c\u5e76\u8ba9\u754c\u9762\u5706\u89d2\u5316\uff0c\u4f7f\u5176\u66f4\u50cf\u771f\u5b9e\u7684\u624b\u673a\u754c\u9762\u3002\u4f7f\u7528\u771f\u5b9e\u7684 UI\u56fe\u7247\uff0c\u800c\u975e\u5360\u4f4d\u7b26\u56fe\u7247(\u53ef\u4ece Unsplash\u3001Pexels\u3001Apple \u5b98\u65b9 UI\u8d44\u6e90\u4e2d\u9009\u62e9)\u3002\n\u6dfb\u52a0\u9876\u90e8\u72b6\u6001\u680f(\u6a21\u62df iOS \u72b6\u6001\u680f)\uff0c\u5e76\u5305\u542b App \u5bfc\u822a\u680f(\u7c7b\u4f3c iOS \u5e95\u90e8 TabBar)\u3002\n\u8bf7\u6309\u7167\u4ee5\u4e0a\u8981\u6c42\u751f\u6210\u5b8c\u6574\u7684\u539f\u578b\u56fe\u548cHTML \u4ee3\u7801\uff0c\u5e76\u786e\u4fdd\u5176\u53ef\u7528\u4e8e\u5b9e\u9645\u5f00\u53d1\u3002",
+    "status": "completed",
+    "created_at": "2026-05-06T03:22:28.976875Z",
+    "updated_at": "2026-05-06T03:22:28.999616Z",
+    "structured_requirement": null,
+    "prototype_url": "/artifacts/wf-c1fc9001d7bc/prototype.html",
+    "prd_document_url": "/artifacts/wf-c1fc9001d7bc/prd.md",
+    "verification_report": {
+      "report_id": "report-wf-c1fc9001d7bc",
+      "created_at": "2026-05-06T03:22:28.999085Z",
+      "prototype_issues": [
+        {
+          "id": "P001",
+          "type": "accessibility",
+          "severity": "minor",
+          "message": "\u90e8\u5206\u5143\u7d20\u7f3a\u5c11 aria-label \u5c5e\u6027",
+          "suggestion": "\u4e3a\u4ea4\u4e92\u5143\u7d20\u6dfb\u52a0 aria-label \u4ee5\u63d0\u9ad8\u53ef\u8bbf\u95ee\u6027",
+          "location": "button, input elements"
+        }
+      ],
+      "document_issues": [
+        {
+          "id": "D001",
+          "type": "completeness",
+          "severity": "info",
+          "message": "\u975e\u529f\u80fd\u9700\u6c42\u90e8\u5206\u53ef\u4ee5\u8fdb\u4e00\u6b65\u7ec6\u5316",
+          "suggestion": "\u8865\u5145\u5177\u4f53\u7684\u6027\u80fd\u6307\u6807\u548c\u5b89\u5168\u6807\u51c6",
+          "location": "Section 4"
+        }
+      ],
+      "consistency_issues": [],
+      "auto_fixed_issues": [],
+      "manual_review_required": []
+    },
+    "verification_report_url": "/artifacts/wf-c1fc9001d7bc/report.json",
+    "error_message": null
+  },
+  {
+    "id": "wf-e96214de4c11",
+    "user_id": "test-user-2",
+    "requirement_text": "\u6d4b\u8bd5\u5b8c\u6574\u5de5\u4f5c\u6d41\uff1a\u751f\u6210\u539f\u578b\u3001\u6587\u6863\u548c\u62a5\u544a",
+    "status": "failed",
+    "created_at": "2026-05-06T03:30:31.037825Z",
+    "updated_at": "2026-05-06T03:30:31.045641Z",
+    "structured_requirement": null,
+    "prototype_url": "/artifacts/wf-e96214de4c11/prototype.html",
+    "prd_document_url": "/artifacts/wf-e96214de4c11/prd.md",
+    "verification_report": {
+      "report_id": "report-wf-e96214de4c11",
+      "created_at": "2026-05-06T03:30:31.043900Z",
+      "prototype_issues": [
+        {
+          "id": "P001",
+          "type": "accessibility",
+          "severity": "minor",
+          "message": "\u90e8\u5206\u5143\u7d20\u7f3a\u5c11 aria-label \u5c5e\u6027",
+          "suggestion": "\u4e3a\u4ea4\u4e92\u5143\u7d20\u6dfb\u52a0 aria-label \u4ee5\u63d0\u9ad8\u53ef\u8bbf\u95ee\u6027",
+          "location": "button, input elements"
+        }
+      ],
+      "document_issues": [
+        {
+          "id": "D001",
+          "type": "completeness",
+          "severity": "info",
+          "message": "\u975e\u529f\u80fd\u9700\u6c42\u90e8\u5206\u53ef\u4ee5\u8fdb\u4e00\u6b65\u7ec6\u5316",
+          "suggestion": "\u8865\u5145\u5177\u4f53\u7684\u6027\u80fd\u6307\u6807\u548c\u5b89\u5168\u6807\u51c6",
+          "location": "Section 4"
+        }
+      ],
+      "consistency_issues": [],
+      "auto_fixed_issues": [],
+      "manual_review_required": []
+    },
+    "verification_report_url": null,
+    "error_message": "Object of type datetime is not JSON serializable"
+  },
+  {
+    "id": "wf-f69f18b96486",
+    "user_id": "e25e5d07-fd4e-4b1c-b625-6c88d6c99f00",
+    "requirement_text": "\u521b\u5efa\u4e00\u4e2a\u5f85\u529e\u4e8b\u9879\u7ba1\u7406\u5e94\u7528\uff0c\u652f\u6301\u6dfb\u52a0\u3001\u7f16\u8f91\u3001\u5220\u9664\u4efb\u52a1\uff0c\u6807\u8bb0\u5b8c\u6210\u72b6\u6001\uff0c\u6309\u4f18\u5148\u7ea7\u7b5b\u9009",
+    "status": "init",
+    "created_at": "2026-05-06T03:45:50.238673Z",
+    "updated_at": "2026-05-06T03:45:50.238681Z",
+    "structured_requirement": null,
+    "prototype_url": null,
+    "prd_document_url": null,
+    "verification_report": null,
+    "verification_report_url": null,
+    "error_message": null
+  },
+  {
+    "id": "wf-d19c815993b2",
+    "user_id": "e25e5d07-fd4e-4b1c-b625-6c88d6c99f00",
+    "requirement_text": "\u521b\u5efa\u4e00\u4e2a\u5f85\u529e\u4e8b\u9879\u7ba1\u7406\u5e94\u7528\uff0c\u652f\u6301\u6dfb\u52a0\u3001\u7f16\u8f91\u3001\u5220\u9664\u4efb\u52a1\uff0c\u6807\u8bb0\u5b8c\u6210\u72b6\u6001\uff0c\u6309\u4f18\u5148\u7ea7\u7b5b\u9009",
+    "status": "verified",
+    "created_at": "2026-05-06T03:47:37.368306Z",
+    "updated_at": "2026-05-06T03:50:26.193251Z",
+    "structured_requirement": null,
+    "prototype_url": null,
+    "prd_document_url": null,
+    "verification_report": {
+      "report_id": "report-wf-d19c815993b2",
+      "created_at": "2026-05-06T03:50:26.193154Z",
+      "prototype_issues": [
+        {
+          "id": "P001",
+          "type": "accessibility",
+          "severity": "minor",
+          "message": "\u90e8\u5206\u5143\u7d20\u7f3a\u5c11 aria-label \u5c5e\u6027",
+          "suggestion": "\u4e3a\u4ea4\u4e92\u5143\u7d20\u6dfb\u52a0 aria-label \u4ee5\u63d0\u9ad8\u53ef\u8bbf\u95ee\u6027",
+          "location": "button, input elements"
+        }
+      ],
+      "document_issues": [
+        {
+          "id": "D001",
+          "type": "completeness",
+          "severity": "info",
+          "message": "\u975e\u529f\u80fd\u9700\u6c42\u90e8\u5206\u53ef\u4ee5\u8fdb\u4e00\u6b65\u7ec6\u5316",
+          "suggestion": "\u8865\u5145\u5177\u4f53\u7684\u6027\u80fd\u6307\u6807\u548c\u5b89\u5168\u6807\u51c6",
+          "location": "Section 4"
+        }
+      ],
+      "consistency_issues": [],
+      "auto_fixed_issues": [],
+      "manual_review_required": []
+    },
+    "verification_report_url": "/artifacts/wf-d19c815993b2/report.json",
+    "error_message": "substring not found"
+  },
+  {
+    "id": "wf-81c724017cdc",
+    "user_id": "e25e5d07-fd4e-4b1c-b625-6c88d6c99f00",
+    "requirement_text": "\u521b\u5efa\u4e00\u4e2a\u7b80\u5355\u7684\u8ba1\u7b97\u5668\u5e94\u7528\uff0c\u652f\u6301\u52a0\u51cf\u4e58\u9664\u8fd0\u7b97",
+    "status": "verified",
+    "created_at": "2026-05-06T03:49:23.161450Z",
+    "updated_at": "2026-05-06T03:51:41.642069Z",
+    "structured_requirement": null,
+    "prototype_url": null,
+    "prd_document_url": null,
+    "verification_report": {
+      "report_id": "report-wf-81c724017cdc",
+      "created_at": "2026-05-06T03:51:41.642035Z",
+      "prototype_issues": [
+        {
+          "id": "P001",
+          "type": "accessibility",
+          "severity": "minor",
+          "message": "\u90e8\u5206\u5143\u7d20\u7f3a\u5c11 aria-label \u5c5e\u6027",
+          "suggestion": "\u4e3a\u4ea4\u4e92\u5143\u7d20\u6dfb\u52a0 aria-label \u4ee5\u63d0\u9ad8\u53ef\u8bbf\u95ee\u6027",
+          "location": "button, input elements"
+        }
+      ],
+      "document_issues": [
+        {
+          "id": "D001",
+          "type": "completeness",
+          "severity": "info",
+          "message": "\u975e\u529f\u80fd\u9700\u6c42\u90e8\u5206\u53ef\u4ee5\u8fdb\u4e00\u6b65\u7ec6\u5316",
+          "suggestion": "\u8865\u5145\u5177\u4f53\u7684\u6027\u80fd\u6307\u6807\u548c\u5b89\u5168\u6807\u51c6",
+          "location": "Section 4"
+        }
+      ],
+      "consistency_issues": [],
+      "auto_fixed_issues": [],
+      "manual_review_required": []
+    },
+    "verification_report_url": "/artifacts/wf-81c724017cdc/report.json",
+    "error_message": "substring not found"
+  },
+  {
+    "id": "wf-0fcce7d27f3c",
+    "user_id": "e25e5d07-fd4e-4b1c-b625-6c88d6c99f00",
+    "requirement_text": "\u521b\u5efa\u4e00\u4e2a\u5929\u6c14\u9884\u62a5\u67e5\u8be2\u9875\u9762",
+    "status": "verified",
+    "created_at": "2026-05-06T03:50:50.520623Z",
+    "updated_at": "2026-05-06T03:53:16.866532Z",
+    "structured_requirement": null,
+    "prototype_url": null,
+    "prd_document_url": null,
+    "verification_report": {
+      "report_id": "report-wf-0fcce7d27f3c",
+      "created_at": "2026-05-06T03:53:16.866493Z",
+      "prototype_issues": [
+        {
+          "id": "P001",
+          "type": "accessibility",
+          "severity": "minor",
+          "message": "\u90e8\u5206\u5143\u7d20\u7f3a\u5c11 aria-label \u5c5e\u6027",
+          "suggestion": "\u4e3a\u4ea4\u4e92\u5143\u7d20\u6dfb\u52a0 aria-label \u4ee5\u63d0\u9ad8\u53ef\u8bbf\u95ee\u6027",
+          "location": "button, input elements"
+        }
+      ],
+      "document_issues": [
+        {
+          "id": "D001",
+          "type": "completeness",
+          "severity": "info",
+          "message": "\u975e\u529f\u80fd\u9700\u6c42\u90e8\u5206\u53ef\u4ee5\u8fdb\u4e00\u6b65\u7ec6\u5316",
+          "suggestion": "\u8865\u5145\u5177\u4f53\u7684\u6027\u80fd\u6307\u6807\u548c\u5b89\u5168\u6807\u51c6",
+          "location": "Section 4"
+        }
+      ],
+      "consistency_issues": [],
+      "auto_fixed_issues": [],
+      "manual_review_required": []
+    },
+    "verification_report_url": "/artifacts/wf-0fcce7d27f3c/report.json",
+    "error_message": "substring not found"
+  },
+  {
+    "id": "wf-726dfc5c825d",
+    "user_id": "e25e5d07-fd4e-4b1c-b625-6c88d6c99f00",
+    "requirement_text": "\u521b\u5efa\u4e00\u4e2a\u4efb\u52a1\u770b\u677f\u5e94\u7528\uff0c\u652f\u6301\u62d6\u62fd\u4efb\u52a1\u5361\u7247\u5728\u4e0d\u540c\u5217\u4e4b\u95f4\u79fb\u52a8",
+    "status": "verified",
+    "created_at": "2026-05-06T03:56:02.630295Z",
+    "updated_at": "2026-05-06T03:58:38.880990Z",
+    "structured_requirement": null,
+    "prototype_url": "/artifacts/wf-726dfc5c825d/prototype.html",
+    "prd_document_url": "/artifacts/wf-726dfc5c825d/prd.md",
+    "verification_report": {
+      "report_id": "report-wf-726dfc5c825d",
+      "created_at": "2026-05-06T03:58:38.880918Z",
+      "prototype_issues": [
+        {
+          "id": "P001",
+          "type": "accessibility",
+          "severity": "minor",
+          "message": "\u90e8\u5206\u5143\u7d20\u7f3a\u5c11 aria-label \u5c5e\u6027",
+          "suggestion": "\u4e3a\u4ea4\u4e92\u5143\u7d20\u6dfb\u52a0 aria-label \u4ee5\u63d0\u9ad8\u53ef\u8bbf\u95ee\u6027",
+          "location": "button, input elements"
+        }
+      ],
+      "document_issues": [
+        {
+          "id": "D001",
+          "type": "completeness",
+          "severity": "info",
+          "message": "\u975e\u529f\u80fd\u9700\u6c42\u90e8\u5206\u53ef\u4ee5\u8fdb\u4e00\u6b65\u7ec6\u5316",
+          "suggestion": "\u8865\u5145\u5177\u4f53\u7684\u6027\u80fd\u6307\u6807\u548c\u5b89\u5168\u6807\u51c6",
+          "location": "Section 4"
+        }
+      ],
+      "consistency_issues": [],
+      "auto_fixed_issues": [],
+      "manual_review_required": []
+    },
+    "verification_report_url": "/artifacts/wf-726dfc5c825d/report.json",
+    "error_message": "'list' object has no attribute 'get'"
+  },
+  {
+    "id": "wf-196e7caaa2ca",
+    "user_id": "e25e5d07-fd4e-4b1c-b625-6c88d6c99f00",
+    "requirement_text": "\u521b\u5efa\u4e00\u4e2a\u4e2a\u4eba\u8bb0\u8d26\u5e94\u7528\uff0c\u652f\u6301\u8bb0\u5f55\u6536\u652f\u3001\u5206\u7c7b\u7edf\u8ba1\u3001\u6708\u5ea6\u62a5\u8868",
+    "status": "verified",
+    "created_at": "2026-05-06T04:00:16.029433Z",
+    "updated_at": "2026-05-06T04:17:15.630749Z",
+    "structured_requirement": null,
+    "prototype_url": null,
+    "prd_document_url": null,
+    "verification_report": {
+      "report_id": "report-wf-196e7caaa2ca",
+      "created_at": "2026-05-06T04:17:15.630559Z",
+      "prototype_issues": [
+        {
+          "id": "P001",
+          "type": "accessibility",
+          "severity": "minor",
+          "message": "\u90e8\u5206\u5143\u7d20\u7f3a\u5c11 aria-label \u5c5e\u6027",
+          "suggestion": "\u4e3a\u4ea4\u4e92\u5143\u7d20\u6dfb\u52a0 aria-label \u4ee5\u63d0\u9ad8\u53ef\u8bbf\u95ee\u6027",
+          "location": "button, input elements"
+        }
+      ],
+      "document_issues": [
+        {
+          "id": "D001",
+          "type": "completeness",
+          "severity": "info",
+          "message": "\u975e\u529f\u80fd\u9700\u6c42\u90e8\u5206\u53ef\u4ee5\u8fdb\u4e00\u6b65\u7ec6\u5316",
+          "suggestion": "\u8865\u5145\u5177\u4f53\u7684\u6027\u80fd\u6307\u6807\u548c\u5b89\u5168\u6807\u51c6",
+          "location": "Section 4"
+        }
+      ],
+      "consistency_issues": [],
+      "auto_fixed_issues": [],
+      "manual_review_required": []
+    },
+    "verification_report_url": "/artifacts/wf-196e7caaa2ca/report.json",
+    "error_message": "All models failed. Last error: Request timed out."
+  },
+  {
+    "id": "wf-8393f1573ef4",
+    "user_id": "e25e5d07-fd4e-4b1c-b625-6c88d6c99f00",
+    "requirement_text": "\u521b\u5efa\u4e00\u4e2a\u4e2a\u4eba\u8bb0\u8d26\u5e94\u7528\uff0c\u652f\u6301\u8bb0\u5f55\u6536\u652f\u3001\u5206\u7c7b\u7edf\u8ba1\u3001\u6708\u5ea6\u62a5\u8868",
+    "status": "generating",
+    "created_at": "2026-05-06T04:11:37.791684Z",
+    "updated_at": "2026-05-06T04:12:31.024277Z",
+    "structured_requirement": null,
+    "prototype_url": null,
+    "prd_document_url": null,
+    "verification_report": null,
+    "verification_report_url": null,
+    "error_message": null
+  },
+  {
+    "id": "wf-6643d08bde56",
+    "user_id": "cfec69ac-0943-4d46-8dd5-d6aa80c231d3",
+    "requirement_text": "\u9ad8\u7aef\u5b9a\u5236\u5316\u65c5\u884c\u9879\u76ee\n\n\u6211\u60f3\u5f00\u53d1\u4e00\u4e2aAPP\uff0c\u7528\u6765\u8fdb\u884c\u65c5\u884c\u7ebf\u8def\u7684\u89c4\u5212\uff0c\u5e2e\u52a9\u7528\u6237\u751f\u6210\u51fa\u884c\u7684\u884c\u7a0b\u653b\u7565\u3002\u73b0\u5728\u9700\u8981\u8f93\u51fa\u9ad8\u4fdd\u771f\u7684\u539f\u578b\u56fe\uff0c\u8bf7\u901a\u8fc7\u4ee5\u4e0b\u65b9\u5f0f\u5e2e\u6211\u5b8c\u6210\u6240\u6709\u754c\u9762\u7684\u539f\u578b\u8bbe\u8ba1\uff0c\u5e76\u786e\u4fdd\u8fd9\u4e9b\u539f\u578b\u754c\u9762\u53ef\u4ee5\u76f4\u63a5\u7528\u4e8e\u5f00\u53d1:\n1\u3001\u7528\u6237\u4f53\u9a8c\u5206\u6790:\u5148\u5206\u6790\u8fd9\u4e2a App \u7684\u4e3b\u8981\u529f\u80fd\u548c\u7528\u6237\u9700\u6c42\uff0c\u786e\u5b9a\u6838\u5fc3\u4ea4\u4e92\u903b\u8f91\u3002\n2\u3001\u4ea7\u54c1\u754c\u9762\u89c4\u5212:\u4f5c\u4e3a\u4ea7\u54c1\u7ecf\u7406\uff0c\u5b9a\u4e49\u5173\u952e\u754c\u9762\uff0c\u786e\u4fdd\u4fe1\u606f\u67b6\u6784\u5408\u7406\uff0c\u9664\u9875\u9762\u5916\u5f39\u51fa\u6846\u3001\u83dc\u5355\u680f\u4e5f\u8fdb\u884c\u8bbe\u8ba1\u5b9e\u73b0\n2.1\u3001\u6838\u5fc3\u6a21\u5757:\n\u767b\u9646\u6ce8\u518c\u529f\u80fd(\u767b\u9646\u3001\u6ce8\u518c\u3001\u9690\u79c1\u534f\u8bae\u7b49)\n\u8def\u7ebf\u89c4\u5212\uff08\u8f93\u5165\u51fa\u53d1\u5730\u548c\u76ee\u7684\u5730\u4ee5\u53ca\u65c5\u884c\u65e5\u671f\u548c\u9884\u7b97\u89c4\u5212\u65c5\u884c\u7ebf\u8def\uff09\n\u7968\u52a1\u9884\u8ba2(\u9884\u8ba2\u673a\u7968/\u706b\u8f66\u7968/\u6c7d\u8f66\u7968,\u9884\u8ba2\u9152\u5e97,\u9884\u8ba2\u666f\u70b9\u95e8\u7968)\n\u4e2a\u4eba\u4e2d\u5fc3\uff08\u5386\u53f2\u884c\u7a0b\uff0c\u8ba2\u5355\u7ba1\u7406\uff0c\u6d88\u606f\u901a\u77e5\uff09\n\u5e95\u90e8\u5bfc\u822a\u5206\u522b\u4e3a\u8def\u7ebf\u89c4\u5212\uff0c\u7968\u52a1\u9884\u8ba2\uff0c\u4e2a\u4eba\u4e2d\u5fc3\n\n\u76ee\u6807\u7528\u6237\uff1a\u9ad8\u7aef\u5b9a\u5236\u6e38\u7528\u6237\n\n\u7ea6\u675f\u6761\u4ef6\uff1a\u8bbe\u8ba1\u98ce\u683c\u4e3a\u7b80\u7ea6\u73b0\u4ee3\u98ce\u683c\uff0c\u54c1\u724c\u4e3b\u8272\u8c03\u4e3a\u84dd\u8272\uff0c\u5b57\u4f53\u4e3a\u82f9\u65b9\uff1b\u53c2\u8003\u5e94\u7528\u4e3a\u9a6c\u8702\u7a9d\u548c\u7a77\u6e38\u7684\u5e03\u5c40\u98ce\u683c\u548c\u4fe1\u606f\u67b6\u6784\uff0c\u56fe\u7247\u7d20\u6750\u98ce\u683c:\u4fa7\u91cd\u4e8e\u4f7f\u7528\u81ea\u7136\u98ce\u5149\u548c\u4eba\u6587\u53e4\u8ff9\uff0c\u53ef\u4ee5\u4eceUnsplash\u3001Pexels\u9009\u62e9\uff1b\u5176\u4e2d\u89c4\u5212\u65c5\u884c\u7ebf\u8def\uff0c\u751f\u6210\u7684\u884c\u7a0b\u653b\u7565\u9700\u8981\u5305\u542b\u51fa\u884c\u5730\u70b9\uff0c\u65f6\u95f4\u5b89\u6392\uff0c\u6d3b\u52a8\u5efa\u8bae\uff0c\u9910\u996e\u63a8\u8350\uff0c\u4ea4\u901a\u65b9\u5f0f\uff0c\u5176\u4e2d\u9910\u996e\u63a8\u8350\u53ef\u4ee5\u53c2\u8003\u5927\u4f17\u70b9\u8bc4\uff0c\u53ef\u4ee5\u5728\u5927\u4f17\u70b9\u8bc4\u83b7\u53d6\u4fe1\u606f\u540e\u6574\u5408\u5c55\u793a\uff1b\u7968\u52a1\u3001\u9152\u5e97\u3001\u666f\u70b9\u95e8\u7968\u9884\u8ba2\u529f\u80fd\u9700\u8981\u5728APP\u5185\u95ed\u73af\u5b8c\u6210\u9884\u8ba2\uff0c\u9700\u8981\u8bbe\u8ba1\u4e00\u5957\u5b8c\u6574\u7684\u3001\u72ec\u7acb\u7684\u9884\u8ba2\u6d41\u7a0b\u754c\u9762\uff0c\u9996\u9009\u652f\u4ed8\u65b9\u5f0f\u4e3a\u4fe1\u7528\u5361\u3001\u5fae\u4fe1\u3001\u652f\u4ed8\u5b9d\uff0c\u652f\u4ed8\u73af\u8282\u6a21\u62df\u5c55\u793a\u652f\u4ed8\u6210\u529f\u6216\u5931\u8d25\u7684\u63d0\u793a\u754c\u9762\u3002\n3\u3001\u9ad8\u4fdd\u771f UI\u8bbe\u8ba1:\u4f5c\u4e3a [I\u8bbe\u8ba1\u5e08\uff0c\u8bbe\u8ba1\u8d34\u8fd1\u771f\u5b9e iOS \u8bbe\u8ba1\u89c4\u8303\u7684\u754c\u9762\uff0c\u4f7f\u7528\u73b0\u4ee3\u5316\u7684 UI\u5143\u7d20\uff0c\u4f7f\u5176\u5177\u6709\u826f\u597d\u7684\u89c6\u89c9\u4f53\u9a8c\u3002\n4\u3001HTML, \u539f\u578b\u5b9e\u73b0:\u4f7f\u7528 HTML+ Tailwind CSs\u751f\u6210\u6240\u6709\u539f\u578b\u754c\u9762\uff0c\u5e76\u4f7f\u7528FontAwesome(\u6216\u5176\u4ed6\u5f00\u6e90 UI\u7ec4\u4ef6)\u8ba9\u754c\u9762\u66f4\u52a0\u7cbe\u7f8e\u3001\u63a5\u8fd1\u771f\u5b9e\u7684 App \u8bbe\u8ba1\u62c6\u5206\u4ee3\u7801\u6587\u4ef6\uff0c\u4fdd\u6301\u7ed3\u6784\u6e05\u6670:\n5\u3001\u6bcf\u4e2a\u754c\u9762\u5e94\u4f5c\u4e3a\u72ec\u7acb\u7684 HTML \u6587\u4ef6\u5b58\u653e\uff0c\u4f8b\u5982 home.html\u3001profile.htmlsettings.html\u7b49\u3002\nindex.html \u4f5c\u4e3a\u4e3b\u5165\u53e3\uff0c\u4e0d\u76f4\u63a5\u5199\u5165\u6240\u6709\u754c\u9762\u7684 HTML \u4ee3\u7801\uff0c\u800c\u662f\u4f7f\u7528 iframe\u7684\u65b9\u5f0f\u5d4c\u5165\u8fd9\u4e9b HTML\u7247\u6bb5\uff0c\u5e76\u5c06\u6240\u6709\u9875\u9762\u76f4\u63a5\u5e73\u94fa\u5c55\u793a\u5728 index \u9875\u9762\u4e2d\uff0c\u800c\u4e0d\u662f\u8df3\u8f6c\u94fe\u63a5\u3002\n\u771f\u5b9e\u611f\u589e\u5f3a:\u754c\u9762\u5c3a\u5bf8\u5e94\u6a21\u62df iPhone 16 Pro\uff0c\u5e76\u8ba9\u754c\u9762\u5706\u89d2\u5316\uff0c\u4f7f\u5176\u66f4\u50cf\u771f\u5b9e\u7684\u624b\u673a\u754c\u9762\u3002\u4f7f\u7528\u771f\u5b9e\u7684 UI\u56fe\u7247\uff0c\u800c\u975e\u5360\u4f4d\u7b26\u56fe\u7247(\u53ef\u4ece Unsplash\u3001Pexels\u3001Apple \u5b98\u65b9 UI\u8d44\u6e90\u4e2d\u9009\u62e9)\u3002\n\u6dfb\u52a0\u9876\u90e8\u72b6\u6001\u680f(\u6a21\u62df iOS \u72b6\u6001\u680f)\uff0c\u5e76\u5305\u542b App \u5bfc\u822a\u680f(\u7c7b\u4f3c iOS \u5e95\u90e8 TabBar)\u3002\n\u8bf7\u6309\u7167\u4ee5\u4e0a\u8981\u6c42\u751f\u6210\u5b8c\u6574\u7684\u539f\u578b\u56fe\u548cHTML \u4ee3\u7801\uff0c\u5e76\u786e\u4fdd\u5176\u53ef\u7528\u4e8e\u5b9e\u9645\u5f00\u53d1\u3002",
+    "status": "verified",
+    "created_at": "2026-05-06T06:24:23.053114Z",
+    "updated_at": "2026-05-06T06:41:49.039722Z",
+    "structured_requirement": null,
+    "prototype_url": null,
+    "prd_document_url": null,
+    "verification_report": {
+      "report_id": "report-wf-6643d08bde56",
+      "created_at": "2026-05-06T06:41:49.039518Z",
+      "prototype_issues": [
+        {
+          "id": "P001",
+          "type": "accessibility",
+          "severity": "minor",
+          "message": "\u90e8\u5206\u5143\u7d20\u7f3a\u5c11 aria-label \u5c5e\u6027",
+          "suggestion": "\u4e3a\u4ea4\u4e92\u5143\u7d20\u6dfb\u52a0 aria-label \u4ee5\u63d0\u9ad8\u53ef\u8bbf\u95ee\u6027",
+          "location": "button, input elements"
+        }
+      ],
+      "document_issues": [
+        {
+          "id": "D001",
+          "type": "completeness",
+          "severity": "info",
+          "message": "\u975e\u529f\u80fd\u9700\u6c42\u90e8\u5206\u53ef\u4ee5\u8fdb\u4e00\u6b65\u7ec6\u5316",
+          "suggestion": "\u8865\u5145\u5177\u4f53\u7684\u6027\u80fd\u6307\u6807\u548c\u5b89\u5168\u6807\u51c6",
+          "location": "Section 4"
+        }
+      ],
+      "consistency_issues": [],
+      "auto_fixed_issues": [],
+      "manual_review_required": []
+    },
+    "verification_report_url": "/artifacts/wf-6643d08bde56/report.json",
+    "error_message": "All models failed. Last error: Request timed out."
+  },
+  {
+    "id": "wf-e157909688d0",
+    "user_id": "e25e5d07-fd4e-4b1c-b625-6c88d6c99f00",
+    "requirement_text": "\u521b\u5efa\u4e00\u4e2a\u4e2a\u4eba\u8bb0\u8d26\u5e94\u7528\uff0c\u652f\u6301\u8bb0\u5f55\u6536\u652f\u3001\u5206\u7c7b\u7edf\u8ba1\u3001\u6708\u5ea6\u62a5\u8868",
+    "status": "generated",
+    "created_at": "2026-05-06T06:54:06.144217Z",
+    "updated_at": "2026-05-06T06:58:12.440331Z",
+    "structured_requirement": null,
+    "prototype_url": "/artifacts/wf-e157909688d0/prototype.html",
+    "prd_document_url": "/artifacts/wf-e157909688d0/prd.md",
+    "verification_report": null,
+    "verification_report_url": null,
+    "error_message": "'list' object has no attribute 'get'"
+  },
+  {
+    "id": "wf-794e63adec00",
+    "user_id": "test-user",
+    "requirement_text": "\u521b\u5efa\u4e00\u4e2a\u7b80\u5355\u7684\u8ba1\u7b97\u5668",
+    "status": "init",
+    "created_at": "2026-05-06T07:05:51.473594Z",
+    "updated_at": "2026-05-06T07:05:51.473617Z",
+    "structured_requirement": null,
+    "prototype_url": null,
+    "prd_document_url": null,
+    "verification_report": null,
+    "verification_report_url": null,
+    "error_message": null
+  },
+  {
+    "id": "wf-16ce62cd39fe",
+    "user_id": "test-user",
+    "requirement_text": "\u521b\u5efa\u4e00\u4e2a\u7b80\u5355\u7684\u8ba1\u7b97\u5668",
+    "status": "init",
+    "created_at": "2026-05-06T07:06:00.008486Z",
+    "updated_at": "2026-05-06T07:06:00.008519Z",
+    "structured_requirement": null,
+    "prototype_url": null,
+    "prd_document_url": null,
+    "verification_report": null,
+    "verification_report_url": null,
+    "error_message": null
+  },
+  {
+    "id": "wf-3508beddd509",
+    "user_id": "test-user",
+    "requirement_text": "\u521b\u5efa\u4e00\u4e2a\u7b80\u5355\u7684\u8ba1\u7b97\u5668",
+    "status": "init",
+    "created_at": "2026-05-06T07:06:12.788289Z",
+    "updated_at": "2026-05-06T07:06:12.788311Z",
+    "structured_requirement": null,
+    "prototype_url": null,
+    "prd_document_url": null,
+    "verification_report": null,
+    "verification_report_url": null,
+    "error_message": null
+  },
+  {
+    "id": "wf-a725a93ebb28",
+    "user_id": "test-user",
+    "requirement_text": "\u521b\u5efa\u4e00\u4e2a\u7b80\u5355\u7684\u5f85\u529e\u4e8b\u9879\u5e94\u7528",
+    "status": "generated",
+    "created_at": "2026-05-06T07:06:38.151105Z",
+    "updated_at": "2026-05-06T07:10:19.532274Z",
+    "structured_requirement": null,
+    "prototype_url": "/artifacts/wf-a725a93ebb28/prototype.html",
+    "prd_document_url": "/artifacts/wf-a725a93ebb28/prd.md",
+    "verification_report": null,
+    "verification_report_url": null,
+    "error_message": "'list' object has no attribute 'get'"
+  },
+  {
+    "id": "wf-b468cfedab1b",
+    "user_id": "test-user",
+    "requirement_text": "\u521b\u5efa\u4e00\u4e2a\u7b80\u5355\u7684\u5f85\u529e\u4e8b\u9879\u5e94\u7528",
+    "status": "failed",
+    "created_at": "2026-05-06T07:10:45.270257Z",
+    "updated_at": "2026-05-06T07:10:45.280481Z",
+    "structured_requirement": null,
+    "prototype_url": null,
+    "prd_document_url": null,
+    "verification_report": null,
+    "verification_report_url": null,
+    "error_message": "Cannot run the event loop while another loop is running"
+  },
+  {
+    "id": "wf-492efaf93d3e",
+    "user_id": "test-user",
+    "requirement_text": "\u521b\u5efa\u4e00\u4e2a\u7b80\u5355\u7684\u5f85\u529e\u4e8b\u9879\u5e94\u7528",
+    "status": "failed",
+    "created_at": "2026-05-06T07:11:11.265678Z",
+    "updated_at": "2026-05-06T07:11:11.275225Z",
+    "structured_requirement": null,
+    "prototype_url": null,
+    "prd_document_url": null,
+    "verification_report": null,
+    "verification_report_url": null,
+    "error_message": "Cannot run the event loop while another loop is running"
+  },
+  {
+    "id": "wf-03ecdfb9a086",
+    "user_id": "e25e5d07-fd4e-4b1c-b625-6c88d6c99f00",
+    "requirement_text": "\u521b\u5efa\u4e00\u4e2a\u4e2a\u4eba\u8bb0\u8d26\u5e94\u7528\uff0c\u652f\u6301\u8bb0\u5f55\u6536\u652f\u3001\u5206\u7c7b\u7edf\u8ba1\u3001\u6708\u5ea6\u62a5\u8868",
+    "status": "init",
+    "created_at": "2026-05-06T07:12:13.344231Z",
+    "updated_at": "2026-05-06T07:12:13.344236Z",
+    "structured_requirement": null,
+    "prototype_url": null,
+    "prd_document_url": null,
+    "verification_report": null,
+    "verification_report_url": null,
+    "error_message": null
+  },
+  {
+    "id": "wf-cd0b201ddf15",
+    "user_id": "e25e5d07-fd4e-4b1c-b625-6c88d6c99f00",
+    "requirement_text": "\u521b\u5efa\u4e00\u4e2a\u4e2a\u4eba\u8bb0\u8d26\u5e94\u7528",
+    "status": "generated",
+    "created_at": "2026-05-06T07:35:00.809151Z",
+    "updated_at": "2026-05-06T07:39:13.446064Z",
+    "structured_requirement": null,
+    "prototype_url": "/artifacts/wf-cd0b201ddf15/prototype.html",
+    "prd_document_url": "/artifacts/wf-cd0b201ddf15/prd.md",
+    "verification_report": null,
+    "verification_report_url": null,
+    "error_message": "10 validation errors for BusinessEntity\nattributes.0\n  Input should be a valid dictionary or instance of Attribute [type=model_type, input_value='userId', input_type=str]\n    For further information visit https://errors.pydantic.dev/2.13/v/model_type\nattributes.1\n  Input should be a valid dictionary or instance of Attribute [type=model_type, input_value='username', input_type=str]\n    For further information visit https://errors.pydantic.dev/2.13/v/model_type\nattributes.2\n  Input should be a valid dictionary or instance of Attribute [type=model_type, input_value='password', input_type=str]\n    For further information visit https://errors.pydantic.dev/2.13/v/model_type\nattributes.3\n  Input should be a valid dictionary or instance of Attribute [type=model_type, input_value='email', input_type=str]\n    For further information visit https://errors.pydantic.dev/2.13/v/model_type\nattributes.4\n  Input should be a valid dictionary or instance of Attribute [type=model_type, input_value='createdAt', input_type=str]\n    For further information visit https://errors.pydantic.dev/2.13/v/model_type\nattributes.5\n  Input should be a valid dictionary or instance of Attribute [type=model_type, input_value='updatedAt', input_type=str]\n    For further information visit https://errors.pydantic.dev/2.13/v/model_type\nrelationships.0.target_entity\n  Field required [type=missing, input_value={'relatedEntity': 'Transa...', 'cardinality': '1:N'}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.13/v/missing\nrelationships.0.relationship_type\n  Field required [type=missing, input_value={'relatedEntity': 'Transa...', 'cardinality': '1:N'}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.13/v/missing\nrelationships.1.target_entity\n  Field required [type=missing, input_value={'relatedEntity': 'Catego...', 'cardinality': '1:N'}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.13/v/missing\nrelationships.1.relationship_type\n  Field required [type=missing, input_value={'relatedEntity': 'Catego...', 'cardinality': '1:N'}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.13/v/missing"
+  },
+  {
+    "id": "wf-8070ce8232f7",
+    "user_id": "e25e5d07-fd4e-4b1c-b625-6c88d6c99f00",
+    "requirement_text": "\u521b\u5efa\u4e00\u4e2a\u4e2a\u4eba\u8bb0\u8d26\u5e94\u7528",
+    "status": "init",
+    "created_at": "2026-05-06T07:48:45.573602Z",
+    "updated_at": "2026-05-06T07:48:45.573613Z",
+    "structured_requirement": null,
+    "prototype_url": null,
+    "prd_document_url": null,
+    "verification_report": null,
+    "verification_report_url": null,
+    "error_message": null
+  },
+  {
+    "id": "wf-58a5beceb282",
+    "user_id": "e25e5d07-fd4e-4b1c-b625-6c88d6c99f00",
+    "requirement_text": "\u521b\u5efa\u4e00\u4e2a\u7b80\u5355\u7684\u5f85\u529e\u4e8b\u9879\u5e94\u7528",
+    "status": "completed",
+    "created_at": "2026-05-06T08:02:41.000048Z",
+    "updated_at": "2026-05-06T08:07:30.050412Z",
+    "structured_requirement": null,
+    "prototype_url": "/artifacts/wf-58a5beceb282/prototype.html",
+    "prd_document_url": "/artifacts/wf-58a5beceb282/prd.md",
+    "verification_report": {
+      "report_id": "report-wf-58a5beceb282",
+      "created_at": "2026-05-06T08:07:30.049434Z",
+      "prototype_issues": [
+        {
+          "id": "P001",
+          "type": "accessibility",
+          "severity": "minor",
+          "message": "\u90e8\u5206\u5143\u7d20\u7f3a\u5c11 aria-label \u5c5e\u6027",
+          "suggestion": "\u4e3a\u4ea4\u4e92\u5143\u7d20\u6dfb\u52a0 aria-label \u4ee5\u63d0\u9ad8\u53ef\u8bbf\u95ee\u6027",
+          "location": "button, input elements"
+        }
+      ],
+      "document_issues": [
+        {
+          "id": "D001",
+          "type": "completeness",
+          "severity": "info",
+          "message": "\u975e\u529f\u80fd\u9700\u6c42\u90e8\u5206\u53ef\u4ee5\u8fdb\u4e00\u6b65\u7ec6\u5316",
+          "suggestion": "\u8865\u5145\u5177\u4f53\u7684\u6027\u80fd\u6307\u6807\u548c\u5b89\u5168\u6807\u51c6",
+          "location": "Section 4"
+        }
+      ],
+      "consistency_issues": [],
+      "auto_fixed_issues": [],
+      "manual_review_required": []
+    },
+    "verification_report_url": "/artifacts/wf-58a5beceb282/report.json",
+    "error_message": null
+  },
+  {
+    "id": "wf-313f02705f3c",
+    "user_id": "e25e5d07-fd4e-4b1c-b625-6c88d6c99f00",
+    "requirement_text": "\u521b\u5efa\u4e00\u4e2a\u535a\u5ba2\u7cfb\u7edf",
+    "status": "init",
+    "created_at": "2026-05-06T08:23:41.854923Z",
+    "updated_at": "2026-05-06T08:23:41.854935Z",
+    "structured_requirement": null,
+    "prototype_url": null,
+    "prd_document_url": null,
+    "verification_report": null,
+    "verification_report_url": null,
+    "error_message": null
+  },
+  {
+    "id": "wf-7ea2b2b60204",
+    "user_id": "e25e5d07-fd4e-4b1c-b625-6c88d6c99f00",
+    "requirement_text": "\u521b\u5efa\u4e00\u4e2a\u7b80\u5355\u7684\u535a\u5ba2\u7cfb\u7edf\uff0c\u652f\u6301\u6587\u7ae0\u53d1\u5e03\u548c\u8bc4\u8bba\u529f\u80fd",
+    "status": "completed",
+    "created_at": "2026-05-06T08:24:38.789598Z",
+    "updated_at": "2026-05-06T08:24:38.799413Z",
+    "structured_requirement": null,
+    "prototype_url": "/artifacts/wf-7ea2b2b60204/prototype.html",
+    "prd_document_url": "/artifacts/wf-7ea2b2b60204/prd.md",
+    "verification_report": {
+      "report_id": "report-wf-7ea2b2b60204",
+      "created_at": "2026-05-06T08:24:38.798782Z",
+      "prototype_issues": [
+        {
+          "id": "P001",
+          "type": "accessibility",
+          "severity": "minor",
+          "message": "\u90e8\u5206\u5143\u7d20\u7f3a\u5c11 aria-label \u5c5e\u6027",
+          "suggestion": "\u4e3a\u4ea4\u4e92\u5143\u7d20\u6dfb\u52a0 aria-label \u4ee5\u63d0\u9ad8\u53ef\u8bbf\u95ee\u6027",
+          "location": "button, input elements"
+        }
+      ],
+      "document_issues": [
+        {
+          "id": "D001",
+          "type": "completeness",
+          "severity": "info",
+          "message": "\u975e\u529f\u80fd\u9700\u6c42\u90e8\u5206\u53ef\u4ee5\u8fdb\u4e00\u6b65\u7ec6\u5316",
+          "suggestion": "\u8865\u5145\u5177\u4f53\u7684\u6027\u80fd\u6307\u6807\u548c\u5b89\u5168\u6807\u51c6",
+          "location": "Section 4"
+        }
+      ],
+      "consistency_issues": [],
+      "auto_fixed_issues": [],
+      "manual_review_required": []
+    },
+    "verification_report_url": "/artifacts/wf-7ea2b2b60204/report.json",
+    "error_message": null
+  },
+  {
+    "id": "wf-633f7634c043",
+    "user_id": "cfec69ac-0943-4d46-8dd5-d6aa80c231d3",
+    "requirement_text": "\u6df1\u5ea6\u5b9a\u5236\u6e38\u9879\u76ee\n\n\u6211\u60f3\u5f00\u53d1\u4e00\u4e2aAPP\uff0c\u7528\u6765\u8fdb\u884c\u65c5\u884c\u7ebf\u8def\u7684\u89c4\u5212\uff0c\u5e2e\u52a9\u7528\u6237\u751f\u6210\u51fa\u884c\u7684\u884c\u7a0b\u653b\u7565\u3002\u73b0\u5728\u9700\u8981\u8f93\u51fa\u9ad8\u4fdd\u771f\u7684\u539f\u578b\u56fe\uff0c\u8bf7\u901a\u8fc7\u4ee5\u4e0b\u65b9\u5f0f\u5e2e\u6211\u5b8c\u6210\u6240\u6709\u754c\u9762\u7684\u539f\u578b\u8bbe\u8ba1\uff0c\u5e76\u786e\u4fdd\u8fd9\u4e9b\u539f\u578b\u754c\u9762\u53ef\u4ee5\u76f4\u63a5\u7528\u4e8e\u5f00\u53d1:\n1\u3001\u7528\u6237\u4f53\u9a8c\u5206\u6790:\u5148\u5206\u6790\u8fd9\u4e2a App \u7684\u4e3b\u8981\u529f\u80fd\u548c\u7528\u6237\u9700\u6c42\uff0c\u786e\u5b9a\u6838\u5fc3\u4ea4\u4e92\u903b\u8f91\u3002\n2\u3001\u4ea7\u54c1\u754c\u9762\u89c4\u5212:\u4f5c\u4e3a\u4ea7\u54c1\u7ecf\u7406\uff0c\u5b9a\u4e49\u5173\u952e\u754c\u9762\uff0c\u786e\u4fdd\u4fe1\u606f\u67b6\u6784\u5408\u7406\uff0c\u9664\u9875\u9762\u5916\u5f39\u51fa\u6846\u3001\u83dc\u5355\u680f\u4e5f\u8fdb\u884c\u8bbe\u8ba1\u5b9e\u73b0\n2.1\u3001\u6838\u5fc3\u6a21\u5757:\n\u767b\u9646\u6ce8\u518c\u529f\u80fd(\u767b\u9646\u3001\u6ce8\u518c\u3001\u9690\u79c1\u534f\u8bae\u7b49)\n\u8def\u7ebf\u89c4\u5212\uff08\u8f93\u5165\u51fa\u53d1\u5730\u548c\u76ee\u7684\u5730\u4ee5\u53ca\u65c5\u884c\u65e5\u671f\u548c\u9884\u7b97\u89c4\u5212\u65c5\u884c\u7ebf\u8def\uff09\n\u7968\u52a1\u9884\u8ba2(\u9884\u8ba2\u673a\u7968/\u706b\u8f66\u7968/\u6c7d\u8f66\u7968,\u9884\u8ba2\u9152\u5e97,\u9884\u8ba2\u666f\u70b9\u95e8\u7968)\n\u4e2a\u4eba\u4e2d\u5fc3\uff08\u5386\u53f2\u884c\u7a0b\uff0c\u8ba2\u5355\u7ba1\u7406\uff0c\u6d88\u606f\u901a\u77e5\uff09\n\u5e95\u90e8\u5bfc\u822a\u5206\u522b\u4e3a\u8def\u7ebf\u89c4\u5212\uff0c\u7968\u52a1\u9884\u8ba2\uff0c\u4e2a\u4eba\u4e2d\u5fc3\n\n\u76ee\u6807\u7528\u6237\uff1a\u9ad8\u7aef\u65c5\u884c\u7528\u6237\n\n\u7ea6\u675f\u6761\u4ef6\uff1a\u8bbe\u8ba1\u98ce\u683c\u4e3a\u7b80\u7ea6\u73b0\u4ee3\u98ce\u683c\uff0c\u54c1\u724c\u4e3b\u8272\u8c03\u4e3a\u84dd\u8272\uff0c\u5b57\u4f53\u4e3a\u82f9\u65b9\uff1b\u53c2\u8003\u5e94\u7528\u4e3a\u9a6c\u8702\u7a9d\u548c\u7a77\u6e38\u7684\u5e03\u5c40\u98ce\u683c\u548c\u4fe1\u606f\u67b6\u6784\uff0c\u56fe\u7247\u7d20\u6750\u98ce\u683c:\u4fa7\u91cd\u4e8e\u4f7f\u7528\u81ea\u7136\u98ce\u5149\u548c\u4eba\u6587\u53e4\u8ff9\uff0c\u53ef\u4ee5\u4eceUnsplash\u3001Pexels\u9009\u62e9\uff1b\u5176\u4e2d\u89c4\u5212\u65c5\u884c\u7ebf\u8def\uff0c\u751f\u6210\u7684\u884c\u7a0b\u653b\u7565\u9700\u8981\u5305\u542b\u51fa\u884c\u5730\u70b9\uff0c\u65f6\u95f4\u5b89\u6392\uff0c\u6d3b\u52a8\u5efa\u8bae\uff0c\u9910\u996e\u63a8\u8350\uff0c\u4ea4\u901a\u65b9\u5f0f\uff0c\u5176\u4e2d\u9910\u996e\u63a8\u8350\u53ef\u4ee5\u53c2\u8003\u5927\u4f17\u70b9\u8bc4\uff0c\u53ef\u4ee5\u5728\u5927\u4f17\u70b9\u8bc4\u83b7\u53d6\u4fe1\u606f\u540e\u6574\u5408\u5c55\u793a\uff1b\u7968\u52a1\u3001\u9152\u5e97\u3001\u666f\u70b9\u95e8\u7968\u9884\u8ba2\u529f\u80fd\u9700\u8981\u5728APP\u5185\u95ed\u73af\u5b8c\u6210\u9884\u8ba2\uff0c\u9700\u8981\u8bbe\u8ba1\u4e00\u5957\u5b8c\u6574\u7684\u3001\u72ec\u7acb\u7684\u9884\u8ba2\u6d41\u7a0b\u754c\u9762\uff0c\u9996\u9009\u652f\u4ed8\u65b9\u5f0f\u4e3a\u4fe1\u7528\u5361\u3001\u5fae\u4fe1\u3001\u652f\u4ed8\u5b9d\uff0c\u652f\u4ed8\u73af\u8282\u6a21\u62df\u5c55\u793a\u652f\u4ed8\u6210\u529f\u6216\u5931\u8d25\u7684\u63d0\u793a\u754c\u9762\u3002\n3\u3001\u9ad8\u4fdd\u771f UI\u8bbe\u8ba1:\u4f5c\u4e3a [I\u8bbe\u8ba1\u5e08\uff0c\u8bbe\u8ba1\u8d34\u8fd1\u771f\u5b9e iOS \u8bbe\u8ba1\u89c4\u8303\u7684\u754c\u9762\uff0c\u4f7f\u7528\u73b0\u4ee3\u5316\u7684 UI\u5143\u7d20\uff0c\u4f7f\u5176\u5177\u6709\u826f\u597d\u7684\u89c6\u89c9\u4f53\u9a8c\u3002\n4\u3001HTML, \u539f\u578b\u5b9e\u73b0:\u4f7f\u7528 HTML+ Tailwind CSs\u751f\u6210\u6240\u6709\u539f\u578b\u754c\u9762\uff0c\u5e76\u4f7f\u7528FontAwesome(\u6216\u5176\u4ed6\u5f00\u6e90 UI\u7ec4\u4ef6)\u8ba9\u754c\u9762\u66f4\u52a0\u7cbe\u7f8e\u3001\u63a5\u8fd1\u771f\u5b9e\u7684 App \u8bbe\u8ba1\u62c6\u5206\u4ee3\u7801\u6587\u4ef6\uff0c\u4fdd\u6301\u7ed3\u6784\u6e05\u6670:\n5\u3001\u6bcf\u4e2a\u754c\u9762\u5e94\u4f5c\u4e3a\u72ec\u7acb\u7684 HTML \u6587\u4ef6\u5b58\u653e\uff0c\u4f8b\u5982 home.html\u3001profile.htmlsettings.html\u7b49\u3002\nindex.html \u4f5c\u4e3a\u4e3b\u5165\u53e3\uff0c\u4e0d\u76f4\u63a5\u5199\u5165\u6240\u6709\u754c\u9762\u7684 HTML \u4ee3\u7801\uff0c\u800c\u662f\u4f7f\u7528 iframe\u7684\u65b9\u5f0f\u5d4c\u5165\u8fd9\u4e9b HTML\u7247\u6bb5\uff0c\u5e76\u5c06\u6240\u6709\u9875\u9762\u76f4\u63a5\u5e73\u94fa\u5c55\u793a\u5728 index \u9875\u9762\u4e2d\uff0c\u800c\u4e0d\u662f\u8df3\u8f6c\u94fe\u63a5\u3002\n\u771f\u5b9e\u611f\u589e\u5f3a:\u754c\u9762\u5c3a\u5bf8\u5e94\u6a21\u62df iPhone 16 Pro\uff0c\u5e76\u8ba9\u754c\u9762\u5706\u89d2\u5316\uff0c\u4f7f\u5176\u66f4\u50cf\u771f\u5b9e\u7684\u624b\u673a\u754c\u9762\u3002\u4f7f\u7528\u771f\u5b9e\u7684 UI\u56fe\u7247\uff0c\u800c\u975e\u5360\u4f4d\u7b26\u56fe\u7247(\u53ef\u4ece Unsplash\u3001Pexels\u3001Apple \u5b98\u65b9 UI\u8d44\u6e90\u4e2d\u9009\u62e9)\u3002\n\u6dfb\u52a0\u9876\u90e8\u72b6\u6001\u680f(\u6a21\u62df iOS \u72b6\u6001\u680f)\uff0c\u5e76\u5305\u542b App \u5bfc\u822a\u680f(\u7c7b\u4f3c iOS \u5e95\u90e8 TabBar)\u3002\n\u8bf7\u6309\u7167\u4ee5\u4e0a\u8981\u6c42\u751f\u6210\u5b8c\u6574\u7684\u539f\u578b\u56fe\u548cHTML \u4ee3\u7801\uff0c\u5e76\u786e\u4fdd\u5176\u53ef\u7528\u4e8e\u5b9e\u9645\u5f00\u53d1\u3002",
+    "status": "completed",
+    "created_at": "2026-05-06T08:27:56.535036Z",
+    "updated_at": "2026-05-06T08:27:56.541901Z",
+    "structured_requirement": null,
+    "prototype_url": "/artifacts/wf-633f7634c043/prototype.html",
+    "prd_document_url": "/artifacts/wf-633f7634c043/prd.md",
+    "verification_report": {
+      "report_id": "report-wf-633f7634c043",
+      "created_at": "2026-05-06T08:27:56.541491Z",
+      "prototype_issues": [
+        {
+          "id": "P001",
+          "type": "accessibility",
+          "severity": "minor",
+          "message": "\u90e8\u5206\u5143\u7d20\u7f3a\u5c11 aria-label \u5c5e\u6027",
+          "suggestion": "\u4e3a\u4ea4\u4e92\u5143\u7d20\u6dfb\u52a0 aria-label \u4ee5\u63d0\u9ad8\u53ef\u8bbf\u95ee\u6027",
+          "location": "button, input elements"
+        }
+      ],
+      "document_issues": [
+        {
+          "id": "D001",
+          "type": "completeness",
+          "severity": "info",
+          "message": "\u975e\u529f\u80fd\u9700\u6c42\u90e8\u5206\u53ef\u4ee5\u8fdb\u4e00\u6b65\u7ec6\u5316",
+          "suggestion": "\u8865\u5145\u5177\u4f53\u7684\u6027\u80fd\u6307\u6807\u548c\u5b89\u5168\u6807\u51c6",
+          "location": "Section 4"
+        }
+      ],
+      "consistency_issues": [],
+      "auto_fixed_issues": [],
+      "manual_review_required": []
+    },
+    "verification_report_url": "/artifacts/wf-633f7634c043/report.json",
+    "error_message": null
+  },
+  {
+    "id": "wf-98e0fbffeefb",
+    "user_id": "e25e5d07-fd4e-4b1c-b625-6c88d6c99f00",
+    "requirement_text": "\u521b\u5efa\u4e00\u4e2a\u5728\u7ebf\u5b66\u4e60\u5e73\u53f0\uff0c\u652f\u6301\u8bfe\u7a0b\u7ba1\u7406\u3001\u5b66\u751f\u6ce8\u518c\u3001\u5b66\u4e60\u8fdb\u5ea6\u8ddf\u8e2a\u548c\u5728\u7ebf\u8003\u8bd5\u529f\u80fd",
+    "status": "completed",
+    "created_at": "2026-05-06T09:53:40.010566Z",
+    "updated_at": "2026-05-06T09:58:04.047487Z",
+    "structured_requirement": null,
+    "prototype_url": "/artifacts/wf-98e0fbffeefb/prototype.html",
+    "prd_document_url": "/artifacts/wf-98e0fbffeefb/prd.md",
+    "verification_report": {
+      "report_id": "report-wf-98e0fbffeefb",
+      "created_at": "2026-05-06T09:58:04.046885Z",
+      "prototype_issues": [],
+      "document_issues": [],
+      "consistency_issues": [],
+      "auto_fixed_issues": [],
+      "manual_review_required": [
+        {
+          "id": "MR001",
+          "type": "review",
+          "severity": "info",
+          "message": "\u5171\u53d1\u73b0 0 \u4e2a\u95ee\u9898\uff080\u4e2a\u4e25\u91cd\uff0c0\u4e2a\u91cd\u8981\uff0c0\u4e2a\u6b21\u8981\uff0c0\u4e2a\u5efa\u8bae\uff09",
+          "suggestion": "\u8bf7\u6839\u636e\u95ee\u9898\u5217\u8868\u8fdb\u884c\u76f8\u5e94\u4f18\u5316",
+          "location": "\u6574\u4f53\u8bc4\u4f30"
+        }
+      ]
+    },
+    "verification_report_url": "/artifacts/wf-98e0fbffeefb/report.json",
+    "error_message": null
+  },
+  {
+    "id": "wf-13124b322be5",
+    "user_id": "cfec69ac-0943-4d46-8dd5-d6aa80c231d3",
+    "requirement_text": "\u5b9a\u5236\u65c5\u884c\u9879\u76ee\n\n\u6211\u60f3\u5f00\u53d1\u4e00\u4e2aAPP\uff0c\u7528\u6765\u8fdb\u884c\u65c5\u884c\u7ebf\u8def\u7684\u89c4\u5212\uff0c\u5e2e\u52a9\u7528\u6237\u751f\u6210\u51fa\u884c\u7684\u884c\u7a0b\u653b\u7565\u3002\u73b0\u5728\u9700\u8981\u8f93\u51fa\u9ad8\u4fdd\u771f\u7684\u539f\u578b\u56fe\uff0c\u8bf7\u901a\u8fc7\u4ee5\u4e0b\u65b9\u5f0f\u5e2e\u6211\u5b8c\u6210\u6240\u6709\u754c\u9762\u7684\u539f\u578b\u8bbe\u8ba1\uff0c\u5e76\u786e\u4fdd\u8fd9\u4e9b\u539f\u578b\u754c\u9762\u53ef\u4ee5\u76f4\u63a5\u7528\u4e8e\u5f00\u53d1:\n1\u3001\u7528\u6237\u4f53\u9a8c\u5206\u6790:\u5148\u5206\u6790\u8fd9\u4e2a App \u7684\u4e3b\u8981\u529f\u80fd\u548c\u7528\u6237\u9700\u6c42\uff0c\u786e\u5b9a\u6838\u5fc3\u4ea4\u4e92\u903b\u8f91\u3002\n2\u3001\u4ea7\u54c1\u754c\u9762\u89c4\u5212:\u4f5c\u4e3a\u4ea7\u54c1\u7ecf\u7406\uff0c\u5b9a\u4e49\u5173\u952e\u754c\u9762\uff0c\u786e\u4fdd\u4fe1\u606f\u67b6\u6784\u5408\u7406\uff0c\u9664\u9875\u9762\u5916\u5f39\u51fa\u6846\u3001\u83dc\u5355\u680f\u4e5f\u8fdb\u884c\u8bbe\u8ba1\u5b9e\u73b0\n2.1\u3001\u6838\u5fc3\u6a21\u5757:\n\u767b\u9646\u6ce8\u518c\u529f\u80fd(\u767b\u9646\u3001\u6ce8\u518c\u3001\u9690\u79c1\u534f\u8bae\u7b49)\n\u8def\u7ebf\u89c4\u5212\uff08\u8f93\u5165\u51fa\u53d1\u5730\u548c\u76ee\u7684\u5730\u4ee5\u53ca\u65c5\u884c\u65e5\u671f\u548c\u9884\u7b97\u89c4\u5212\u65c5\u884c\u7ebf\u8def\uff09\n\u7968\u52a1\u9884\u8ba2(\u9884\u8ba2\u673a\u7968/\u706b\u8f66\u7968/\u6c7d\u8f66\u7968,\u9884\u8ba2\u9152\u5e97,\u9884\u8ba2\u666f\u70b9\u95e8\u7968)\n\u4e2a\u4eba\u4e2d\u5fc3\uff08\u5386\u53f2\u884c\u7a0b\uff0c\u8ba2\u5355\u7ba1\u7406\uff0c\u6d88\u606f\u901a\u77e5\uff09\n\u5e95\u90e8\u5bfc\u822a\u5206\u522b\u4e3a\u8def\u7ebf\u89c4\u5212\uff0c\u7968\u52a1\u9884\u8ba2\uff0c\u4e2a\u4eba\u4e2d\u5fc3\n\n\u76ee\u6807\u7528\u6237\uff1a\u9ad8\u7aef\u5b9a\u5236\u6e38\u7528\u6237\n\n\u7ea6\u675f\u6761\u4ef6\uff1a\u8bbe\u8ba1\u98ce\u683c\u4e3a\u7b80\u7ea6\u73b0\u4ee3\u98ce\u683c\uff0c\u54c1\u724c\u4e3b\u8272\u8c03\u4e3a\u84dd\u8272\uff0c\u5b57\u4f53\u4e3a\u82f9\u65b9\uff1b\u53c2\u8003\u5e94\u7528\u4e3a\u9a6c\u8702\u7a9d\u548c\u7a77\u6e38\u7684\u5e03\u5c40\u98ce\u683c\u548c\u4fe1\u606f\u67b6\u6784\uff0c\u56fe\u7247\u7d20\u6750\u98ce\u683c:\u4fa7\u91cd\u4e8e\u4f7f\u7528\u81ea\u7136\u98ce\u5149\u548c\u4eba\u6587\u53e4\u8ff9\uff0c\u53ef\u4ee5\u4eceUnsplash\u3001Pexels\u9009\u62e9\uff1b\u5176\u4e2d\u89c4\u5212\u65c5\u884c\u7ebf\u8def\uff0c\u751f\u6210\u7684\u884c\u7a0b\u653b\u7565\u9700\u8981\u5305\u542b\u51fa\u884c\u5730\u70b9\uff0c\u65f6\u95f4\u5b89\u6392\uff0c\u6d3b\u52a8\u5efa\u8bae\uff0c\u9910\u996e\u63a8\u8350\uff0c\u4ea4\u901a\u65b9\u5f0f\uff0c\u5176\u4e2d\u9910\u996e\u63a8\u8350\u53ef\u4ee5\u53c2\u8003\u5927\u4f17\u70b9\u8bc4\uff0c\u53ef\u4ee5\u5728\u5927\u4f17\u70b9\u8bc4\u83b7\u53d6\u4fe1\u606f\u540e\u6574\u5408\u5c55\u793a\uff1b\u7968\u52a1\u3001\u9152\u5e97\u3001\u666f\u70b9\u95e8\u7968\u9884\u8ba2\u529f\u80fd\u9700\u8981\u5728APP\u5185\u95ed\u73af\u5b8c\u6210\u9884\u8ba2\uff0c\u9700\u8981\u8bbe\u8ba1\u4e00\u5957\u5b8c\u6574\u7684\u3001\u72ec\u7acb\u7684\u9884\u8ba2\u6d41\u7a0b\u754c\u9762\uff0c\u9996\u9009\u652f\u4ed8\u65b9\u5f0f\u4e3a\u4fe1\u7528\u5361\u3001\u5fae\u4fe1\u3001\u652f\u4ed8\u5b9d\uff0c\u652f\u4ed8\u73af\u8282\u6a21\u62df\u5c55\u793a\u652f\u4ed8\u6210\u529f\u6216\u5931\u8d25\u7684\u63d0\u793a\u754c\u9762\u3002\n3\u3001\u9ad8\u4fdd\u771f UI\u8bbe\u8ba1:\u4f5c\u4e3a [I\u8bbe\u8ba1\u5e08\uff0c\u8bbe\u8ba1\u8d34\u8fd1\u771f\u5b9e iOS \u8bbe\u8ba1\u89c4\u8303\u7684\u754c\u9762\uff0c\u4f7f\u7528\u73b0\u4ee3\u5316\u7684 UI\u5143\u7d20\uff0c\u4f7f\u5176\u5177\u6709\u826f\u597d\u7684\u89c6\u89c9\u4f53\u9a8c\u3002\n4\u3001HTML, \u539f\u578b\u5b9e\u73b0:\u4f7f\u7528 HTML+ Tailwind CSs\u751f\u6210\u6240\u6709\u539f\u578b\u754c\u9762\uff0c\u5e76\u4f7f\u7528FontAwesome(\u6216\u5176\u4ed6\u5f00\u6e90 UI\u7ec4\u4ef6)\u8ba9\u754c\u9762\u66f4\u52a0\u7cbe\u7f8e\u3001\u63a5\u8fd1\u771f\u5b9e\u7684 App \u8bbe\u8ba1\u62c6\u5206\u4ee3\u7801\u6587\u4ef6\uff0c\u4fdd\u6301\u7ed3\u6784\u6e05\u6670:\n5\u3001\u6bcf\u4e2a\u754c\u9762\u5e94\u4f5c\u4e3a\u72ec\u7acb\u7684 HTML \u6587\u4ef6\u5b58\u653e\uff0c\u4f8b\u5982 home.html\u3001profile.htmlsettings.html\u7b49\u3002\nindex.html \u4f5c\u4e3a\u4e3b\u5165\u53e3\uff0c\u4e0d\u76f4\u63a5\u5199\u5165\u6240\u6709\u754c\u9762\u7684 HTML \u4ee3\u7801\uff0c\u800c\u662f\u4f7f\u7528 iframe\u7684\u65b9\u5f0f\u5d4c\u5165\u8fd9\u4e9b HTML\u7247\u6bb5\uff0c\u5e76\u5c06\u6240\u6709\u9875\u9762\u76f4\u63a5\u5e73\u94fa\u5c55\u793a\u5728 index \u9875\u9762\u4e2d\uff0c\u800c\u4e0d\u662f\u8df3\u8f6c\u94fe\u63a5\u3002\n\u771f\u5b9e\u611f\u589e\u5f3a:\u754c\u9762\u5c3a\u5bf8\u5e94\u6a21\u62df iPhone 16 Pro\uff0c\u5e76\u8ba9\u754c\u9762\u5706\u89d2\u5316\uff0c\u4f7f\u5176\u66f4\u50cf\u771f\u5b9e\u7684\u624b\u673a\u754c\u9762\u3002\u4f7f\u7528\u771f\u5b9e\u7684 UI\u56fe\u7247\uff0c\u800c\u975e\u5360\u4f4d\u7b26\u56fe\u7247(\u53ef\u4ece Unsplash\u3001Pexels\u3001Apple \u5b98\u65b9 UI\u8d44\u6e90\u4e2d\u9009\u62e9)\u3002\n\u6dfb\u52a0\u9876\u90e8\u72b6\u6001\u680f(\u6a21\u62df iOS \u72b6\u6001\u680f)\uff0c\u5e76\u5305\u542b App \u5bfc\u822a\u680f(\u7c7b\u4f3c iOS \u5e95\u90e8 TabBar)\u3002\n\u8bf7\u6309\u7167\u4ee5\u4e0a\u8981\u6c42\u751f\u6210\u5b8c\u6574\u7684\u539f\u578b\u56fe\u548cHTML \u4ee3\u7801\uff0c\u5e76\u786e\u4fdd\u5176\u53ef\u7528\u4e8e\u5b9e\u9645\u5f00\u53d1\u3002",
+    "status": "completed",
+    "created_at": "2026-05-06T10:18:42.611434Z",
+    "updated_at": "2026-05-06T10:23:13.673668Z",
+    "structured_requirement": null,
+    "prototype_url": "/artifacts/wf-13124b322be5/prototype.html",
+    "prd_document_url": "/artifacts/wf-13124b322be5/prd.md",
+    "verification_report": {
+      "report_id": "report-wf-13124b322be5",
+      "created_at": "2026-05-06T10:23:13.673096Z",
+      "prototype_issues": [],
+      "document_issues": [],
+      "consistency_issues": [],
+      "auto_fixed_issues": [],
+      "manual_review_required": [
+        {
+          "id": "MR001",
+          "type": "review",
+          "severity": "info",
+          "message": "\u5171\u53d1\u73b0 0 \u4e2a\u95ee\u9898\uff080\u4e2a\u4e25\u91cd\uff0c0\u4e2a\u91cd\u8981\uff0c0\u4e2a\u6b21\u8981\uff0c0\u4e2a\u5efa\u8bae\uff09",
+          "suggestion": "\u8bf7\u6839\u636e\u95ee\u9898\u5217\u8868\u8fdb\u884c\u76f8\u5e94\u4f18\u5316",
+          "location": "\u6574\u4f53\u8bc4\u4f30"
+        }
+      ]
+    },
+    "verification_report_url": "/artifacts/wf-13124b322be5/report.json",
+    "error_message": null
+  },
+  {
+    "id": "wf-e4d2aba5cf57",
+    "user_id": "4252d704-3323-4987-a494-c3851bc3424e",
+    "requirement_text": "\u505a\u4e00\u4e2a\u7b80\u5355\u7684\u4efb\u52a1\u7ba1\u7406\u7cfb\u7edf\uff0c\u652f\u6301\u521b\u5efa\u4efb\u52a1\u3001\u5206\u914d\u8d1f\u8d23\u4eba\u3001\u8ddf\u8e2a\u72b6\u6001",
+    "status": "init",
+    "created_at": "2026-05-07T02:42:40.319874Z",
+    "updated_at": "2026-05-07T02:42:40.319882Z",
+    "structured_requirement": null,
+    "prototype_url": null,
+    "prd_document_url": null,
+    "verification_report": null,
+    "verification_report_url": null,
+    "error_message": null
+  },
+  {
+    "id": "wf-717b108f9dd4",
+    "user_id": "test-user",
+    "requirement_text": "\u505a\u4e00\u4e2a\u7b80\u5355\u7684\u4efb\u52a1\u7ba1\u7406\u7cfb\u7edf\uff0c\u652f\u6301\u521b\u5efa\u4efb\u52a1\u3001\u5206\u914d\u8d1f\u8d23\u4eba\u3001\u8ddf\u8e2a\u72b6\u6001",
+    "status": "init",
+    "created_at": "2026-05-07T02:58:36.880327Z",
+    "updated_at": "2026-05-07T02:58:36.880402Z",
+    "structured_requirement": null,
+    "prototype_url": null,
+    "prd_document_url": null,
+    "verification_report": null,
+    "verification_report_url": null,
+    "error_message": null
+  },
+  {
+    "id": "wf-078f103d479b",
+    "user_id": "test-user",
+    "requirement_text": "\u505a\u4e00\u4e2a\u7b80\u5355\u7684\u4efb\u52a1\u7ba1\u7406\u7cfb\u7edf\uff0c\u652f\u6301\u521b\u5efa\u4efb\u52a1\u3001\u5206\u914d\u8d1f\u8d23\u4eba\u3001\u8ddf\u8e2a\u72b6\u6001",
+    "status": "completed",
+    "created_at": "2026-05-07T02:59:00.807212Z",
+    "updated_at": "2026-05-07T02:59:00.815181Z",
+    "structured_requirement": null,
+    "prototype_url": "/artifacts/wf-078f103d479b/prototype.html",
+    "prd_document_url": "/artifacts/wf-078f103d479b/prd.md",
+    "verification_report": {
+      "report_id": "report-wf-078f103d479b",
+      "created_at": "2026-05-07T02:59:00.814632Z",
+      "prototype_issues": [],
+      "document_issues": [],
+      "consistency_issues": [],
+      "auto_fixed_issues": [],
+      "manual_review_required": [
+        {
+          "id": "MR001",
+          "type": "review",
+          "severity": "info",
+          "message": "\u5171\u53d1\u73b0 0 \u4e2a\u95ee\u9898\uff080\u4e2a\u4e25\u91cd\uff0c0\u4e2a\u91cd\u8981\uff0c0\u4e2a\u6b21\u8981\uff0c0\u4e2a\u5efa\u8bae\uff09",
+          "suggestion": "\u8bf7\u6839\u636e\u95ee\u9898\u5217\u8868\u8fdb\u884c\u76f8\u5e94\u4f18\u5316",
+          "location": "\u6574\u4f53\u8bc4\u4f30"
+        }
+      ]
+    },
+    "verification_report_url": "/artifacts/wf-078f103d479b/report.json",
+    "error_message": null
+  },
+  {
+    "id": "wf-d1d3b883a5cf",
+    "user_id": "2dbb89c4-9cf1-4cf4-b109-a36a0f08f081",
+    "requirement_text": "\u9ad8\u7aef\u5b9a\u5236\u6e38\u9879\u76ee\n\n\u6211\u60f3\u5f00\u53d1\u4e00\u4e2aAPP\uff0c\u7528\u6765\u8fdb\u884c\u65c5\u884c\u7ebf\u8def\u7684\u89c4\u5212\uff0c\u5e2e\u52a9\u7528\u6237\u751f\u6210\u51fa\u884c\u7684\u884c\u7a0b\u653b\u7565\u3002\u73b0\u5728\u9700\u8981\u8f93\u51fa\u9ad8\u4fdd\u771f\u7684\u539f\u578b\u56fe\uff0c\u8bf7\u901a\u8fc7\u4ee5\u4e0b\u65b9\u5f0f\u5e2e\u6211\u5b8c\u6210\u6240\u6709\u754c\u9762\u7684\u539f\u578b\u8bbe\u8ba1\uff0c\u5e76\u786e\u4fdd\u8fd9\u4e9b\u539f\u578b\u754c\u9762\u53ef\u4ee5\u76f4\u63a5\u7528\u4e8e\u5f00\u53d1:\n1\u3001\u7528\u6237\u4f53\u9a8c\u5206\u6790:\u5148\u5206\u6790\u8fd9\u4e2a App \u7684\u4e3b\u8981\u529f\u80fd\u548c\u7528\u6237\u9700\u6c42\uff0c\u786e\u5b9a\u6838\u5fc3\u4ea4\u4e92\u903b\u8f91\u3002\n2\u3001\u4ea7\u54c1\u754c\u9762\u89c4\u5212:\u4f5c\u4e3a\u4ea7\u54c1\u7ecf\u7406\uff0c\u5b9a\u4e49\u5173\u952e\u754c\u9762\uff0c\u786e\u4fdd\u4fe1\u606f\u67b6\u6784\u5408\u7406\uff0c\u9664\u9875\u9762\u5916\u5f39\u51fa\u6846\u3001\u83dc\u5355\u680f\u4e5f\u8fdb\u884c\u8bbe\u8ba1\u5b9e\u73b0\n2.1\u3001\u6838\u5fc3\u6a21\u5757:\n\u767b\u9646\u6ce8\u518c\u529f\u80fd(\u767b\u9646\u3001\u6ce8\u518c\u3001\u9690\u79c1\u534f\u8bae\u7b49)\n\u8def\u7ebf\u89c4\u5212\uff08\u8f93\u5165\u51fa\u53d1\u5730\u548c\u76ee\u7684\u5730\u4ee5\u53ca\u65c5\u884c\u65e5\u671f\u548c\u9884\u7b97\u89c4\u5212\u65c5\u884c\u7ebf\u8def\uff09\n\u7968\u52a1\u9884\u8ba2(\u9884\u8ba2\u673a\u7968/\u706b\u8f66\u7968/\u6c7d\u8f66\u7968,\u9884\u8ba2\u9152\u5e97,\u9884\u8ba2\u666f\u70b9\u95e8\u7968)\n\u4e2a\u4eba\u4e2d\u5fc3\uff08\u5386\u53f2\u884c\u7a0b\uff0c\u8ba2\u5355\u7ba1\u7406\uff0c\u6d88\u606f\u901a\u77e5\uff09\n\u5e95\u90e8\u5bfc\u822a\u5206\u522b\u4e3a\u8def\u7ebf\u89c4\u5212\uff0c\u7968\u52a1\u9884\u8ba2\uff0c\u4e2a\u4eba\u4e2d\u5fc3\n\n\u76ee\u6807\u7528\u6237\uff1a\u9ad8\u7aef\u5b9a\u5236\u6e38\u7528\u6237\n\n\u7ea6\u675f\u6761\u4ef6\uff1a\u8bbe\u8ba1\u98ce\u683c\u4e3a\u7b80\u7ea6\u73b0\u4ee3\u98ce\u683c\uff0c\u54c1\u724c\u4e3b\u8272\u8c03\u4e3a\u84dd\u8272\uff0c\u5b57\u4f53\u4e3a\u82f9\u65b9\uff1b\u53c2\u8003\u5e94\u7528\u4e3a\u9a6c\u8702\u7a9d\u548c\u7a77\u6e38\u7684\u5e03\u5c40\u98ce\u683c\u548c\u4fe1\u606f\u67b6\u6784\uff0c\u56fe\u7247\u7d20\u6750\u98ce\u683c:\u4fa7\u91cd\u4e8e\u4f7f\u7528\u81ea\u7136\u98ce\u5149\u548c\u4eba\u6587\u53e4\u8ff9\uff0c\u53ef\u4ee5\u4eceUnsplash\u3001Pexels\u9009\u62e9\uff1b\u5176\u4e2d\u89c4\u5212\u65c5\u884c\u7ebf\u8def\uff0c\u751f\u6210\u7684\u884c\u7a0b\u653b\u7565\u9700\u8981\u5305\u542b\u51fa\u884c\u5730\u70b9\uff0c\u65f6\u95f4\u5b89\u6392\uff0c\u6d3b\u52a8\u5efa\u8bae\uff0c\u9910\u996e\u63a8\u8350\uff0c\u4ea4\u901a\u65b9\u5f0f\uff0c\u5176\u4e2d\u9910\u996e\u63a8\u8350\u53ef\u4ee5\u53c2\u8003\u5927\u4f17\u70b9\u8bc4\uff0c\u53ef\u4ee5\u5728\u5927\u4f17\u70b9\u8bc4\u83b7\u53d6\u4fe1\u606f\u540e\u6574\u5408\u5c55\u793a\uff1b\u7968\u52a1\u3001\u9152\u5e97\u3001\u666f\u70b9\u95e8\u7968\u9884\u8ba2\u529f\u80fd\u9700\u8981\u5728APP\u5185\u95ed\u73af\u5b8c\u6210\u9884\u8ba2\uff0c\u9700\u8981\u8bbe\u8ba1\u4e00\u5957\u5b8c\u6574\u7684\u3001\u72ec\u7acb\u7684\u9884\u8ba2\u6d41\u7a0b\u754c\u9762\uff0c\u9996\u9009\u652f\u4ed8\u65b9\u5f0f\u4e3a\u4fe1\u7528\u5361\u3001\u5fae\u4fe1\u3001\u652f\u4ed8\u5b9d\uff0c\u652f\u4ed8\u73af\u8282\u6a21\u62df\u5c55\u793a\u652f\u4ed8\u6210\u529f\u6216\u5931\u8d25\u7684\u63d0\u793a\u754c\u9762\u3002\n3\u3001\u9ad8\u4fdd\u771f UI\u8bbe\u8ba1:\u4f5c\u4e3a [I\u8bbe\u8ba1\u5e08\uff0c\u8bbe\u8ba1\u8d34\u8fd1\u771f\u5b9e iOS \u8bbe\u8ba1\u89c4\u8303\u7684\u754c\u9762\uff0c\u4f7f\u7528\u73b0\u4ee3\u5316\u7684 UI\u5143\u7d20\uff0c\u4f7f\u5176\u5177\u6709\u826f\u597d\u7684\u89c6\u89c9\u4f53\u9a8c\u3002\n4\u3001HTML, \u539f\u578b\u5b9e\u73b0:\u4f7f\u7528 HTML+ Tailwind CSs\u751f\u6210\u6240\u6709\u539f\u578b\u754c\u9762\uff0c\u5e76\u4f7f\u7528FontAwesome(\u6216\u5176\u4ed6\u5f00\u6e90 UI\u7ec4\u4ef6)\u8ba9\u754c\u9762\u66f4\u52a0\u7cbe\u7f8e\u3001\u63a5\u8fd1\u771f\u5b9e\u7684 App \u8bbe\u8ba1\u62c6\u5206\u4ee3\u7801\u6587\u4ef6\uff0c\u4fdd\u6301\u7ed3\u6784\u6e05\u6670:\n5\u3001\u6bcf\u4e2a\u754c\u9762\u5e94\u4f5c\u4e3a\u72ec\u7acb\u7684 HTML \u6587\u4ef6\u5b58\u653e\uff0c\u4f8b\u5982 home.html\u3001profile.htmlsettings.html\u7b49\u3002\nindex.html \u4f5c\u4e3a\u4e3b\u5165\u53e3\uff0c\u4e0d\u76f4\u63a5\u5199\u5165\u6240\u6709\u754c\u9762\u7684 HTML \u4ee3\u7801\uff0c\u800c\u662f\u4f7f\u7528 iframe\u7684\u65b9\u5f0f\u5d4c\u5165\u8fd9\u4e9b HTML\u7247\u6bb5\uff0c\u5e76\u5c06\u6240\u6709\u9875\u9762\u76f4\u63a5\u5e73\u94fa\u5c55\u793a\u5728 index \u9875\u9762\u4e2d\uff0c\u800c\u4e0d\u662f\u8df3\u8f6c\u94fe\u63a5\u3002\n\u771f\u5b9e\u611f\u589e\u5f3a:\u754c\u9762\u5c3a\u5bf8\u5e94\u6a21\u62df iPhone 16 Pro\uff0c\u5e76\u8ba9\u754c\u9762\u5706\u89d2\u5316\uff0c\u4f7f\u5176\u66f4\u50cf\u771f\u5b9e\u7684\u624b\u673a\u754c\u9762\u3002\u4f7f\u7528\u771f\u5b9e\u7684 UI\u56fe\u7247\uff0c\u800c\u975e\u5360\u4f4d\u7b26\u56fe\u7247(\u53ef\u4ece Unsplash\u3001Pexels\u3001Apple \u5b98\u65b9 UI\u8d44\u6e90\u4e2d\u9009\u62e9)\u3002\n\u6dfb\u52a0\u9876\u90e8\u72b6\u6001\u680f(\u6a21\u62df iOS \u72b6\u6001\u680f)\uff0c\u5e76\u5305\u542b App \u5bfc\u822a\u680f(\u7c7b\u4f3c iOS \u5e95\u90e8 TabBar)\u3002\n\u8bf7\u6309\u7167\u4ee5\u4e0a\u8981\u6c42\u751f\u6210\u5b8c\u6574\u7684\u539f\u578b\u56fe\u548cHTML \u4ee3\u7801\uff0c\u5e76\u786e\u4fdd\u5176\u53ef\u7528\u4e8e\u5b9e\u9645\u5f00\u53d1\u3002",
+    "status": "completed",
+    "created_at": "2026-05-07T07:04:09.425897Z",
+    "updated_at": "2026-05-07T07:08:39.464679Z",
+    "structured_requirement": null,
+    "prototype_url": "/artifacts/wf-d1d3b883a5cf/prototype.html",
+    "prd_document_url": "/artifacts/wf-d1d3b883a5cf/prd.md",
+    "verification_report": {
+      "report_id": "report-wf-d1d3b883a5cf",
+      "created_at": "2026-05-07T07:08:39.464051Z",
+      "prototype_issues": [],
+      "document_issues": [],
+      "consistency_issues": [],
+      "auto_fixed_issues": [],
+      "manual_review_required": [
+        {
+          "id": "MR001",
+          "type": "review",
+          "severity": "info",
+          "message": "\u5171\u53d1\u73b0 0 \u4e2a\u95ee\u9898\uff080\u4e2a\u4e25\u91cd\uff0c0\u4e2a\u91cd\u8981\uff0c0\u4e2a\u6b21\u8981\uff0c0\u4e2a\u5efa\u8bae\uff09",
+          "suggestion": "\u8bf7\u6839\u636e\u95ee\u9898\u5217\u8868\u8fdb\u884c\u76f8\u5e94\u4f18\u5316",
+          "location": "\u6574\u4f53\u8bc4\u4f30"
+        }
+      ]
+    },
+    "verification_report_url": "/artifacts/wf-d1d3b883a5cf/report.json",
+    "error_message": null
+  }
+]

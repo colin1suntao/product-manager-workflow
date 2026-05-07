@@ -4,14 +4,12 @@
 """
 
 import uuid
-from typing import Optional
 
 import bcrypt
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from pm_workstation.auth.models import User
-from pm_workstation.config import settings
 
 
 def hash_password(password: str) -> str:
@@ -60,7 +58,7 @@ class UserStore:
         await self.db.refresh(user)
         return user
 
-    async def find_by_email(self, email: str) -> Optional[User]:
+    async def find_by_email(self, email: str) -> User | None:
         """通过邮箱查找用户
 
         Args:
@@ -73,7 +71,7 @@ class UserStore:
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def find_by_id(self, user_id: str) -> Optional[User]:
+    async def find_by_id(self, user_id: str) -> User | None:
         """通过 ID 查找用户
 
         Args:

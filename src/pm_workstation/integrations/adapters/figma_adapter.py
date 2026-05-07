@@ -5,7 +5,6 @@
 
 import logging
 from datetime import datetime
-from typing import Optional
 
 try:
     import httpx
@@ -55,7 +54,7 @@ class FigmaAdapter(BaseIntegrationAdapter):
     def import_data(
         self,
         task: SyncTask,
-        data_types: Optional[list[SyncDataType]] = None,
+        data_types: list[SyncDataType] | None = None,
     ) -> SyncResult:
         result = SyncResult(success=False, started_at=datetime.utcnow())
 
@@ -89,7 +88,7 @@ class FigmaAdapter(BaseIntegrationAdapter):
     def export_data(
         self,
         task: SyncTask,
-        data_types: Optional[list[SyncDataType]] = None,
+        data_types: list[SyncDataType] | None = None,
     ) -> SyncResult:
         result = SyncResult(success=False, started_at=datetime.utcnow())
         result.error_message = "Figma API does not support export (read-only)"
@@ -170,7 +169,7 @@ class FigmaAdapter(BaseIntegrationAdapter):
             ))
         return items
 
-    def _extract_components(self, node: dict, components: Optional[list] = None) -> list:
+    def _extract_components(self, node: dict, components: list | None = None) -> list:
         if components is None:
             components = []
 
@@ -182,7 +181,7 @@ class FigmaAdapter(BaseIntegrationAdapter):
 
         return components
 
-    def _extract_frames(self, node: dict, frames: Optional[list] = None) -> list:
+    def _extract_frames(self, node: dict, frames: list | None = None) -> list:
         if frames is None:
             frames = []
 

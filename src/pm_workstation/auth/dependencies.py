@@ -3,18 +3,16 @@
 提供 FastAPI 依赖项，用于验证 JWT Token 并提取当前用户。
 """
 
-from typing import Optional
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 
 from pm_workstation.auth.jwt import verify_access_token
-from pm_workstation.auth.token_store import token_store
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login", auto_error=False)
 
 
-async def get_current_user(token: Optional[str] = Depends(oauth2_scheme)) -> str:
+async def get_current_user(token: str | None = Depends(oauth2_scheme)) -> str:
     """获取当前认证用户的 ID
 
     Args:
@@ -48,8 +46,8 @@ async def get_current_user(token: Optional[str] = Depends(oauth2_scheme)) -> str
 
 
 async def get_current_user_optional(
-    token: Optional[str] = Depends(oauth2_scheme),
-) -> Optional[str]:
+    token: str | None = Depends(oauth2_scheme),
+) -> str | None:
     """可选的当前用户（允许匿名访问）
 
     用于需要支持匿名访问的端点。

@@ -5,7 +5,6 @@
 
 import logging
 from datetime import datetime
-from typing import Optional
 
 try:
     import httpx
@@ -65,7 +64,7 @@ class GitHubAdapter(BaseIntegrationAdapter):
     def import_data(
         self,
         task: SyncTask,
-        data_types: Optional[list[SyncDataType]] = None,
+        data_types: list[SyncDataType] | None = None,
     ) -> SyncResult:
         result = SyncResult(success=False, started_at=datetime.utcnow())
 
@@ -99,7 +98,7 @@ class GitHubAdapter(BaseIntegrationAdapter):
     def export_data(
         self,
         task: SyncTask,
-        data_types: Optional[list[SyncDataType]] = None,
+        data_types: list[SyncDataType] | None = None,
     ) -> SyncResult:
         result = SyncResult(success=False, started_at=datetime.utcnow())
 
@@ -176,7 +175,7 @@ class GitHubAdapter(BaseIntegrationAdapter):
         self,
         owner: str,
         repo: str,
-        labels: Optional[str] = None,
+        labels: str | None = None,
         state: str = "all",
     ) -> list[dict]:
         if not HAS_HTTPX:
@@ -199,8 +198,8 @@ class GitHubAdapter(BaseIntegrationAdapter):
     def _parse_issue(
         self,
         issue: dict,
-        data_types: Optional[list[SyncDataType]],
-    ) -> Optional[SyncItem]:
+        data_types: list[SyncDataType] | None,
+    ) -> SyncItem | None:
         labels = [lbl.get("name", "").lower() for lbl in issue.get("labels", [])]
 
         data_type = SyncDataType.TASK
@@ -230,7 +229,7 @@ class GitHubAdapter(BaseIntegrationAdapter):
         owner: str,
         repo: str,
         item_data: dict,
-    ) -> Optional[str]:
+    ) -> str | None:
         if not HAS_HTTPX:
             raise RuntimeError("httpx is required for GitHub integration")
 
@@ -255,7 +254,7 @@ class GitHubAdapter(BaseIntegrationAdapter):
         return data.get("html_url")
 
     @staticmethod
-    def _parse_datetime(dt_str: Optional[str]) -> Optional[datetime]:
+    def _parse_datetime(dt_str: str | None) -> datetime | None:
         if not dt_str:
             return None
         try:

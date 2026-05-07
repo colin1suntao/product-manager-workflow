@@ -4,7 +4,6 @@
 """
 
 from datetime import datetime
-from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -14,7 +13,7 @@ from pm_workstation.models.core import WorkflowStatus
 class StartWorkflowRequest(BaseModel):
     """启动工作流请求"""
     requirement_text: str = Field(..., description="原始需求文本", min_length=1)
-    llm_provider_id: Optional[str] = Field(default=None, description="LLM Provider ID")
+    llm_provider_id: str | None = Field(default=None, description="LLM Provider ID")
 
 
 class WorkflowResponse(BaseModel):
@@ -25,12 +24,12 @@ class WorkflowResponse(BaseModel):
     status: WorkflowStatus = Field(..., description="当前状态")
     created_at: datetime = Field(..., description="创建时间")
     updated_at: datetime = Field(..., description="更新时间")
-    structured_requirement: Optional[dict] = Field(default=None, description="结构化需求")
-    prototype_url: Optional[str] = Field(default=None, description="原型URL")
-    prd_document_url: Optional[str] = Field(default=None, description="PRD文档URL")
-    verification_report: Optional[dict] = Field(default=None, description="校验报告")
-    verification_report_url: Optional[str] = Field(default=None, description="校验报告URL")
-    error_message: Optional[str] = Field(default=None, description="错误信息")
+    structured_requirement: dict | None = Field(default=None, description="结构化需求")
+    prototype_url: str | None = Field(default=None, description="原型URL")
+    prd_document_url: str | None = Field(default=None, description="PRD文档URL")
+    verification_report: dict | None = Field(default=None, description="校验报告")
+    verification_report_url: str | None = Field(default=None, description="校验报告URL")
+    error_message: str | None = Field(default=None, description="错误信息")
 
 
 class WorkflowListResponse(BaseModel):
@@ -41,26 +40,26 @@ class WorkflowListResponse(BaseModel):
 
 class PauseWorkflowRequest(BaseModel):
     """暂停工作流请求"""
-    reason: Optional[str] = Field(default=None, description="暂停原因")
+    reason: str | None = Field(default=None, description="暂停原因")
 
 
 class ResumeWorkflowRequest(BaseModel):
     """恢复工作流请求"""
-    user_responses: Optional[list[dict]] = Field(default=None, description="用户回复")
+    user_responses: list[dict] | None = Field(default=None, description="用户回复")
 
 
 class DeliverablesResponse(BaseModel):
     """交付物响应"""
     workflow_id: str = Field(..., description="工作流ID")
-    prototype_url: Optional[str] = Field(default=None, description="原型URL")
-    prd_document_url: Optional[str] = Field(default=None, description="PRD文档URL")
-    verification_report: Optional[dict] = Field(default=None, description="校验报告")
+    prototype_url: str | None = Field(default=None, description="原型URL")
+    prd_document_url: str | None = Field(default=None, description="PRD文档URL")
+    verification_report: dict | None = Field(default=None, description="校验报告")
 
 
 class ErrorResponse(BaseModel):
     """错误响应"""
     detail: str = Field(..., description="错误详情")
-    code: Optional[str] = Field(default=None, description="错误代码")
+    code: str | None = Field(default=None, description="错误代码")
 
 
 # --- LLM Provider 相关 Schema ---
@@ -70,7 +69,7 @@ class LLMProviderConfigCreate(BaseModel):
     name: str = Field(..., description="显示名称", min_length=1, max_length=100)
     provider_type: str = Field(..., description="提供商类型 (openai/anthropic/custom)")
     api_key: str = Field(..., description="API Key", min_length=1)
-    base_url: Optional[str] = Field(default=None, description="API Base URL", max_length=500)
+    base_url: str | None = Field(default=None, description="API Base URL", max_length=500)
     default_model: str = Field(..., description="默认模型名称", min_length=1, max_length=100)
     is_active: bool = Field(default=True, description="是否启用")
     is_default: bool = Field(default=False, description="是否为默认 Provider")
@@ -78,12 +77,12 @@ class LLMProviderConfigCreate(BaseModel):
 
 class LLMProviderConfigUpdate(BaseModel):
     """更新 LLM Provider 配置请求"""
-    name: Optional[str] = Field(default=None, description="显示名称", min_length=1, max_length=100)
-    api_key: Optional[str] = Field(default=None, description="API Key", min_length=1)
-    base_url: Optional[str] = Field(default=None, description="API Base URL", max_length=500)
-    default_model: Optional[str] = Field(default=None, description="默认模型名称", min_length=1, max_length=100)
-    is_active: Optional[bool] = Field(default=None, description="是否启用")
-    is_default: Optional[bool] = Field(default=None, description="是否为默认 Provider")
+    name: str | None = Field(default=None, description="显示名称", min_length=1, max_length=100)
+    api_key: str | None = Field(default=None, description="API Key", min_length=1)
+    base_url: str | None = Field(default=None, description="API Base URL", max_length=500)
+    default_model: str | None = Field(default=None, description="默认模型名称", min_length=1, max_length=100)
+    is_active: bool | None = Field(default=None, description="是否启用")
+    is_default: bool | None = Field(default=None, description="是否为默认 Provider")
 
 
 class LLMProviderConfigResponse(BaseModel):
@@ -92,7 +91,7 @@ class LLMProviderConfigResponse(BaseModel):
     name: str
     provider_type: str
     api_key: str
-    base_url: Optional[str]
+    base_url: str | None
     default_model: str
     is_active: bool
     is_default: bool
@@ -108,22 +107,22 @@ class LLMProviderListResponse(BaseModel):
 
 class LLMTestRequest(BaseModel):
     """LLM 连通性测试请求"""
-    prompt: Optional[str] = Field(default=None, description="测试提示词")
+    prompt: str | None = Field(default=None, description="测试提示词")
 
 
 class LLMQuickTestRequest(BaseModel):
     """快速连通性测试请求（无需保存配置）"""
     provider_type: str = Field(..., description="提供商类型 (openai/anthropic/custom)")
     api_key: str = Field(..., description="API Key", min_length=1)
-    base_url: Optional[str] = Field(default=None, description="API Base URL", max_length=500)
-    default_model: Optional[str] = Field(default=None, description="模型名称", max_length=100)
+    base_url: str | None = Field(default=None, description="API Base URL", max_length=500)
+    default_model: str | None = Field(default=None, description="模型名称", max_length=100)
 
 
 class LLMModelListRequest(BaseModel):
     """获取模型列表请求"""
     provider_type: str = Field(..., description="提供商类型 (openai/anthropic/custom)")
     api_key: str = Field(..., description="API Key", min_length=1)
-    base_url: Optional[str] = Field(default=None, description="API Base URL", max_length=500)
+    base_url: str | None = Field(default=None, description="API Base URL", max_length=500)
 
 
 class LLMModelListResponse(BaseModel):

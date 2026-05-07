@@ -4,7 +4,6 @@
 """
 
 import uuid
-from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
@@ -69,10 +68,10 @@ async def upload_component(
 
 @router.get("", response_model=dict, summary="搜索组件")
 async def search_components(
-    q: Optional[str] = Query(default=None, description="搜索关键词"),
-    category: Optional[str] = Query(default=None, description="组件分类"),
-    tag: Optional[str] = Query(default=None, description="标签过滤"),
-    status: Optional[str] = Query(default=None, description="状态过滤"),
+    q: str | None = Query(default=None, description="搜索关键词"),
+    category: str | None = Query(default=None, description="组件分类"),
+    tag: str | None = Query(default=None, description="标签过滤"),
+    status: str | None = Query(default=None, description="状态过滤"),
     page: int = Query(default=1, ge=1, description="页码"),
     page_size: int = Query(default=20, ge=1, le=100, description="每页数量"),
     user_id: str = Depends(get_current_user),

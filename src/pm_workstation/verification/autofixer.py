@@ -7,14 +7,11 @@ import re
 
 from pydantic import BaseModel, Field
 
-from pm_workstation.document.markdown_formatter import MarkdownFormatter
 from pm_workstation.verification.document_models import (
-    DocIssueSeverity,
     DocIssueType,
     DocumentIssue,
 )
 from pm_workstation.verification.verification_models import (
-    IssueSeverity,
     IssueType,
     VerificationIssue,
 )

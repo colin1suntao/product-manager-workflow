@@ -4,19 +4,15 @@
 """
 
 from datetime import datetime
-from typing import Optional
 
 from pydantic import BaseModel, Field
 
 from pm_workstation.verification.autofixer import FixResult
 from pm_workstation.verification.consistency_checker import ConsistencyCheckResult
 from pm_workstation.verification.document_models import (
-    DocIssueSeverity,
-    DocIssueType,
     DocumentVerificationReport,
 )
 from pm_workstation.verification.verification_models import (
-    IssueSeverity,
     PrototypeVerificationReport,
 )
 
@@ -61,7 +57,7 @@ class VerificationReport(BaseModel):
     summary: IssueSummary = Field(..., description="问题汇总统计")
 
     # 修复结果
-    auto_fix_result: Optional[FixResult] = Field(default=None, description="自动修复结果")
+    auto_fix_result: FixResult | None = Field(default=None, description="自动修复结果")
 
     # 总结
     overall_passed: bool = Field(..., description="总体是否通过")
@@ -77,10 +73,10 @@ class IssueReporter:
     def generate_report(
         self,
         requirement_id: str,
-        prototype_report: Optional[PrototypeVerificationReport] = None,
-        document_report: Optional[DocumentVerificationReport] = None,
-        consistency_result: Optional[ConsistencyCheckResult] = None,
-        fix_result: Optional[FixResult] = None,
+        prototype_report: PrototypeVerificationReport | None = None,
+        document_report: DocumentVerificationReport | None = None,
+        consistency_result: ConsistencyCheckResult | None = None,
+        fix_result: FixResult | None = None,
     ) -> VerificationReport:
         """生成综合校验报告
 
@@ -207,7 +203,7 @@ class IssueReporter:
     def _compute_summary(
         self,
         issues: list[CategorizedIssue],
-        fix_result: Optional[FixResult] = None,
+        fix_result: FixResult | None = None,
     ) -> IssueSummary:
         """计算问题汇总统计"""
         critical = sum(1 for i in issues if i.severity == "critical")
@@ -235,11 +231,11 @@ class IssueReporter:
 
     def _generate_summary_text(
         self,
-        prototype_report: Optional[PrototypeVerificationReport],
-        document_report: Optional[DocumentVerificationReport],
-        consistency_result: Optional[ConsistencyCheckResult],
+        prototype_report: PrototypeVerificationReport | None,
+        document_report: DocumentVerificationReport | None,
+        consistency_result: ConsistencyCheckResult | None,
         summary: IssueSummary,
-        fix_result: Optional[FixResult],
+        fix_result: FixResult | None,
     ) -> str:
         """生成报告总结文本"""
         parts = []
@@ -289,7 +285,7 @@ class IssueReporter:
         """
         lines = []
 
-        lines.append(f"# 综合校验报告")
+        lines.append("# 综合校验报告")
         lines.append("")
         lines.append(f"- **报告 ID**: {report.report_id}")
         lines.append(f"- **生成时间**: {report.generated_at.strftime('%Y-%m-%d %H:%M:%S')}")
@@ -299,8 +295,8 @@ class IssueReporter:
 
         lines.append("## 校验维度")
         lines.append("")
-        lines.append(f"| 维度 | 状态 |")
-        lines.append(f"| --- | --- |")
+        lines.append("| 维度 | 状态 |")
+        lines.append("| --- | --- |")
         proto_status = "通过" if report.prototype_passed else "未通过"
         doc_status = "通过" if report.document_passed else "未通过"
         cons_status = "通过" if report.consistency_passed else "未通过"

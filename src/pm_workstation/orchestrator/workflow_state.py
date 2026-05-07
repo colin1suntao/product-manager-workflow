@@ -3,7 +3,6 @@
 定义 LangGraph 工作流中使用的状态结构。
 """
 
-from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -24,7 +23,7 @@ class WorkflowState(BaseModel):
     workflow_run: WorkflowRun = Field(..., description="工作流运行记录")
 
     # 解析阶段产物
-    structured_requirement: Optional[StructuredRequirement] = Field(
+    structured_requirement: StructuredRequirement | None = Field(
         default=None,
         description="结构化需求",
     )
@@ -32,15 +31,15 @@ class WorkflowState(BaseModel):
     clarification_questions: list[dict] = Field(default_factory=list, description="待澄清问题列表")
 
     # 生成阶段产物
-    page_structure: Optional[PageStructure] = Field(default=None, description="页面结构")
+    page_structure: PageStructure | None = Field(default=None, description="页面结构")
     prototype_html: str = Field(default="", description="原型 HTML 内容")
     prd_document: str = Field(default="", description="PRD 文档内容")
 
     # 校验阶段产物
-    verification_report: Optional[VerificationReport] = Field(default=None, description="校验报告")
+    verification_report: VerificationReport | None = Field(default=None, description="校验报告")
 
     # 控制字段
-    error_message: Optional[str] = Field(default=None, description="错误信息")
+    error_message: str | None = Field(default=None, description="错误信息")
     pause_requested: bool = Field(default=False, description="是否请求暂停")
     user_responses: list[dict] = Field(default_factory=list, description="用户回复")
 

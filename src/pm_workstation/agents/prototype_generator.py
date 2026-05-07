@@ -3,7 +3,7 @@
 根据结构化需求生成可交互的 HTML 原型。
 """
 
-from pm_workstation.model_router.base import LLMBackend, LLMMessage, LLMResponse
+from pm_workstation.model_router.base import LLMBackend, LLMMessage
 from pm_workstation.model_router.fallback_handler import FallbackHandler
 
 

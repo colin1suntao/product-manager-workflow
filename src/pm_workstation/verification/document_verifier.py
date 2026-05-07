@@ -9,7 +9,6 @@ import uuid
 from pm_workstation.document.markdown_formatter import MarkdownFormatter
 from pm_workstation.document.terminology_checker import (
     TerminologyConsistencyChecker,
-    TerminologyIssue,
 )
 from pm_workstation.verification.document_models import (
     DocIssueSeverity,
@@ -146,7 +145,7 @@ class DocumentFormatChecker:
             ))
 
         col_counts = []
-        for i, line in enumerate(lines):
+        for _i, line in enumerate(lines):
             cells = [c.strip() for c in line.split('|')[1:-1]]
             col_counts.append(len(cells))
 

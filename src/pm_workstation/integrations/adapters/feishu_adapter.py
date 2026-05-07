@@ -5,7 +5,6 @@
 
 import logging
 from datetime import datetime
-from typing import Optional
 
 try:
     import httpx
@@ -62,7 +61,7 @@ class FeishuAdapter(BaseIntegrationAdapter):
     def import_data(
         self,
         task: SyncTask,
-        data_types: Optional[list[SyncDataType]] = None,
+        data_types: list[SyncDataType] | None = None,
     ) -> SyncResult:
         result = SyncResult(success=False, started_at=datetime.utcnow())
 
@@ -96,7 +95,7 @@ class FeishuAdapter(BaseIntegrationAdapter):
     def export_data(
         self,
         task: SyncTask,
-        data_types: Optional[list[SyncDataType]] = None,
+        data_types: list[SyncDataType] | None = None,
     ) -> SyncResult:
         result = SyncResult(success=False, started_at=datetime.utcnow())
 
@@ -154,7 +153,7 @@ class FeishuAdapter(BaseIntegrationAdapter):
     def _list_documents(
         self,
         token: str,
-        title_filter: Optional[str] = None,
+        title_filter: str | None = None,
     ) -> list[SyncItem]:
         if not HAS_HTTPX:
             raise RuntimeError("httpx is required for Feishu integration")
@@ -215,7 +214,7 @@ class FeishuAdapter(BaseIntegrationAdapter):
             logger.warning("Failed to list Feishu tasks: %s", e)
             return []
 
-    def _create_document(self, token: str, item_data: dict) -> Optional[str]:
+    def _create_document(self, token: str, item_data: dict) -> str | None:
         if not HAS_HTTPX:
             raise RuntimeError("httpx is required for Feishu integration")
 
@@ -236,7 +235,7 @@ class FeishuAdapter(BaseIntegrationAdapter):
             logger.error("Failed to create Feishu document: %s", e)
             return None
 
-    def _create_task(self, token: str, item_data: dict) -> Optional[str]:
+    def _create_task(self, token: str, item_data: dict) -> str | None:
         if not HAS_HTTPX:
             raise RuntimeError("httpx is required for Feishu integration")
 

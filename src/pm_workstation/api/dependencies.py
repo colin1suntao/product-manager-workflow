@@ -3,9 +3,9 @@
 提供全局依赖项，如数据库连接、工作流管理器、当前用户等。
 """
 
-from typing import AsyncGenerator, Optional
+from collections.abc import AsyncGenerator
 
-from fastapi import Depends, Header, HTTPException, Request
+from fastapi import Header, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from pm_workstation.llm.provider_store import LLMProviderStore
@@ -25,6 +25,7 @@ def get_provider_store(request: Request) -> LLMProviderStore:
 async def get_db_session(request: Request) -> AsyncGenerator[AsyncSession, None]:
     """获取数据库会话"""
     from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+
     from pm_workstation.auth.models import Base
 
     engine = create_async_engine("sqlite+aiosqlite:///./pm_workstation.db", echo=False)
@@ -36,7 +37,7 @@ async def get_db_session(request: Request) -> AsyncGenerator[AsyncSession, None]
 
 
 async def get_current_user(
-    x_user_id: Optional[str] = Header(default=None, alias="X-User-ID"),
+    x_user_id: str | None = Header(default=None, alias="X-User-ID"),
 ) -> str:
     """获取当前用户ID
 

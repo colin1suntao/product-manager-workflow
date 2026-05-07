@@ -4,13 +4,12 @@
 """
 
 from datetime import datetime
-from enum import Enum
-from typing import Optional
+from enum import StrEnum
 
 from pydantic import BaseModel, Field
 
 
-class IntegrationType(str, Enum):
+class IntegrationType(StrEnum):
     """集成类型"""
     JIRA = "jira"
     TRELLO = "trello"
@@ -22,7 +21,7 @@ class IntegrationType(str, Enum):
     CUSTOM = "custom"
 
 
-class SyncStatus(str, Enum):
+class SyncStatus(StrEnum):
     """同步状态"""
     PENDING = "pending"
     RUNNING = "running"
@@ -31,7 +30,7 @@ class SyncStatus(str, Enum):
     CANCELLED = "cancelled"
 
 
-class SyncDirection(str, Enum):
+class SyncDirection(StrEnum):
     """同步方向"""
     IMPORT = "import"
     EXPORT = "export"
@@ -52,7 +51,7 @@ class IntegrationConfig(BaseModel):
     access_token: str = Field(default="", description="访问令牌（加密存储）")
 
     # 额外配置
-    settings: Optional[dict] = Field(default_factory=dict, description="额外配置项")
+    settings: dict | None = Field(default_factory=dict, description="额外配置项")
 
     # 元数据
     created_by: str = Field(default="", description="创建者")
@@ -72,14 +71,14 @@ class SyncTask(BaseModel):
     progress: float = Field(default=0.0, ge=0.0, le=100.0, description="进度百分比")
 
     # 数据信息
-    source_data: Optional[dict] = Field(default_factory=dict, description="源数据信息")
-    result_data: Optional[dict] = Field(default_factory=dict, description="同步结果")
-    error_message: Optional[str] = Field(default=None, description="错误信息")
+    source_data: dict | None = Field(default_factory=dict, description="源数据信息")
+    result_data: dict | None = Field(default_factory=dict, description="同步结果")
+    error_message: str | None = Field(default=None, description="错误信息")
 
     # 元数据
     created_at: datetime = Field(default_factory=datetime.utcnow, description="创建时间")
-    started_at: Optional[datetime] = Field(default=None, description="开始时间")
-    completed_at: Optional[datetime] = Field(default=None, description="完成时间")
+    started_at: datetime | None = Field(default=None, description="开始时间")
+    completed_at: datetime | None = Field(default=None, description="完成时间")
 
     def start(self) -> None:
         """标记任务开始"""
@@ -87,7 +86,7 @@ class SyncTask(BaseModel):
         self.started_at = datetime.utcnow()
         self.progress = 0.0
 
-    def complete(self, result_data: Optional[dict] = None) -> None:
+    def complete(self, result_data: dict | None = None) -> None:
         """标记任务完成"""
         self.status = SyncStatus.COMPLETED
         self.progress = 100.0

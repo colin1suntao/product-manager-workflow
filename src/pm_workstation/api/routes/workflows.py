@@ -5,7 +5,7 @@
 
 import threading
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException
 
 from pm_workstation.api.dependencies import get_workflow_manager
 from pm_workstation.api.schemas import (

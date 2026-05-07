@@ -109,6 +109,7 @@ async def test_provider(
     try:
         adapter = LLMFactory.create_adapter(config)
         import time
+
         from pm_workstation.model_router.base import LLMMessage
 
         start_time = time.time()
@@ -152,10 +153,10 @@ async def quick_test_connection(
     user_id: str = Depends(get_current_user),
 ) -> LLMTestResponse:
     """快速测试 LLM 连通性（无需保存配置）"""
-    from pm_workstation.model_router.base import LLMConfig, LLMMessage
-
     import asyncio
     import time
+
+    from pm_workstation.model_router.base import LLMConfig, LLMMessage
 
     config = LLMConfig(
         model=request.default_model or "gpt-4o",
@@ -192,7 +193,7 @@ async def quick_test_connection(
         )
     except HTTPException:
         raise
-    except asyncio.TimeoutError:
+    except TimeoutError:
         return LLMTestResponse(
             success=False,
             response_time_ms=0,

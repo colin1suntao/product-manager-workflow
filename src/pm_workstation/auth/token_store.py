@@ -3,7 +3,6 @@
 使用 Redis 存储已撤销的 Refresh Token JTI，实现 Token 黑名单机制。
 """
 
-from pm_workstation.config import settings
 
 
 class TokenStore:

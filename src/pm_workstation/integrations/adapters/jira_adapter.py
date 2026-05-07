@@ -5,7 +5,6 @@
 
 import logging
 from datetime import datetime
-from typing import Any, Optional
 
 try:
     import httpx
@@ -20,7 +19,7 @@ from pm_workstation.integrations.adapters.base import (
     SyncResult,
 )
 from pm_workstation.integrations.adapters.registry import register_adapter
-from pm_workstation.integrations.models import IntegrationType, SyncDirection, SyncTask
+from pm_workstation.integrations.models import IntegrationType, SyncTask
 
 logger = logging.getLogger(__name__)
 
@@ -69,7 +68,7 @@ class JiraAdapter(BaseIntegrationAdapter):
     def import_data(
         self,
         task: SyncTask,
-        data_types: Optional[list[SyncDataType]] = None,
+        data_types: list[SyncDataType] | None = None,
     ) -> SyncResult:
         result = SyncResult(success=False, started_at=datetime.utcnow())
 
@@ -98,7 +97,7 @@ class JiraAdapter(BaseIntegrationAdapter):
     def export_data(
         self,
         task: SyncTask,
-        data_types: Optional[list[SyncDataType]] = None,
+        data_types: list[SyncDataType] | None = None,
     ) -> SyncResult:
         result = SyncResult(success=False, started_at=datetime.utcnow())
 
@@ -165,7 +164,7 @@ class JiraAdapter(BaseIntegrationAdapter):
     def _build_jql(
         self,
         task: SyncTask,
-        data_types: Optional[list[SyncDataType]] = None,
+        data_types: list[SyncDataType] | None = None,
     ) -> str:
         parts = []
 
@@ -198,7 +197,7 @@ class JiraAdapter(BaseIntegrationAdapter):
 
         return data.get("issues", [])
 
-    def _parse_issue(self, issue: dict) -> Optional[SyncItem]:
+    def _parse_issue(self, issue: dict) -> SyncItem | None:
         try:
             fields = issue.get("fields", {})
             issue_type = fields.get("issuetype", {}).get("name", "")
@@ -222,7 +221,7 @@ class JiraAdapter(BaseIntegrationAdapter):
             logger.warning("Failed to parse Jira issue: %s", e)
             return None
 
-    def _create_issue(self, item_data: dict) -> Optional[str]:
+    def _create_issue(self, item_data: dict) -> str | None:
         if not HAS_HTTPX:
             raise RuntimeError("httpx is required for Jira integration")
 
@@ -247,7 +246,7 @@ class JiraAdapter(BaseIntegrationAdapter):
         return data.get("key")
 
     @staticmethod
-    def _parse_datetime(dt_str: Optional[str]) -> Optional[datetime]:
+    def _parse_datetime(dt_str: str | None) -> datetime | None:
         if not dt_str:
             return None
         try:

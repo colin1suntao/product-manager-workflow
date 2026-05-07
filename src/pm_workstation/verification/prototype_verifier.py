@@ -6,14 +6,11 @@
 import uuid
 
 from pm_workstation.models.core import (
-    Attribute,
     BusinessEntity,
-    FlowStep,
     RuleTreeNode,
     StructuredRequirement,
-    UserFlow,
 )
-from pm_workstation.prototype.page_structure import PageNode, PageStructure
+from pm_workstation.prototype.page_structure import PageStructure
 from pm_workstation.verification.verification_models import (
     CoverageResult,
     InteractionCheckResult,
@@ -366,8 +363,8 @@ class PrototypeVerifier:
         issues.extend(interaction_check.failed_interactions)
         issues.extend(self._check_navigation_integrity(prototype_structure))
 
-        auto_fixed = [i for i in issues if i.auto_fix_applied]
-        manual_review = [i for i in issues if not i.auto_fix_applied and i.severity in (
+        [i for i in issues if i.auto_fix_applied]
+        [i for i in issues if not i.auto_fix_applied and i.severity in (
             IssueSeverity.CRITICAL,
             IssueSeverity.MAJOR,
         )]

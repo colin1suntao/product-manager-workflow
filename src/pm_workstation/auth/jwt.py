@@ -4,7 +4,7 @@
 """
 
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from jose import JWTError, jwt
@@ -21,7 +21,7 @@ def create_access_token(user_id: str) -> str:
     Returns:
         JWT Access Token 字符串
     """
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     expire = now + timedelta(minutes=settings.access_token_expire_minutes)
 
     payload = {
@@ -43,7 +43,7 @@ def create_refresh_token(user_id: str) -> tuple[str, str]:
     Returns:
         (token, jti) 元组，jti 用于 Token 撤销
     """
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     expire = now + timedelta(days=settings.refresh_token_expire_days)
     jti = str(uuid.uuid4())
 

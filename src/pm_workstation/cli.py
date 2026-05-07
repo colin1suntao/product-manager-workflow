@@ -17,7 +17,7 @@ def main():
 def serve(host: str, port: int, reload: bool):
     """启动Web服务器"""
     import uvicorn
-    
+
     uvicorn.run(
         "pm_workstation.api:app",
         host=host,
@@ -32,12 +32,12 @@ def serve(host: str, port: int, reload: bool):
 def configure(model: str, api_key: str):
     """配置系统设置"""
     from pm_workstation.config import settings
-    
+
     if model:
         settings.default_model = model
     if api_key:
         settings.api_key = api_key
-    
+
     settings.save()
     click.echo("配置已保存")
 

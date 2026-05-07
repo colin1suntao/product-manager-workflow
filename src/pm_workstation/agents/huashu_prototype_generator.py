@@ -4,9 +4,8 @@
 使用 React + Babel 技术栈，遵循 huashu-design 的设计哲学和技术规范。
 """
 
-from pm_workstation.model_router.base import LLMBackend, LLMMessage, LLMResponse
+from pm_workstation.model_router.base import LLMBackend, LLMMessage
 from pm_workstation.model_router.fallback_handler import FallbackHandler
-
 
 # huashu-design 的核心技术规范
 HUASHU_REACT_SETUP = """## 技术架构（必须遵守）
@@ -52,7 +51,7 @@ HUASHU_DESIGN_PRINCIPLES = """## 设计原则（huashu-design 理念）
 
 class HuashuPrototypeGenerator:
     """基于 huashu-design 理念的原型生成器
-    
+
     生成高保真、可交互的 React + Babel HTML 原型，
     遵循 huashu-design 的设计哲学和技术规范。
     """

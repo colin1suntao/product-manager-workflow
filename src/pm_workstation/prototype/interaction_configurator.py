@@ -25,60 +25,60 @@ class PageInteraction(BaseModel):
 
 class InteractionConfigurator:
     """交互配置器
-    
+
     根据用户流程和操作分支，为页面生成交互配置。
     """
-    
+
     def configure_for_flow(self, flow: UserFlow, page_id: str) -> PageInteraction:
         """为用户流程配置交互
-        
+
         Args:
             flow: 用户流程
             page_id: 页面ID
-            
+
         Returns:
             页面交互配置
         """
         interactions = []
-        
+
         for step in flow.steps:
             interaction = self._step_to_interaction(step, page_id)
             if interaction:
                 interactions.append(interaction)
-        
+
         # 添加分支交互
         for branch in flow.branches:
             branch_interaction = self._branch_to_interaction(branch, page_id)
             if branch_interaction:
                 interactions.append(branch_interaction)
-        
+
         return PageInteraction(
             page_id=page_id,
             interactions=interactions,
         )
-    
+
     def configure_for_operations(
         self,
         operations: list[str],
         page_id: str,
     ) -> list[Interaction]:
         """为操作列表配置交互
-        
+
         Args:
             operations: 操作列表
             page_id: 页面ID
-            
+
         Returns:
             交互列表
         """
         interactions = []
-        
+
         for operation in operations:
             interaction = self._operation_to_interaction(operation, page_id)
             interactions.append(interaction)
-        
+
         return interactions
-    
+
     def _step_to_interaction(
         self,
         step: FlowStep,
@@ -86,7 +86,7 @@ class InteractionConfigurator:
     ) -> Interaction | None:
         """将流程步骤转换为交互"""
         action_lower = step.action.lower() if step.action else ""
-        
+
         # 根据动作类型推断交互
         if any(kw in action_lower for kw in ["click", "点击", "submit", "提交", "save", "保存"]):
             return Interaction(
@@ -112,7 +112,7 @@ class InteractionConfigurator:
                 params={"target": step.expected_result},
                 description=step.description,
             )
-        
+
         # 默认交互
         return Interaction(
             trigger="click",
@@ -121,12 +121,12 @@ class InteractionConfigurator:
             params={"step": step.step_number},
             description=step.description,
         )
-    
+
     def _branch_to_interaction(self, branch, page_id: str) -> Interaction | None:
         """将分支转换为交互"""
         if not hasattr(branch, 'name') or not hasattr(branch, 'condition'):
             return None
-        
+
         return Interaction(
             trigger="click",
             target=f"#{page_id}-branch-{branch.name.lower().replace(' ', '-')}",
@@ -134,7 +134,7 @@ class InteractionConfigurator:
             params={"branch": branch.name},
             description=f"分支：{branch.name}",
         )
-    
+
     def _operation_to_interaction(
         self,
         operation: str,
@@ -142,7 +142,7 @@ class InteractionConfigurator:
     ) -> Interaction:
         """将操作转换为交互"""
         operation_lower = operation.lower()
-        
+
         if any(kw in operation_lower for kw in ["列表", "list", "table"]):
             return Interaction(
                 trigger="click",
@@ -181,20 +181,20 @@ class InteractionConfigurator:
                 params={"confirm": "确定删除？"},
                 description=operation,
             )
-        
+
         return Interaction(
             trigger="click",
             target=f"#{page_id}-action-btn",
             action="custom",
             description=operation,
         )
-    
+
     def _infer_action_from_step(self, step: FlowStep) -> str:
         """从步骤推断动作类型"""
         action_lower = step.action.lower() if step.action else ""
         description_lower = step.description.lower() if step.description else ""
         combined = f"{action_lower} {description_lower}"
-        
+
         if any(kw in combined for kw in ["submit", "提交", "save", "保存"]):
             return "submit-form"
         elif any(kw in combined for kw in ["navigate", "跳转", "go to"]):
@@ -203,5 +203,5 @@ class InteractionConfigurator:
             return "open-modal"
         elif any(kw in combined for kw in ["delete", "删除", "remove"]):
             return "confirm-dialog"
-        
+
         return "custom"

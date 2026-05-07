@@ -1,10 +1,9 @@
 """逻辑疏漏检测器"""
 
-from typing import Optional
 
 from pydantic import BaseModel
 
-from pm_workstation.model_router.base import LLMBackend, LLMMessage, LLMResponse
+from pm_workstation.model_router.base import LLMBackend, LLMMessage
 from pm_workstation.models.core import Question
 
 
@@ -24,34 +23,34 @@ class GapDetectionResult(BaseModel):
 
 class GapDetector:
     """逻辑疏漏检测器 - 标记考虑不全的场景"""
-    
+
     def __init__(self, llm_handler: LLMBackend):
         """初始化疏漏检测器
-        
+
         Args:
             llm_handler: LLM处理器
         """
         self.llm_handler = llm_handler
-    
+
     async def detect(self, requirement_text: str, structured_data: str) -> GapDetectionResult:
         """检测逻辑疏漏
-        
+
         Args:
             requirement_text: 原始需求文本
             structured_data: 已解析的结构化数据
-            
+
         Returns:
             疏漏检测结果
         """
         prompt = self._build_detect_prompt(requirement_text, structured_data)
-        
+
         response = await self.llm_handler.chat([
             LLMMessage(role="system", content=self._get_system_prompt()),
             LLMMessage(role="user", content=prompt),
         ])
-        
+
         return self._parse_result(response.content)
-    
+
     def _get_system_prompt(self) -> str:
         """获取系统提示词"""
         return """你是一个需求质量审计专家，擅长发现需求中的逻辑疏漏、考虑不全的场景和潜在风险。
@@ -75,7 +74,7 @@ class GapDetector:
 最后给出整体完整性评估（is_complete: true/false）。
 
 请以JSON格式输出。"""
-    
+
     def _build_detect_prompt(self, requirement_text: str, structured_data: str) -> str:
         """构建检测提示词"""
         return f"""请检查以下需求是否存在逻辑疏漏：
@@ -88,29 +87,29 @@ class GapDetector:
 
 请全面检查异常处理、边界条件、权限安全、用户体验、数据一致性等方面，
 列出所有发现的疏漏和需要澄清的问题。"""
-    
+
     def _parse_result(self, content: str) -> GapDetectionResult:
         """解析检测结果"""
         import json
-        
+
         json_str = self._extract_json(content)
         data = json.loads(json_str)
-        
+
         gaps = [GapItem(**g) for g in data.get("gaps", [])]
-        
+
         clarifications_data = data.get("clarifications", [])
         clarifications = [Question(**q) for q in clarifications_data]
-        
+
         return GapDetectionResult(
             gaps=gaps,
             clarifications=clarifications,
             is_complete=data.get("is_complete", False),
         )
-    
+
     def _extract_json(self, content: str) -> str:
         """从响应中提取JSON"""
         content = content.strip()
-        
+
         if "```json" in content:
             start = content.index("```json") + 7
             end = content.index("```", start)
@@ -119,5 +118,5 @@ class GapDetector:
             start = content.index("```") + 3
             end = content.index("```", start)
             return content[start:end].strip()
-        
+
         return content
