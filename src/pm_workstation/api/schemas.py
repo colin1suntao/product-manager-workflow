@@ -28,6 +28,8 @@ class WorkflowResponse(BaseModel):
     structured_requirement: Optional[dict] = Field(default=None, description="结构化需求")
     prototype_url: Optional[str] = Field(default=None, description="原型URL")
     prd_document_url: Optional[str] = Field(default=None, description="PRD文档URL")
+    verification_report: Optional[dict] = Field(default=None, description="校验报告")
+    verification_report_url: Optional[str] = Field(default=None, description="校验报告URL")
     error_message: Optional[str] = Field(default=None, description="错误信息")
 
 

@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>创建一个在线学习平台，支持课程管理、学生注册、学习进度跟踪和在线考试功能</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", sans-serif; background: #f0f2f5; }
+        
+        /* 顶部导航 */
+        .navbar { background: #001529; color: white; padding: 0 24px; height: 64px; display: flex; align-items: center; justify-content: space-between; position: fixed; width: 100%; top: 0; z-index: 100; }
+        .navbar .logo { font-size: 20px; font-weight: bold; }
+        .navbar .user-info { display: flex; align-items: center; gap: 16px; }
+        .navbar .avatar { width: 32px; height: 32px; background: #1890ff; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+        
+        /* 侧边栏 */
+        .sidebar { width: 200px; background: #001529; position: fixed; top: 64px; bottom: 0; left: 0; padding-top: 16px; }
+        .menu-item { padding: 12px 24px; color: rgba(255,255,255,0.65); cursor: pointer; transition: all 0.3s; }
+        .menu-item:hover, .menu-item.active { background: #1890ff; color: white; }
+        
+        /* 主内容区 */
+        .main-content { margin-left: 200px; margin-top: 64px; padding: 24px; min-height: calc(100vh - 64px); }
+        
+        /* 卡片 */
+        .card { background: white; border-radius: 8px; padding: 24px; margin-bottom: 24px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+        .card-title { font-size: 18px; font-weight: 600; margin-bottom: 16px; color: #1a1a1a; }
+        
+        /* 统计卡片 */
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+        .stat-card { background: white; border-radius: 8px; padding: 20px; text-align: center; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+        .stat-value { font-size: 32px; font-weight: bold; color: #1890ff; }
+        .stat-label { color: #666; margin-top: 8px; }
+        
+        /* 按钮 */
+        .btn { padding: 8px 16px; border-radius: 4px; border: none; cursor: pointer; font-size: 14px; transition: all 0.3s; }
+        .btn-primary { background: #1890ff; color: white; }
+        .btn-primary:hover { background: #40a9ff; }
+        
+        /* 表格 */
+        .table { width: 100%; border-collapse: collapse; }
+        .table th, .table td { padding: 12px; text-align: left; border-bottom: 1px solid #f0f0f0; }
+        .table th { background: #fafafa; font-weight: 600; }
+        .table tr:hover { background: #f5f5f5; }
+        
+        /* 标签 */
+        .tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; }
+        .tag-success { background: #f6ffed; color: #52c41a; border: 1px solid #b7eb8f; }
+        .tag-warning { background: #fff7e6; color: #faad14; border: 1px solid #ffd591; }
+    </style>
+</head>
+<body>
+    <!-- 顶部导航 -->
+    <div class="navbar">
+        <div class="logo">创建一个在线学习平台，支持课程管理、学生注册、学习进度跟踪和在线考试功能</div>
+        <div class="user-info">
+            <span>欢迎回来，管理员</span>
+            <div class="avatar">A</div>
+        </div>
+    </div>
+    
+    <!-- 侧边栏 -->
+    <div class="sidebar">
+        <div class="menu-item active">📊 仪表盘</div>
+        <div class="menu-item">📝 用户管理</div>
+        <div class="menu-item">📋 数据处理</div>
+        <div class="menu-item">📈 报表分析</div>
+        <div class="menu-item">⚙️ 系统设置</div>
+    </div>
+    
+    <!-- 主内容区 -->
+    <div class="main-content">
+        <!-- 统计概览 -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">1,234</div>
+                <div class="stat-label">总用户数</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">5,678</div>
+                <div class="stat-label">今日访问</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">890</div>
+                <div class="stat-label">活跃用户</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">98.5%</div>
+                <div class="stat-label">系统可用率</div>
+            </div>
+        </div>
+        
+        <!-- 功能模块 -->
+        <div class="card">
+            <div class="card-title">核心功能模块</div>
+            <p style="color: #666; line-height: 1.8;">创建一个在线学习平台，支持课程管理、学生注册、学习进度跟踪和在线考试功能</p>
+            <div style="margin-top: 16px;">
+                <span class="tag tag-success" style="margin-right: 8px;">用户管理</span><span class="tag tag-success" style="margin-right: 8px;">数据处理</span><span class="tag tag-success" style="margin-right: 8px;">报表分析</span><span class="tag tag-success" style="margin-right: 8px;">系统设置</span>
+            </div>
+        </div>
+        
+        <!-- 数据列表 -->
+        <div class="card">
+            <div class="card-title">最近活动</div>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>时间</th>
+                        <th>活动</th>
+                        <th>用户</th>
+                        <th>状态</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>2024-01-15 10:30</td>
+                        <td>新用户注册</td>
+                        <td>张三</td>
+                        <td><span class="tag tag-success">完成</span></td>
+                    </tr>
+                    <tr>
+                        <td>2024-01-15 09:45</td>
+                        <td>内容发布</td>
+                        <td>李四</td>
+                        <td><span class="tag tag-success">完成</span></td>
+                    </tr>
+                    <tr>
+                        <td>2024-01-15 09:20</td>
+                        <td>数据更新</td>
+                        <td>系统</td>
+                        <td><span class="tag tag-warning">处理中</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

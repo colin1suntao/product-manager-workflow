@@ -20,8 +20,15 @@ export default function Sidebar() {
   const router = useRouter();
 
   const handleLogout = async () => {
-    await authApi.logout();
+    // 先跳转到登录页，避免其他组件继续调用 API
     router.push("/auth/login");
+    
+    // 然后在后台执行登出操作
+    try {
+      await authApi.logout();
+    } catch {
+      // 即使登出失败，也已经跳转了
+    }
   };
 
   return (

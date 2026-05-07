@@ -1,0 +1,18 @@
+{
+  "report_id": "report-wf-078f103d479b",
+  "created_at": "2026-05-07T02:59:00.814632Z",
+  "prototype_issues": [],
+  "document_issues": [],
+  "consistency_issues": [],
+  "auto_fixed_issues": [],
+  "manual_review_required": [
+    {
+      "id": "MR001",
+      "type": "review",
+      "severity": "info",
+      "message": "共发现 0 个问题（0个严重，0个重要，0个次要，0个建议）",
+      "suggestion": "请根据问题列表进行相应优化",
+      "location": "整体评估"
+    }
+  ]
+}

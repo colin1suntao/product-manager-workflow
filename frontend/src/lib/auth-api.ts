@@ -20,7 +20,9 @@ async function fetchApi<T>(path: string, options: RequestInit = {}): Promise<T> 
     const error = await response.json().catch(() => ({ detail: response.statusText }));
     throw new Error(error.detail || "API request failed");
   }
-  return response.json();
+  return response.json().catch(() => {
+    throw new Error("API 响应格式错误");
+  });
 }
 
 export const authApi = {
@@ -44,4 +46,32 @@ export const authApi = {
       method: "POST",
       body: JSON.stringify(data),
     }),
+  
+  login: async (email: string, password: string) => {
+    const response = await fetch(`${API_BASE}/api/v1/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
+    
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ detail: response.statusText }));
+      throw new Error(error.detail || "登录失败");
+    }
+    return response.json();
+  },
+  
+  register: async (email: string, password: string) => {
+    const response = await fetch(`${API_BASE}/api/v1/auth/register`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
+    
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ detail: response.statusText }));
+      throw new Error(error.detail || "注册失败");
+    }
+    return response.json();
+  },
 };

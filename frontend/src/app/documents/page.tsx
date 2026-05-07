@@ -10,13 +10,15 @@ export default function DocumentsPage() {
   const [loading, setLoading] = useState(true);
   const [selectedRun, setSelectedRun] = useState<WorkflowRun | null>(null);
   const [docContent, setDocContent] = useState("");
+  const [docLoading, setDocLoading] = useState(false);
 
   useEffect(() => {
     async function fetchRuns() {
       try {
         const data = await workflowApi.list();
+        // 筛选有 PRD 文档的工作流
         const withDocs = data.workflows.filter(
-          (r) => r.document_url && ["completed", "verifying", "fixing"].includes(r.status),
+          (r) => r.prd_document_url && ["completed", "verified", "verifying"].includes(r.status),
         );
         setRuns(withDocs);
         if (withDocs.length > 0) {
@@ -33,20 +35,24 @@ export default function DocumentsPage() {
 
   useEffect(() => {
     async function fetchDoc() {
-      if (!selectedRun?.document_url) {
+      if (!selectedRun?.prd_document_url) {
         setDocContent("");
         return;
       }
+      setDocLoading(true);
       try {
-        const response = await fetch(selectedRun.document_url);
+        // 直接通过 URL 获取文档内容
+        const response = await fetch(selectedRun.prd_document_url);
         const text = await response.text();
         setDocContent(text);
       } catch {
         setDocContent("文档加载失败");
+      } finally {
+        setDocLoading(false);
       }
     }
     fetchDoc();
-  }, [selectedRun?.document_url]);
+  }, [selectedRun?.prd_document_url]);
 
   if (loading) {
     return (
@@ -58,11 +64,11 @@ export default function DocumentsPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-6">文档查看</h1>
+      <h1 className="text-2xl font-bold mb-6">产品文档</h1>
 
       {runs.length === 0 ? (
         <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
-          <p className="text-gray-500">暂无可用的文档</p>
+          <p className="text-gray-500">暂无可用的产品文档</p>
           <Link
             href="/requirements"
             className="mt-2 inline-block text-blue-600 hover:underline text-sm"
@@ -85,7 +91,9 @@ export default function DocumentsPage() {
                         : "hover:bg-gray-50"
                     }`}
                   >
-                    <div className="font-medium truncate">{run.title}</div>
+                    <div className="font-medium truncate">
+                      {run.requirement_text?.slice(0, 30) || run.title || "未命名需求"}
+                    </div>
                     <div className="text-xs text-gray-400 mt-0.5">
                       {new Date(run.updated_at).toLocaleDateString("zh-CN")}
                     </div>
@@ -96,9 +104,13 @@ export default function DocumentsPage() {
           </div>
 
           <div className="flex-1 bg-white rounded-lg border border-gray-200 overflow-auto p-6">
-            {docContent ? (
+            {docLoading ? (
+              <div className="flex items-center justify-center h-full">
+                <p className="text-gray-500">文档加载中...</p>
+              </div>
+            ) : docContent ? (
               <div className="prose prose-sm max-w-none">
-                <pre className="whitespace-pre-wrap font-mono text-sm text-gray-700">
+                <pre className="whitespace-pre-wrap font-sans text-sm text-gray-700 leading-relaxed">
                   {docContent}
                 </pre>
               </div>

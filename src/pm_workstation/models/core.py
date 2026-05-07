@@ -1,6 +1,6 @@
 """核心数据模型定义"""
 
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Optional
 
@@ -19,6 +19,7 @@ class WorkflowStatus(str, Enum):
     COMPLETED = "completed"
     FAILED = "failed"
     WAITING_USER_INPUT = "waiting_user_input"
+    CANCELLED = "cancelled"
 
 
 class Attribute(BaseModel):
@@ -143,15 +144,16 @@ class WorkflowRun(BaseModel):
     user_id: str = Field(..., description="用户ID")
     requirement_text: str = Field(..., description="原始需求文本")
     status: WorkflowStatus = Field(default=WorkflowStatus.INIT, description="当前状态")
-    created_at: datetime = Field(default_factory=datetime.utcnow, description="创建时间")
-    updated_at: datetime = Field(default_factory=datetime.utcnow, description="更新时间")
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), description="创建时间")
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), description="更新时间")
     structured_requirement: Optional[StructuredRequirement] = Field(default=None, description="结构化需求")
     prototype_url: Optional[str] = Field(default=None, description="原型访问URL")
     prd_document_url: Optional[str] = Field(default=None, description="PRD文档URL")
     verification_report: Optional[VerificationReport] = Field(default=None, description="校验报告")
+    verification_report_url: Optional[str] = Field(default=None, description="校验报告URL")
     error_message: Optional[str] = Field(default=None, description="错误信息")
 
     def update_status(self, status: WorkflowStatus):
         """更新工作流状态"""
         self.status = status
-        self.updated_at = datetime.utcnow()
+        self.updated_at = datetime.now(timezone.utc)

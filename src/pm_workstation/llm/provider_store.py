@@ -3,10 +3,15 @@
 提供 LLM Provider 配置的持久化操作。
 """
 
+import json
+import os
 from datetime import datetime, timezone
 from typing import Dict, List, Optional
 
 from pm_workstation.llm.models import LLMProviderConfig, LLMProviderType
+
+
+PERSISTENCE_FILE = os.path.join(os.path.dirname(__file__), ".provider_cache.json")
 
 
 class LLMProviderStore:
@@ -14,6 +19,32 @@ class LLMProviderStore:
 
     def __init__(self):
         self._configs: Dict[str, LLMProviderConfig] = {}
+        self._load_from_file()
+
+    def _persistence_path(self) -> str:
+        return PERSISTENCE_FILE
+
+    def _load_from_file(self) -> None:
+        path = self._persistence_path()
+        if not os.path.exists(path):
+            return
+        try:
+            with open(path, "r") as f:
+                data = json.load(f)
+            for item in data:
+                config = LLMProviderConfig(**item)
+                self._configs[config.id] = config
+        except Exception:
+            pass
+
+    def _save_to_file(self) -> None:
+        path = self._persistence_path()
+        try:
+            data = [c.model_dump(mode="json") for c in self._configs.values()]
+            with open(path, "w") as f:
+                json.dump(data, f, indent=2, default=str)
+        except Exception:
+            pass
 
     async def create_config(self, config: LLMProviderConfig) -> LLMProviderConfig:
         """创建新的 LLM Provider 配置
@@ -31,6 +62,7 @@ class LLMProviderStore:
 
         config.updated_at = datetime.now(timezone.utc)
         self._configs[config.id] = config
+        self._save_to_file()
         return config
 
     async def get_config(self, config_id: str) -> Optional[LLMProviderConfig]:
@@ -77,6 +109,7 @@ class LLMProviderStore:
                 setattr(config, key, value)
 
         config.updated_at = datetime.now(timezone.utc)
+        self._save_to_file()
         return config
 
     async def delete_config(self, config_id: str) -> bool:
@@ -90,6 +123,7 @@ class LLMProviderStore:
         """
         if config_id in self._configs:
             del self._configs[config_id]
+            self._save_to_file()
             return True
         return False
 
@@ -125,6 +159,7 @@ class LLMProviderStore:
             c.is_default = c.id == config_id
 
         config.updated_at = datetime.now(timezone.utc)
+        self._save_to_file()
         return True
 
 

@@ -3,6 +3,7 @@
 import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { setTokens } from "@/lib/auth";
+import { authApi } from "@/lib/auth-api";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -19,44 +20,14 @@ export default function LoginPage() {
 
     try {
       if (isLogin) {
-        const res = await fetch("/api/v1/auth/login", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, password }),
-        });
-
-        if (!res.ok) {
-          const data = await res.json();
-          throw new Error(data.detail || "登录失败");
-        }
-
-        const data = await res.json();
+        const data = await authApi.login(email, password);
         setTokens(data.access_token, data.refresh_token);
         router.push("/workflows");
       } else {
-        const res = await fetch("/api/v1/auth/register", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, password }),
-        });
-
-        if (!res.ok) {
-          const data = await res.json();
-          throw new Error(data.detail || "注册失败");
-        }
-
+        await authApi.register(email, password);
+        
         // 注册成功后自动登录
-        const loginRes = await fetch("/api/v1/auth/login", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, password }),
-        });
-
-        if (!loginRes.ok) {
-          throw new Error("自动登录失败，请手动登录");
-        }
-
-        const loginData = await loginRes.json();
+        const loginData = await authApi.login(email, password);
         setTokens(loginData.access_token, loginData.refresh_token);
         router.push("/workflows");
       }

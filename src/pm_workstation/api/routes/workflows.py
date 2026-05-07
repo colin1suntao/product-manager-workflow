@@ -3,7 +3,9 @@
 提供工作流管理相关的 REST API 接口。
 """
 
-from fastapi import APIRouter, Depends, HTTPException
+import threading
+
+from fastapi import APIRouter, Depends, HTTPException, Request
 
 from pm_workstation.api.dependencies import get_workflow_manager
 from pm_workstation.api.schemas import (
@@ -32,13 +34,15 @@ def _convert_run_to_response(run) -> WorkflowResponse:
         structured_requirement=run.structured_requirement.model_dump() if run.structured_requirement else None,
         prototype_url=run.prototype_url,
         prd_document_url=run.prd_document_url,
+        verification_report=run.verification_report.model_dump() if run.verification_report else None,
+        verification_report_url=run.verification_report_url,
         error_message=run.error_message,
     )
 
 
 @router.post("", response_model=WorkflowResponse, summary="启动工作流")
 async def start_workflow(
-    request: StartWorkflowRequest,
+    workflow_request: StartWorkflowRequest,
     user_id: str = Depends(get_current_user),
     manager: WorkflowManager = Depends(get_workflow_manager),
 ) -> WorkflowResponse:
@@ -46,21 +50,17 @@ async def start_workflow(
 
     接收原始需求文本，创建并启动一个新的工作流。
     """
-    # 获取 LLM 处理器
-    llm_handler = None
-    if request.llm_provider_id:
-        from pm_workstation.api.routes.llm import _provider_store
-        from pm_workstation.llm.factory import LLMFactory
-
-        config = await _provider_store.get_config(request.llm_provider_id)
-        if config:
-            llm_handler = LLMFactory.create_adapter(config)
-
+    # 创建工作流
     run = manager.start_workflow(
         user_id=user_id,
-        requirement_text=request.requirement_text,
-        llm_provider_id=request.llm_provider_id,
+        requirement_text=workflow_request.requirement_text,
+        llm_provider_id=workflow_request.llm_provider_id,
     )
+
+    # 在后台线程执行工作流
+    thread = threading.Thread(target=manager.execute_workflow_sync, args=(run.id,), daemon=True)
+    thread.start()
+
     return _convert_run_to_response(run)
 
 
@@ -186,3 +186,46 @@ async def list_workflows(
         workflows=[_convert_run_to_response(run) for run in workflows],
         total=len(workflows),
     )
+
+
+@router.post("/{workflow_id}/cancel", response_model=WorkflowResponse, summary="停止工作流")
+async def cancel_workflow(
+    workflow_id: str,
+    user_id: str = Depends(get_current_user),
+    manager: WorkflowManager = Depends(get_workflow_manager),
+) -> WorkflowResponse:
+    """停止工作流"""
+    run = manager.get_workflow_status(workflow_id)
+    if not run:
+        raise HTTPException(status_code=404, detail=f"Workflow {workflow_id} not found")
+
+    if run.user_id != user_id:
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    success = manager.cancel_workflow(workflow_id)
+    if not success:
+        raise HTTPException(status_code=400, detail=f"Cannot cancel workflow in status: {run.status}")
+
+    run = manager.get_workflow_status(workflow_id)
+    return _convert_run_to_response(run)
+
+
+@router.delete("/{workflow_id}", summary="删除工作流")
+async def delete_workflow(
+    workflow_id: str,
+    user_id: str = Depends(get_current_user),
+    manager: WorkflowManager = Depends(get_workflow_manager),
+) -> dict:
+    """删除工作流"""
+    run = manager.get_workflow_status(workflow_id)
+    if not run:
+        raise HTTPException(status_code=404, detail=f"Workflow {workflow_id} not found")
+
+    if run.user_id != user_id:
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    success = manager.delete_workflow(workflow_id)
+    if not success:
+        raise HTTPException(status_code=400, detail="Cannot delete workflow")
+
+    return {"message": "Workflow deleted"}

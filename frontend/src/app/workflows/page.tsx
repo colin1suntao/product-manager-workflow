@@ -2,40 +2,52 @@
 
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { workflowApi } from "@/lib/api";
 import type { WorkflowRun } from "@/types/api";
 
 const STATUS_LABELS: Record<string, string> = {
-  pending: "等待中",
-  analyzing: "分析中",
-  decomposing: "规则拆解中",
-  generating_prototype: "生成原型中",
-  generating_docs: "生成文档中",
+  init: "等待中",
+  parsing: "需求分析中",
+  parsed: "需求已分析",
+  generating: "生成中",
+  generated: "已生成",
   verifying: "校验中",
-  fixing: "修复中",
+  verified: "已校验",
   completed: "已完成",
-  paused: "已暂停",
-  error: "错误",
+  failed: "失败",
+  waiting_user_input: "等待输入",
+  cancelled: "已停止",
 };
 
 const STATUS_COLORS: Record<string, string> = {
-  pending: "bg-gray-100 text-gray-700",
-  analyzing: "bg-blue-100 text-blue-700",
-  decomposing: "bg-blue-100 text-blue-700",
-  generating_prototype: "bg-purple-100 text-purple-700",
-  generating_docs: "bg-yellow-100 text-yellow-700",
+  init: "bg-gray-100 text-gray-700",
+  parsing: "bg-blue-100 text-blue-700",
+  parsed: "bg-blue-100 text-blue-700",
+  generating: "bg-purple-100 text-purple-700",
+  generated: "bg-yellow-100 text-yellow-700",
   verifying: "bg-orange-100 text-orange-700",
-  fixing: "bg-orange-100 text-orange-700",
+  verified: "bg-green-100 text-green-700",
   completed: "bg-green-100 text-green-700",
-  paused: "bg-gray-200 text-gray-700",
-  error: "bg-red-100 text-red-700",
+  failed: "bg-red-100 text-red-700",
+  waiting_user_input: "bg-gray-200 text-gray-700",
+  cancelled: "bg-red-100 text-red-700",
 };
 
 export default function WorkflowsPage() {
+  const router = useRouter();
   const [runs, setRuns] = useState<WorkflowRun[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
+
+  function getRunTitle(run: WorkflowRun): string {
+    if (run.title) return run.title;
+    if (run.requirement_text) {
+      return run.requirement_text.split("\n\n")[0].trim();
+    }
+    return "init";
+  }
 
   const fetchRuns = useCallback(async () => {
     try {
@@ -43,11 +55,17 @@ export default function WorkflowsPage() {
       const data = await workflowApi.list(params);
       setRuns(data.workflows || []);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "加载失败");
+      const msg = err instanceof Error ? err.message : "";
+      // 如果是认证错误，跳转到登录页
+      if (msg.includes("401") || msg.includes("认证") || msg.includes("未提供")) {
+        router.push("/auth/login");
+        return;
+      }
+      setError(msg || "加载失败");
     } finally {
       setLoading(false);
     }
-  }, [filterStatus]);
+  }, [filterStatus, router]);
 
   useEffect(() => {
     fetchRuns();
@@ -76,6 +94,16 @@ export default function WorkflowsPage() {
   async function handleCancel(runId: string) {
     try {
       await workflowApi.cancel(runId);
+      fetchRuns();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "操作失败");
+    }
+  }
+
+  async function handleDelete(runId: string) {
+    if (!confirm("确定要删除此工作流吗？此操作不可恢复。")) return;
+    try {
+      await workflowApi.delete(runId);
       fetchRuns();
     } catch (err) {
       setError(err instanceof Error ? err.message : "操作失败");
@@ -141,7 +169,7 @@ export default function WorkflowsPage() {
             >
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-3">
-                  <h3 className="font-medium">{run.title}</h3>
+                  <h3 className="font-medium">{getRunTitle(run)}</h3>
                   <span
                     className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[run.status]}`}
                   >
@@ -160,8 +188,8 @@ export default function WorkflowsPage() {
                 <span>ID: {run.id}</span>
               </div>
 
-              {run.error && (
-                <p className="text-sm text-red-600 mb-3">{run.error}</p>
+              {run.error_message && (
+                <p className="text-sm text-red-600 mb-3">{run.error_message}</p>
               )}
 
               <div className="flex gap-2">
@@ -171,7 +199,7 @@ export default function WorkflowsPage() {
                 >
                   详情
                 </Link>
-                {run.status === "paused" && (
+                {run.status === "waiting_user_input" && (
                   <button
                     onClick={() => handleResume(run.id)}
                     className="px-3 py-1.5 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 text-xs font-medium"
@@ -179,14 +207,13 @@ export default function WorkflowsPage() {
                     恢复
                   </button>
                 )}
-                {(run.status === "pending" ||
-                  run.status === "paused" ||
-                  run.status === "analyzing" ||
-                  run.status === "decomposing" ||
-                  run.status === "generating_prototype" ||
-                  run.status === "generating_docs" ||
-                  run.status === "verifying" ||
-                  run.status === "fixing") && (
+                {(run.status === "init" ||
+                  run.status === "waiting_user_input" ||
+                  run.status === "parsing" ||
+                  run.status === "parsed" ||
+                  run.status === "generating" ||
+                  run.status === "generated" ||
+                  run.status === "verifying") && (
                   <button
                     onClick={() => handlePause(run.id)}
                     className="px-3 py-1.5 bg-gray-50 text-gray-700 rounded-lg hover:bg-gray-100 text-xs font-medium"
@@ -194,13 +221,23 @@ export default function WorkflowsPage() {
                     暂停
                   </button>
                 )}
-                {(run.status === "pending" ||
-                  run.status === "paused") && (
+                {(run.status === "init" ||
+                  run.status === "waiting_user_input") && (
                   <button
                     onClick={() => handleCancel(run.id)}
                     className="px-3 py-1.5 bg-red-50 text-red-700 rounded-lg hover:bg-red-100 text-xs font-medium"
                   >
-                    取消
+                    停止
+                  </button>
+                )}
+                {(run.status === "completed" ||
+                  run.status === "failed" ||
+                  run.status === "cancelled") && (
+                  <button
+                    onClick={() => handleDelete(run.id)}
+                    className="px-3 py-1.5 bg-red-50 text-red-700 rounded-lg hover:bg-red-100 text-xs font-medium"
+                  >
+                    删除
                   </button>
                 )}
               </div>

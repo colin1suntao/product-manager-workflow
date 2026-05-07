@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>高端定制游项目</title>
+    <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", sans-serif; background: #f5f5f5; }
+        
+        /* 布局 */
+        .navbar { background: #001529; color: white; padding: 0 24px; height: 64px; display: flex; align-items: center; justify-content: space-between; position: fixed; width: 100%; top: 0; z-index: 100; }
+        .navbar .logo { font-size: 20px; font-weight: bold; }
+        .navbar .user-info { display: flex; align-items: center; gap: 16px; font-size: 14px; }
+        
+        .sidebar { width: 256px; background: white; position: fixed; top: 64px; left: 0; bottom: 0; border-right: 1px solid #e8e8e8; padding: 16px 0; overflow-y: auto; }
+        .sidebar-item { display: flex; align-items: center; gap: 12px; padding: 12px 24px; color: #333; text-decoration: none; transition: all 0.2s; }
+        .sidebar-item:hover { background: #f5f5f5; }
+        .sidebar-item.active { background: #e6f7ff; color: #1890ff; border-right: 3px solid #1890ff; }
+        .sidebar-item .icon { width: 32px; height: 32px; background: #f0f0f0; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: bold; }
+        
+        .main { margin-left: 256px; margin-top: 64px; padding: 24px; min-height: calc(100vh - 64px); }
+        .card { background: white; border-radius: 8px; padding: 24px; margin-bottom: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+        .card h2 { font-size: 18px; margin-bottom: 16px; color: #333; }
+        .card p { color: #666; line-height: 1.6; }
+        
+        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+        .stat-card { background: white; border-radius: 8px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+        .stat-card .number { font-size: 32px; font-weight: bold; color: #1890ff; }
+        .stat-card .label { font-size: 14px; color: #999; margin-top: 8px; }
+        
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; padding: 12px 16px; border-bottom: 2px solid #e8e8e8; font-weight: 600; color: #333; }
+        td { padding: 12px 16px; border-bottom: 1px solid #f0f0f0; color: #666; }
+        tr:hover { background: #fafafa; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="text/babel">
+        const { useState } = React;
+        
+        const appData = {
+            title: "高端定制游项目",
+            keywords: ['用户管理', '数据处理', '报表分析', '系统设置'],
+        };
+        
+        function App() {
+            const [activeSection, setActiveSection] = useState(appData.keywords[0] || '概览');
+            
+            return (
+                <div>
+                    <div className="navbar">
+                        <div className="logo">{appData.title}</div>
+                        <div className="user-info">
+                            <span>管理员</span>
+                            <div style={{width: 32, height: 32, background: '#1890ff', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>A</div>
+                        </div>
+                    </div>
+                    
+                    <div className="sidebar">
+                        {appData.keywords.map(kw => (
+                            <a 
+                                key={kw} 
+                                className={"sidebar-item " + (activeSection === kw ? 'active' : '')}
+                                href="#"
+                                onClick={(e) => {e.preventDefault(); setActiveSection(kw)}}
+                            >
+                                <span className="icon">{kw[0]}</span>
+                                {kw}
+                            </a>
+                        ))}
+                    </div>
+                    
+                    <div className="main">
+                        <div className="stats">
+                            {appData.keywords.slice(0, 4).map(kw => (
+                                <div key={kw} className="stat-card">
+                                    <div className="number">{Math.floor(Math.random() * 1000)}</div>
+                                    <div className="label">{kw}</div>
+                                </div>
+                            ))}
+                        </div>
+                        
+                        <div className="card">
+                            <h2>{activeSection}</h2>
+                            <p>这是「{activeSection}」功能模块的原型界面。在实际开发中，这里会实现完整的交互逻辑和数据展示。</p>
+                            <table style={{marginTop: 16}}>
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>名称</th>
+                                        <th>状态</th>
+                                        <th>更新时间</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {[1,2,3,4,5].map(i => (
+                                        <tr key={i}>
+                                            <td>{i}</td>
+                                            <td>示例数据 {i}</td>
+                                            <td><span style={{color: i%2===0 ? '#52c41a' : '#faad14'}}>{i%2===0 ? '正常' : '待处理'}</span></td>
+                                            <td>2026-05-0{i}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+        
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>

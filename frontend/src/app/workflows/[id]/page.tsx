@@ -7,38 +7,40 @@ import { workflowApi } from "@/lib/api";
 import type { WorkflowRun } from "@/types/api";
 
 const STATUS_LABELS: Record<string, string> = {
-  pending: "等待中",
-  analyzing: "分析中",
-  decomposing: "规则拆解中",
-  generating_prototype: "生成原型中",
-  generating_docs: "生成文档中",
+  init: "等待中",
+  parsing: "需求分析中",
+  parsed: "需求已分析",
+  generating: "生成中",
+  generated: "已生成",
   verifying: "校验中",
-  fixing: "修复中",
+  verified: "已校验",
   completed: "已完成",
-  paused: "已暂停",
-  error: "错误",
+  failed: "失败",
+  waiting_user_input: "等待输入",
+  cancelled: "已停止",
 };
 
 const STATUS_COLORS: Record<string, string> = {
-  pending: "bg-gray-100 text-gray-700",
-  analyzing: "bg-blue-100 text-blue-700",
-  decomposing: "bg-blue-100 text-blue-700",
-  generating_prototype: "bg-purple-100 text-purple-700",
-  generating_docs: "bg-yellow-100 text-yellow-700",
+  init: "bg-gray-100 text-gray-700",
+  parsing: "bg-blue-100 text-blue-700",
+  parsed: "bg-blue-100 text-blue-700",
+  generating: "bg-purple-100 text-purple-700",
+  generated: "bg-yellow-100 text-yellow-700",
   verifying: "bg-orange-100 text-orange-700",
-  fixing: "bg-orange-100 text-orange-700",
+  verified: "bg-green-100 text-green-700",
   completed: "bg-green-100 text-green-700",
-  paused: "bg-gray-200 text-gray-700",
-  error: "bg-red-100 text-red-700",
+  failed: "bg-red-100 text-red-700",
+  waiting_user_input: "bg-gray-200 text-gray-700",
+  cancelled: "bg-red-100 text-red-700",
 };
 
 const STEPS = [
-  { key: "analyzing", label: "需求分析" },
-  { key: "decomposing", label: "规则拆解" },
-  { key: "generating_prototype", label: "生成原型" },
-  { key: "generating_docs", label: "生成文档" },
+  { key: "parsing", label: "需求分析" },
+  { key: "parsed", label: "需求已分析" },
+  { key: "generating", label: "生成" },
+  { key: "generated", label: "已生成" },
   { key: "verifying", label: "校验" },
-  { key: "fixing", label: "修复" },
+  { key: "verified", label: "已校验" },
   { key: "completed", label: "完成" },
 ];
 
@@ -94,6 +96,16 @@ export default function WorkflowDetailPage() {
     }
   }
 
+  async function handleDelete() {
+    if (!confirm("确定要删除此工作流吗？此操作不可恢复。")) return;
+    try {
+      await workflowApi.delete(runId);
+      router.push("/workflows");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "操作失败");
+    }
+  }
+
   if (loading && !run) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -113,7 +125,10 @@ export default function WorkflowDetailPage() {
     );
   }
 
-  const stepIndex = STEPS.findIndex((s) => s.key === run.status);
+  const stepIndex = (() => {
+    const idx = STEPS.findIndex((s) => s.key === run.status);
+    return run.status === "init" ? 0 : idx;
+  })();
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -125,10 +140,10 @@ export default function WorkflowDetailPage() {
           >
             ← 返回流程列表
           </Link>
-          <h1 className="text-2xl font-bold">{run.title}</h1>
+          <h1 className="text-2xl font-bold">{run.title || run.requirement_text?.split("\n\n")[0]?.trim() || "init"}</h1>
         </div>
         <div className="flex gap-2">
-          {run.status === "paused" && (
+          {run.status === "waiting_user_input" && (
             <button
               onClick={handleResume}
               className="px-3 py-2 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 text-sm font-medium"
@@ -136,7 +151,7 @@ export default function WorkflowDetailPage() {
               恢复
             </button>
           )}
-          {(run.status === "pending" || run.status === "paused") && (
+          {(run.status === "init" || run.status === "waiting_user_input") && (
             <button
               onClick={handlePause}
               className="px-3 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 text-sm font-medium"
@@ -144,12 +159,20 @@ export default function WorkflowDetailPage() {
               暂停
             </button>
           )}
-          {(run.status === "pending" || run.status === "paused") && (
+          {(run.status === "init" || run.status === "waiting_user_input") && (
             <button
               onClick={handleCancel}
               className="px-3 py-2 bg-red-50 text-red-700 rounded-lg hover:bg-red-100 text-sm font-medium"
             >
-              取消
+              停止
+            </button>
+          )}
+          {(run.status === "completed" || run.status === "failed" || run.status === "cancelled") && (
+            <button
+              onClick={handleDelete}
+              className="px-3 py-2 bg-red-50 text-red-700 rounded-lg hover:bg-red-100 text-sm font-medium"
+            >
+              删除
             </button>
           )}
         </div>
@@ -213,10 +236,10 @@ export default function WorkflowDetailPage() {
       </div>
 
       {/* 错误信息 */}
-      {run.error && (
+      {run.error_message && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
           <h3 className="font-medium text-red-700 mb-1">错误信息</h3>
-          <p className="text-sm text-red-600">{run.error}</p>
+          <p className="text-sm text-red-600">{run.error_message}</p>
         </div>
       )}
 
@@ -225,30 +248,32 @@ export default function WorkflowDetailPage() {
         <h2 className="text-lg font-semibold mb-4">输出</h2>
         <div className="space-y-3">
           {run.prototype_url ? (
-            <Link
-              href={`/prototypes`}
+            <a
+              href={run.prototype_url}
+              target="_blank"
+              rel="noopener noreferrer"
               className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100"
             >
-              <span className="text-2xl">🎨</span>
+              <span className="text-2xl">&#127912;</span>
               <div>
                 <div className="font-medium">原型预览</div>
                 <div className="text-sm text-gray-500">查看生成的 HTML 原型</div>
               </div>
-            </Link>
+            </a>
           ) : (
             <div className="p-3 bg-gray-50 rounded-lg text-gray-400">
               原型尚未生成
             </div>
           )}
 
-          {run.document_url ? (
+          {run.prd_document_url ? (
             <Link
-              href={`/documents`}
+              href="/documents"
               className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100"
             >
-              <span className="text-2xl">📄</span>
+              <span className="text-2xl">&#128196;</span>
               <div>
-                <div className="font-medium">文档查看</div>
+                <div className="font-medium">产品文档</div>
                 <div className="text-sm text-gray-500">查看生成的 PRD 文档</div>
               </div>
             </Link>
@@ -258,26 +283,26 @@ export default function WorkflowDetailPage() {
             </div>
           )}
 
-          {run.report_url ? (
+          {run.verification_report_url ? (
             <Link
-              href={`/reports`}
+              href="/reports"
               className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100"
             >
-              <span className="text-2xl">✅</span>
+              <span className="text-2xl">&#9989;</span>
               <div>
                 <div className="font-medium">校验报告</div>
-                <div className="text-sm text-gray-500">查看验证报告</div>
+                <div className="text-sm text-gray-500">查看校验报告详情</div>
               </div>
             </Link>
           ) : run.status === "completed" ? (
             <Link
-              href={`/reports`}
+              href="/reports"
               className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100"
             >
-              <span className="text-2xl">✅</span>
+              <span className="text-2xl">&#9989;</span>
               <div>
                 <div className="font-medium">校验报告</div>
-                <div className="text-sm text-gray-500">查看验证报告</div>
+                <div className="text-sm text-gray-500">查看校验报告详情</div>
               </div>
             </Link>
           ) : (

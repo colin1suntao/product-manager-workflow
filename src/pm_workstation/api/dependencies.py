@@ -8,6 +8,7 @@ from typing import AsyncGenerator, Optional
 from fastapi import Depends, Header, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from pm_workstation.llm.provider_store import LLMProviderStore
 from pm_workstation.orchestrator.workflow_manager import WorkflowManager
 
 
@@ -16,14 +17,17 @@ def get_workflow_manager(request: Request) -> WorkflowManager:
     return request.app.state.workflow_manager
 
 
+def get_provider_store(request: Request) -> LLMProviderStore:
+    """获取 LLM Provider 存储实例"""
+    return request.app.state.provider_store
+
+
 async def get_db_session(request: Request) -> AsyncGenerator[AsyncSession, None]:
     """获取数据库会话"""
-    # TODO: 使用真实的数据库连接池
-    # 临时使用 in-memory 方式
     from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
     from pm_workstation.auth.models import Base
 
-    engine = create_async_engine("sqlite+aiosqlite:///./pm_auth.db", echo=False)
+    engine = create_async_engine("sqlite+aiosqlite:///./pm_workstation.db", echo=False)
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 

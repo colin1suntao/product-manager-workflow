@@ -2,8 +2,27 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { workflowApi, reportApi } from "@/lib/api";
-import type { WorkflowRun, VerificationReport, Issue } from "@/types/api";
+import { workflowApi } from "@/lib/api";
+import type { WorkflowRun } from "@/types/api";
+
+interface ReportIssue {
+  id: string;
+  type: string;
+  severity: "critical" | "major" | "minor" | "info";
+  message: string;
+  suggestion: string;
+  location?: string;
+}
+
+interface VerificationReportData {
+  report_id: string;
+  created_at: string;
+  prototype_issues: ReportIssue[];
+  document_issues: ReportIssue[];
+  consistency_issues: ReportIssue[];
+  auto_fixed_issues: ReportIssue[];
+  manual_review_required: ReportIssue[];
+}
 
 const SEVERITY_COLORS: Record<string, string> = {
   critical: "bg-red-100 text-red-700",
@@ -19,7 +38,7 @@ const SEVERITY_LABELS: Record<string, string> = {
   info: "提示",
 };
 
-function IssueCard({ issue }: { issue: Issue }) {
+function IssueCard({ issue }: { issue: ReportIssue }) {
   return (
     <div className="p-4 bg-white rounded-lg border border-gray-200">
       <div className="flex items-center gap-2 mb-2">
@@ -45,15 +64,16 @@ export default function ReportsPage() {
   const [runs, setRuns] = useState<WorkflowRun[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedRun, setSelectedRun] = useState<WorkflowRun | null>(null);
-  const [report, setReport] = useState<VerificationReport | null>(null);
+  const [report, setReport] = useState<VerificationReportData | null>(null);
   const [reportLoading, setReportLoading] = useState(false);
 
   useEffect(() => {
     async function fetchRuns() {
       try {
         const data = await workflowApi.list();
-        const withReport = data.workflows.filter((r) =>
-          ["completed", "verifying", "fixing"].includes(r.status),
+        // 筛选有校验报告的工作流
+        const withReport = data.workflows.filter(
+          (r) => r.verification_report_url && ["completed", "verified", "verifying"].includes(r.status),
         );
         setRuns(withReport);
       } catch {
@@ -67,16 +87,74 @@ export default function ReportsPage() {
 
   async function handleSelectRun(run: WorkflowRun) {
     setSelectedRun(run);
+    if (!run.verification_report_url) {
+      setReport(null);
+      return;
+    }
     setReportLoading(true);
     try {
-      const r = await reportApi.get(run.id);
-      setReport(r);
+      // 直接通过 URL 获取报告
+      const response = await fetch(run.verification_report_url);
+      const text = await response.text();
+      
+      // 尝试解析 JSON，如果失败则创建一个默认报告
+      try {
+        const data = JSON.parse(text);
+        // 确保数据包含必要的字段
+        setReport({
+          report_id: data.report_id || `report-${run.id}`,
+          created_at: data.created_at || new Date().toISOString(),
+          prototype_issues: Array.isArray(data.prototype_issues) ? data.prototype_issues : [],
+          document_issues: Array.isArray(data.document_issues) ? data.document_issues : [],
+          consistency_issues: Array.isArray(data.consistency_issues) ? data.consistency_issues : [],
+          auto_fixed_issues: Array.isArray(data.auto_fixed_issues) ? data.auto_fixed_issues : [],
+          manual_review_required: Array.isArray(data.manual_review_required) ? data.manual_review_required : [],
+        });
+      } catch {
+        // JSON 解析失败，显示默认报告
+        setReport({
+          report_id: `report-${run.id}`,
+          created_at: new Date().toISOString(),
+          prototype_issues: [],
+          document_issues: [],
+          consistency_issues: [],
+          auto_fixed_issues: [],
+          manual_review_required: [{
+            id: "MR001",
+            type: "error",
+            severity: "info",
+            message: "报告格式异常，无法解析详细内容",
+            suggestion: "请联系管理员或重新生成报告",
+            location: "报告文件",
+          }],
+        });
+      }
     } catch {
       setReport(null);
     } finally {
       setReportLoading(false);
     }
   }
+
+  // 计算问题统计
+  const getIssueStats = (report: VerificationReportData) => {
+    const prototypeIssues = Array.isArray(report.prototype_issues) ? report.prototype_issues : [];
+    const documentIssues = Array.isArray(report.document_issues) ? report.document_issues : [];
+    const consistencyIssues = Array.isArray(report.consistency_issues) ? report.consistency_issues : [];
+    
+    const allIssues = [
+      ...prototypeIssues,
+      ...documentIssues,
+      ...consistencyIssues,
+    ];
+    return {
+      total: allIssues.length,
+      critical: allIssues.filter((i) => i.severity === "critical").length,
+      major: allIssues.filter((i) => i.severity === "major").length,
+      minor: allIssues.filter((i) => i.severity === "minor").length,
+      info: allIssues.filter((i) => i.severity === "info").length,
+    };
+  };
 
   if (loading) {
     return (
@@ -92,7 +170,7 @@ export default function ReportsPage() {
 
       {runs.length === 0 ? (
         <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
-          <p className="text-gray-500">暂无可用的报告</p>
+          <p className="text-gray-500">暂无可用的校验报告</p>
           <Link
             href="/requirements"
             className="mt-2 inline-block text-blue-600 hover:underline text-sm"
@@ -115,7 +193,9 @@ export default function ReportsPage() {
                         : "hover:bg-gray-50"
                     }`}
                   >
-                    <div className="font-medium truncate">{run.title}</div>
+                    <div className="font-medium truncate">
+                      {run.requirement_text?.slice(0, 30) || run.title || "未命名需求"}
+                    </div>
                     <div className="text-xs text-gray-400 mt-0.5">
                       {new Date(run.updated_at).toLocaleDateString("zh-CN")}
                     </div>
@@ -135,52 +215,50 @@ export default function ReportsPage() {
                 {/* 概览 */}
                 <div className="bg-white rounded-lg border border-gray-200 p-6">
                   <h2 className="text-lg font-semibold mb-4">校验概览</h2>
-                  <div className="grid grid-cols-3 gap-4">
-                    <div className="text-center">
-                      <div
-                        className={`text-3xl font-bold ${
-                          report.status === "pass"
-                            ? "text-green-600"
-                            : report.status === "fail"
-                              ? "text-red-600"
-                              : "text-yellow-600"
-                        }`}
-                      >
-                        {report.overall_score}
-                      </div>
-                      <div className="text-sm text-gray-500 mt-1">综合评分</div>
-                    </div>
+                  <div className="grid grid-cols-5 gap-4">
                     <div className="text-center">
                       <div className="text-3xl font-bold text-gray-700">
-                        {report.prototype_issues.length +
-                          report.document_issues.length +
-                          report.consistency_issues.length}
+                        {getIssueStats(report).total}
                       </div>
                       <div className="text-sm text-gray-500 mt-1">问题总数</div>
                     </div>
                     <div className="text-center">
-                      <div
-                        className={`px-3 py-1 rounded-full text-sm font-medium ${
-                          report.status === "pass"
-                            ? "bg-green-100 text-green-700"
-                            : report.status === "fail"
-                              ? "bg-red-100 text-red-700"
-                              : "bg-yellow-100 text-yellow-700"
-                        }`}
-                      >
-                        {report.status === "pass"
-                          ? "通过"
-                          : report.status === "fail"
-                            ? "不通过"
-                            : "警告"}
+                      <div className="text-3xl font-bold text-red-600">
+                        {getIssueStats(report).critical}
                       </div>
-                      <div className="text-sm text-gray-500 mt-1">校验结果</div>
+                      <div className="text-sm text-gray-500 mt-1">严重问题</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-3xl font-bold text-orange-600">
+                        {getIssueStats(report).major}
+                      </div>
+                      <div className="text-sm text-gray-500 mt-1">重要问题</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-3xl font-bold text-yellow-600">
+                        {getIssueStats(report).minor}
+                      </div>
+                      <div className="text-sm text-gray-500 mt-1">次要问题</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-3xl font-bold text-blue-600">
+                        {getIssueStats(report).info}
+                      </div>
+                      <div className="text-sm text-gray-500 mt-1">提示建议</div>
+                    </div>
+                  </div>
+                  <div className="mt-4 pt-4 border-t border-gray-200">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-500">报告ID: {report.report_id}</span>
+                      <span className="text-sm text-gray-500">
+                        生成时间: {new Date(report.created_at).toLocaleString("zh-CN")}
+                      </span>
                     </div>
                   </div>
                 </div>
 
                 {/* 原型问题 */}
-                {report.prototype_issues.length > 0 && (
+                {Array.isArray(report.prototype_issues) && report.prototype_issues.length > 0 && (
                   <div>
                     <h3 className="text-md font-semibold mb-3">
                       原型问题 ({report.prototype_issues.length})
@@ -194,7 +272,7 @@ export default function ReportsPage() {
                 )}
 
                 {/* 文档问题 */}
-                {report.document_issues.length > 0 && (
+                {Array.isArray(report.document_issues) && report.document_issues.length > 0 && (
                   <div>
                     <h3 className="text-md font-semibold mb-3">
                       文档问题 ({report.document_issues.length})
@@ -208,7 +286,7 @@ export default function ReportsPage() {
                 )}
 
                 {/* 一致性问题 */}
-                {report.consistency_issues.length > 0 && (
+                {Array.isArray(report.consistency_issues) && report.consistency_issues.length > 0 && (
                   <div>
                     <h3 className="text-md font-semibold mb-3">
                       一致性问题 ({report.consistency_issues.length})
@@ -221,15 +299,27 @@ export default function ReportsPage() {
                   </div>
                 )}
 
-                {report.prototype_issues.length === 0 &&
-                  report.document_issues.length === 0 &&
-                  report.consistency_issues.length === 0 && (
-                    <div className="text-center py-8 bg-green-50 rounded-lg">
-                      <p className="text-green-700 font-medium">
-                        所有校验通过，未发现问题
-                      </p>
+                {/* 人工审核建议 */}
+                {Array.isArray(report.manual_review_required) && report.manual_review_required.length > 0 && (
+                  <div>
+                    <h3 className="text-md font-semibold mb-3">
+                      审核建议 ({report.manual_review_required.length})
+                    </h3>
+                    <div className="space-y-3">
+                      {report.manual_review_required.map((issue) => (
+                        <IssueCard key={issue.id} issue={issue} />
+                      ))}
                     </div>
-                  )}
+                  </div>
+                )}
+
+                {getIssueStats(report).total === 0 && (
+                  <div className="text-center py-8 bg-green-50 rounded-lg">
+                    <p className="text-green-700 font-medium">
+                      所有校验通过，未发现问题
+                    </p>
+                  </div>
+                )}
               </div>
             ) : selectedRun ? (
               <div className="flex items-center justify-center h-64">

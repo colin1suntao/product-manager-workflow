@@ -2,16 +2,17 @@
 
 /** 工作流状态 */
 export type WorkflowStatus =
-  | "pending"
-  | "analyzing"
-  | "decomposing"
-  | "generating_prototype"
-  | "generating_docs"
+  | "init"
+  | "parsing"
+  | "parsed"
+  | "generating"
+  | "generated"
   | "verifying"
-  | "fixing"
+  | "verified"
   | "completed"
-  | "paused"
-  | "error";
+  | "failed"
+  | "waiting_user_input"
+  | "cancelled";
 
 /** 工作流运行 */
 export interface WorkflowRun {
@@ -29,6 +30,7 @@ export interface WorkflowRun {
   prd_document_url?: string;
   document_url?: string;
   report_url?: string;
+  verification_report_url?: string;
   error?: string;
   error_message?: string;
 }
@@ -41,10 +43,8 @@ export interface WorkflowListResponse {
 
 /** 工作流创建请求 */
 export interface CreateWorkflowRequest {
-  title: string;
-  requirements: string;
-  target_audience?: string;
-  constraints?: string;
+  requirement_text: string;
+  llm_provider_id?: string;
 }
 
 /** 工作流控制请求 */

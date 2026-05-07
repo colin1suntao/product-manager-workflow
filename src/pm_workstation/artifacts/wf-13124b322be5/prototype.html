@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>定制旅行项目</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", sans-serif; background: #f0f2f5; }
+        
+        /* 顶部导航 */
+        .navbar { background: #001529; color: white; padding: 0 24px; height: 64px; display: flex; align-items: center; justify-content: space-between; position: fixed; width: 100%; top: 0; z-index: 100; }
+        .navbar .logo { font-size: 20px; font-weight: bold; }
+        .navbar .user-info { display: flex; align-items: center; gap: 16px; }
+        .navbar .avatar { width: 32px; height: 32px; background: #1890ff; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+        
+        /* 侧边栏 */
+        .sidebar { width: 200px; background: #001529; position: fixed; top: 64px; bottom: 0; left: 0; padding-top: 16px; }
+        .menu-item { padding: 12px 24px; color: rgba(255,255,255,0.65); cursor: pointer; transition: all 0.3s; }
+        .menu-item:hover, .menu-item.active { background: #1890ff; color: white; }
+        
+        /* 主内容区 */
+        .main-content { margin-left: 200px; margin-top: 64px; padding: 24px; min-height: calc(100vh - 64px); }
+        
+        /* 卡片 */
+        .card { background: white; border-radius: 8px; padding: 24px; margin-bottom: 24px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+        .card-title { font-size: 18px; font-weight: 600; margin-bottom: 16px; color: #1a1a1a; }
+        
+        /* 统计卡片 */
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+        .stat-card { background: white; border-radius: 8px; padding: 20px; text-align: center; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+        .stat-value { font-size: 32px; font-weight: bold; color: #1890ff; }
+        .stat-label { color: #666; margin-top: 8px; }
+        
+        /* 按钮 */
+        .btn { padding: 8px 16px; border-radius: 4px; border: none; cursor: pointer; font-size: 14px; transition: all 0.3s; }
+        .btn-primary { background: #1890ff; color: white; }
+        .btn-primary:hover { background: #40a9ff; }
+        
+        /* 表格 */
+        .table { width: 100%; border-collapse: collapse; }
+        .table th, .table td { padding: 12px; text-align: left; border-bottom: 1px solid #f0f0f0; }
+        .table th { background: #fafafa; font-weight: 600; }
+        .table tr:hover { background: #f5f5f5; }
+        
+        /* 标签 */
+        .tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; }
+        .tag-success { background: #f6ffed; color: #52c41a; border: 1px solid #b7eb8f; }
+        .tag-warning { background: #fff7e6; color: #faad14; border: 1px solid #ffd591; }
+    </style>
+</head>
+<body>
+    <!-- 顶部导航 -->
+    <div class="navbar">
+        <div class="logo">定制旅行项目</div>
+        <div class="user-info">
+            <span>欢迎回来，管理员</span>
+            <div class="avatar">A</div>
+        </div>
+    </div>
+    
+    <!-- 侧边栏 -->
+    <div class="sidebar">
+        <div class="menu-item active">📊 仪表盘</div>
+        <div class="menu-item">📝 用户管理</div>
+        <div class="menu-item">📋 数据处理</div>
+        <div class="menu-item">📈 报表分析</div>
+        <div class="menu-item">⚙️ 系统设置</div>
+    </div>
+    
+    <!-- 主内容区 -->
+    <div class="main-content">
+        <!-- 统计概览 -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">1,234</div>
+                <div class="stat-label">总用户数</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">5,678</div>
+                <div class="stat-label">今日访问</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">890</div>
+                <div class="stat-label">活跃用户</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">98.5%</div>
+                <div class="stat-label">系统可用率</div>
+            </div>
+        </div>
+        
+        <!-- 功能模块 -->
+        <div class="card">
+            <div class="card-title">核心功能模块</div>
+            <p style="color: #666; line-height: 1.8;">定制旅行项目
+
+我想开发一个APP，用来进行旅行线路的规划，帮助用户生成出行的行程攻略。现在需要输出高保真的原型图，请通过以下方式帮我完成所有界面的原型设计，并确保这些原型界面可以直接用于开发:
+1、用户体验分析:先分析这个 App 的主要功能和用户需求，确定核心交互逻辑。
+2、产品界面规划:作为产品经理，定义关键界面，确保信息架构合理，除页面外弹出框、菜单栏也进行设计实现
+2.1、核心模块:
+登陆注册功能(登陆、注册、隐私协议等)
+路线规划（输入出发地和目的地以及旅行日期和预算规划旅行线路）
+票务预订(预订机票/火车票/汽车票,预订酒店,预订景点门票)
+个人中心（历史行程，订单管理，消息通知）
+底部导航分别为路线规划，票务预订，个人中心
+
+目标用户：高端定制游用户
+
+约束条件：设计风格为简约现代风格，品牌主色调为蓝色，字体为苹方；参考应用为马蜂窝和穷游的布局风格和信息架构，图片素材风格:侧重于使用自然风光和人文古迹，可以从Unsplash、Pexels选择；其中规划旅行线路，生成的行程攻略需要包含出行地点，时间安排，活动建议，餐饮推荐，交通方式，其中餐饮推荐可以参考大众点评，可以在大众点评获取信息后整合展示；票务、酒店、景点门票预订功能需要在APP内闭环完成预订，需要设计一套完整的、独立的预订流程界面，首选支付方式为信用卡、微信、支付宝，支付环节模拟展示支付成功或失败的提示界面。
+3、高保真 UI设计:作为 [I设计师，设计贴近真实 iOS 设计规范的界面，使用现代化的 UI元素，使其具有良好的视觉体验。
+4、HTML, 原型实现:使用 HTML+ Tailwind CSs生成所有原型界面，并使用FontAwesome(或其他开源 UI组件)让界面更加精美、接近真实的 App 设计拆分代码文件，保持结构清晰:
+5、每个界面应作为独立的 HTML 文件存放，例如 home.html、profile.htmlsettings.html等。
+index.html 作为主入口，不直接写入所有界面的 HTML 代码，而是使用 iframe的方式嵌入这些 HTML片段，并将所有页面直接平铺展示在 index 页面中，而不是跳转链接。
+真实感增强:界面尺寸应模拟 iPhone 16 Pro，并让界面圆角化，使其更像真实的手机界面。使用真实的 UI图片，而非占位符图片(可从 Unsplash、Pexels、Apple 官方 UI资源中选择)。
+添加顶部状态栏(模拟 iOS 状态栏)，并包含 App 导航栏(类似 iOS 底部 TabBar)。
+请按照以上要求生成完整的原型图和HTML 代码，并确保其可用于实际开发。</p>
+            <div style="margin-top: 16px;">
+                <span class="tag tag-success" style="margin-right: 8px;">用户管理</span><span class="tag tag-success" style="margin-right: 8px;">数据处理</span><span class="tag tag-success" style="margin-right: 8px;">报表分析</span><span class="tag tag-success" style="margin-right: 8px;">系统设置</span>
+            </div>
+        </div>
+        
+        <!-- 数据列表 -->
+        <div class="card">
+            <div class="card-title">最近活动</div>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>时间</th>
+                        <th>活动</th>
+                        <th>用户</th>
+                        <th>状态</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>2024-01-15 10:30</td>
+                        <td>新用户注册</td>
+                        <td>张三</td>
+                        <td><span class="tag tag-success">完成</span></td>
+                    </tr>
+                    <tr>
+                        <td>2024-01-15 09:45</td>
+                        <td>内容发布</td>
+                        <td>李四</td>
+                        <td><span class="tag tag-success">完成</span></td>
+                    </tr>
+                    <tr>
+                        <td>2024-01-15 09:20</td>
+                        <td>数据更新</td>
+                        <td>系统</td>
+                        <td><span class="tag tag-warning">处理中</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

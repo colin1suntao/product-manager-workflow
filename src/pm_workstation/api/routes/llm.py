@@ -5,6 +5,7 @@
 
 from fastapi import APIRouter, Depends, HTTPException
 
+from pm_workstation.api.dependencies import get_provider_store
 from pm_workstation.api.schemas import (
     LLMModelListRequest,
     LLMModelListResponse,
@@ -22,14 +23,6 @@ from pm_workstation.llm.models import LLMProviderConfig, LLMProviderType
 from pm_workstation.llm.provider_store import LLMProviderStore
 
 router = APIRouter(prefix="/llm", tags=["LLM 配置"])
-
-# 全局 Provider 存储
-_provider_store = LLMProviderStore()
-
-
-def get_provider_store() -> LLMProviderStore:
-    """获取 Provider 存储实例"""
-    return _provider_store
 
 
 @router.get("/providers", response_model=LLMProviderListResponse, summary="列出 LLM Provider")

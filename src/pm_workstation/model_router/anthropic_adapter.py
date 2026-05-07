@@ -20,11 +20,12 @@ class AnthropicAdapter(LLMBackend):
             from anthropic import AsyncAnthropic
             
             # 配置 HTTP 客户端，支持代理和超时
+            # 生成任务（原型/PRD）可能需要 5-10 分钟，read 超时设长
             timeout = httpx.Timeout(
                 connect=30.0,
-                read=120.0,
+                read=600.0,
                 write=30.0,
-                pool=30.0,
+                pool=60.0,
             )
             
             # 构建 proxy 配置

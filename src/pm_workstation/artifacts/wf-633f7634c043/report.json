@@ -1,0 +1,27 @@
+{
+  "report_id": "report-wf-633f7634c043",
+  "created_at": "2026-05-06T08:27:56.541491Z",
+  "prototype_issues": [
+    {
+      "id": "P001",
+      "type": "accessibility",
+      "severity": "minor",
+      "message": "部分元素缺少 aria-label 属性",
+      "suggestion": "为交互元素添加 aria-label 以提高可访问性",
+      "location": "button, input elements"
+    }
+  ],
+  "document_issues": [
+    {
+      "id": "D001",
+      "type": "completeness",
+      "severity": "info",
+      "message": "非功能需求部分可以进一步细化",
+      "suggestion": "补充具体的性能指标和安全标准",
+      "location": "Section 4"
+    }
+  ],
+  "consistency_issues": [],
+  "auto_fixed_issues": [],
+  "manual_review_required": []
+}
