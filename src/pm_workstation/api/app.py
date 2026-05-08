@@ -60,6 +60,11 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # 启动时初始化
     app.state.provider_store = LLMProviderStore()
 
+    # 如果没有配置，尝试从环境变量创建默认配置
+    configs = await app.state.provider_store.list_configs()
+    if not configs:
+        _try_create_default_provider(app.state.provider_store)
+
     # 尝试构建 LLM handler
     llm_handler = None
     try:
@@ -74,6 +79,41 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     yield
     # 关闭时清理
     pass
+
+
+def _try_create_default_provider(store) -> None:
+    """尝试从环境变量创建默认 LLM Provider 配置"""
+    import asyncio
+    from pm_workstation.llm.models import LLMProviderConfig, LLMProviderType
+
+    # 检查环境变量
+    api_key = os.environ.get("OPENAI_API_KEY") or os.environ.get("MCAI_LLM_API_KEY")
+    base_url = os.environ.get("OPENAI_BASE_URL") or os.environ.get("MCAI_LLM_BASE_URL", "https://api.openai.com/v1")
+    model = os.environ.get("OPENAI_MODEL") or os.environ.get("MCAI_LLM_MODEL", "gpt-4o-mini")
+
+    if not api_key:
+        return
+
+    # 判断 provider 类型
+    provider_type = LLMProviderType.OPENAI
+    if "anthropic" in base_url.lower():
+        provider_type = LLMProviderType.ANTHROPIC
+
+    config = LLMProviderConfig(
+        id="default-env",
+        name="Default (from env)",
+        provider_type=provider_type,
+        api_key=api_key,
+        base_url=base_url,
+        default_model=model,
+        is_active=True,
+        is_default=True,
+    )
+
+    try:
+        asyncio.get_event_loop().run_until_complete(store.create_config(config))
+    except Exception:
+        pass
 
 
 def create_app() -> FastAPI:

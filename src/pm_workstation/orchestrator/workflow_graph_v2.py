@@ -195,11 +195,14 @@ class WorkflowNodesV2:
                 if not req_text:
                     raise ValueError("缺少需求文本，无法生成")
 
+                # 获取用户选择的 PM Skills
+                skills = state.selected_skills if hasattr(state, 'selected_skills') else []
+
                 if llm_handler:
                     if not state.prototype_html:
                         try:
                             prototype_html = WorkflowNodes._call_llm_sync(
-                                llm_handler, "prototype", req_text
+                                llm_handler, "prototype", req_text, skills=skills
                             )
                             if prototype_html:
                                 state.prototype_html = prototype_html
@@ -209,7 +212,7 @@ class WorkflowNodesV2:
                     if not state.prd_document:
                         try:
                             prd_document = WorkflowNodes._call_llm_sync(
-                                llm_handler, "prd", req_text
+                                llm_handler, "prd", req_text, skills=skills
                             )
                             if prd_document:
                                 state.prd_document = prd_document

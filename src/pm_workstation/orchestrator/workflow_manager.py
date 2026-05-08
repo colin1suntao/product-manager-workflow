@@ -135,16 +135,22 @@ class WorkflowManager:
         try:
             # 使用 LangGraph 执行完整工作流
             print("[WorkflowManager] Invoking LangGraph app...")
+            print(f"[WorkflowManager] Initial state skills: {state.selected_skills}")
             result = self._app.invoke(state)
             print(f"[WorkflowManager] LangGraph completed, result type: {type(result)}")
 
             # LangGraph 返回的可能是 dict 或 WorkflowState
             if isinstance(result, dict):
+                print(f"[WorkflowManager] Result keys: {result.keys()}")
+                print(f"[WorkflowManager] Result prototype_html length: {len(result.get('prototype_html', ''))}")
+                print(f"[WorkflowManager] Result prd_document length: {len(result.get('prd_document', ''))}")
                 final_state = WorkflowState.model_validate(result)
             else:
                 final_state = result
 
             print(f"[WorkflowManager] Final status: {final_state.workflow_run.status}")
+            print(f"[WorkflowManager] Final prototype_html length: {len(final_state.prototype_html)}")
+            print(f"[WorkflowManager] Final prd_document length: {len(final_state.prd_document)}")
 
             # 更新运行记录
             self._update_run_from_state(final_state)

@@ -5,6 +5,7 @@
 
 from pm_workstation.model_router.base import LLMBackend, LLMMessage
 from pm_workstation.model_router.fallback_handler import FallbackHandler
+from pm_workstation.skills.loader import SkillLoader
 
 
 class PRDGenerator:
@@ -17,6 +18,7 @@ class PRDGenerator:
             llm_handler: LLM 处理器
         """
         self.llm_handler = llm_handler
+        self.skill_loader = SkillLoader()
 
     async def generate(
         self,
@@ -114,14 +116,22 @@ PRD 文档必须包含以下章节：
 
         # 添加 PM Skills 指导
         if skills:
-            parts.append("""
+            loaded_skills = self.skill_loader.load_multiple(skills)
+            if loaded_skills:
+                parts.append("""
 ## 应用的 PM Skills
 
 请在生成 PRD 时，参考以下产品经理技能的方法论和框架：
 """)
-            for skill_name in skills:
-                parts.append(f"- **{skill_name}**: 请将该技能的核心概念和最佳实践融入 PRD 文档中")
-            parts.append("")
+                for skill in loaded_skills:
+                    parts.append(f"### {skill.name}")
+                    if skill.description:
+                        parts.append(f"**描述**: {skill.description}")
+                    if skill.system_prompt:
+                        parts.append(f"\n{skill.system_prompt}")
+                    elif skill.get_full_prompt():
+                        parts.append(f"\n{skill.get_full_prompt()}")
+                    parts.append("")
 
         if structured_requirement:
             parts.append("""## 结构化需求分析
