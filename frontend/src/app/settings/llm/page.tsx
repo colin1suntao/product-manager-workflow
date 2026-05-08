@@ -35,20 +35,28 @@ export default function LLMSettingsPage() {
     default_model: "",
   });
 
-  const [mounted, setMounted] = useState(false);
-
   useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    if (!mounted) return;
     if (!isAuthenticated()) {
       router.push("/auth/login");
       return;
     }
-    loadProviders();
-  }, [mounted]);
+    let ignore = false;
+    const load = async () => {
+      try {
+        const data = await llmApi.list();
+        if (!ignore) setProviders(data.providers);
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : "";
+        if (msg.includes("401") || msg.includes("认证")) {
+          router.push("/auth/login");
+        } else {
+          console.error("Failed to load providers", e);
+        }
+      }
+    };
+    load();
+    return () => { ignore = true; };
+  }, [router]);
 
   const loadProviders = async () => {
     try {
@@ -196,10 +204,6 @@ export default function LLMSettingsPage() {
     } finally {
       setFetchingModels(false);
     }
-  };
-
-  const handleSelectModel = (modelId: string) => {
-    setForm({ ...form, default_model: modelId });
   };
 
   return (

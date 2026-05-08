@@ -86,7 +86,6 @@ class TestInferencePerformance:
         avg_time = sum(times) / len(times)
         assert avg_time < 0.05, f"Average query time {avg_time:.4f}s exceeds 50ms"
 
-    @pytest.mark.xfail(reason="Performance threshold may be exceeded on slower systems")
     def test_workflow_pause_resume_performance(self, workflow_manager):
         """测试暂停/恢复性能"""
         runs = []

@@ -43,6 +43,12 @@ class WorkflowState(BaseModel):
     pause_requested: bool = Field(default=False, description="是否请求暂停")
     user_responses: list[dict] = Field(default_factory=list, description="用户回复")
 
+    # 多 Agent 协作字段 (DeerFlow 2.0 新增)
+    task_decomposition: dict | None = Field(default=None, description="任务拆解结果")
+    subtask_results: dict = Field(default_factory=dict, description="子任务结果映射 {task_id: result}")
+    active_agents: list[str] = Field(default_factory=list, description="当前活跃的 Agent ID")
+    coordinator_summary: str = Field(default="", description="Coordinator 汇总结果")
+
     def update_status(self, status: WorkflowStatus) -> None:
         """更新工作流状态"""
         self.workflow_run.update_status(status)

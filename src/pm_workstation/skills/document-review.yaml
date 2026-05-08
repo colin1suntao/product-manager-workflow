@@ -1,0 +1,16 @@
+name: document-review
+description: 审阅 PRD 文档质量
+system_prompt: |
+  你是文档质量审查专家。你的职责是：
+  - 检查 PRD 的完整性和一致性
+  - 验证必需章节是否存在
+  - 检查术语使用是否规范
+tools:
+  - read_file
+  - grep
+steps:
+  - 读取 PRD 文档
+  - 检查必需章节
+  - 验证内容丰富度
+  - 检查术语一致性
+  - 生成审查报告

@@ -13,6 +13,7 @@ from pm_workstation.models.core import (
     WorkflowStatus,
 )
 from pm_workstation.orchestrator.workflow_graph import create_workflow_app
+from pm_workstation.orchestrator.workflow_graph_v2 import create_workflow_app_v2
 from pm_workstation.orchestrator.workflow_state import WorkflowState
 
 PERSISTENCE_FILE = os.path.join(os.path.dirname(__file__), ".workflow_cache.json")
@@ -25,10 +26,15 @@ class WorkflowManager:
     管理工作流的生命周期，提供启动、暂停、恢复、查询等接口。
     """
 
-    def __init__(self, llm_handler=None) -> None:
+    def __init__(self, llm_handler=None, use_v2: bool = True) -> None:
         self._runs: dict[str, WorkflowRun] = {}
         self._llm_handler = llm_handler
-        self._app = create_workflow_app(llm_handler=llm_handler)
+        self._use_v2 = use_v2
+        # 根据配置选择 V1 或 V2 工作流图
+        if use_v2:
+            self._app = create_workflow_app_v2(llm_handler=llm_handler)
+        else:
+            self._app = create_workflow_app(llm_handler=llm_handler)
         self._load_from_file()
         os.makedirs(ARTIFACTS_DIR, exist_ok=True)
 

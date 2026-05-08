@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { workflowApi } from "@/lib/api";
@@ -52,27 +52,35 @@ export default function WorkflowDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const fetchRun = useCallback(async () => {
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const data = await workflowApi.get(runId);
+        setRun(data);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "加载失败");
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+    const timer = setInterval(load, 3000);
+    return () => clearInterval(timer);
+  }, [runId]);
+
+  const refetch = async () => {
     try {
       const data = await workflowApi.get(runId);
       setRun(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "加载失败");
-    } finally {
-      setLoading(false);
+      setError(err instanceof Error ? err.message : "操作失败");
     }
-  }, [runId]);
-
-  useEffect(() => {
-    fetchRun();
-    const timer = setInterval(fetchRun, 3000);
-    return () => clearInterval(timer);
-  }, [fetchRun]);
+  };
 
   async function handlePause() {
     try {
       await workflowApi.pause(runId);
-      fetchRun();
+      refetch();
     } catch (err) {
       setError(err instanceof Error ? err.message : "操作失败");
     }
@@ -81,7 +89,7 @@ export default function WorkflowDetailPage() {
   async function handleResume() {
     try {
       await workflowApi.resume(runId);
-      fetchRun();
+      refetch();
     } catch (err) {
       setError(err instanceof Error ? err.message : "操作失败");
     }
@@ -90,7 +98,7 @@ export default function WorkflowDetailPage() {
   async function handleCancel() {
     try {
       await workflowApi.cancel(runId);
-      fetchRun();
+      refetch();
     } catch (err) {
       setError(err instanceof Error ? err.message : "操作失败");
     }
