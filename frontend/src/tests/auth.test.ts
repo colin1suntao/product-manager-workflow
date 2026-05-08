@@ -5,7 +5,6 @@ import {
   getRefreshToken,
   clearTokens,
   isTokenExpired,
-  isAuthenticated,
 } from "@/lib/auth";
 
 describe("auth module", () => {
