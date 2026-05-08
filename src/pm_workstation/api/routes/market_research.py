@@ -9,7 +9,7 @@ from datetime import datetime
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
 
 from pm_workstation.agents.market_research_agent import MarketResearchAgent
-from pm_workstation.auth.dependencies import get_current_user
+from pm_workstation.auth.dependencies import get_current_user, get_current_user_optional
 from pm_workstation.skills.loader import SkillLoader
 
 router = APIRouter(prefix="/market-research", tags=["市场调研"])
@@ -241,7 +241,7 @@ async def get_research_status(
 async def recommend_skills(
     request: Request,
     body: dict,
-    user_id: str = Depends(get_current_user),
+    user_id: str | None = Depends(get_current_user_optional),
 ) -> dict:
     """根据调研需求推荐相关的 PM Skills
 
@@ -253,8 +253,7 @@ async def recommend_skills(
     if not requirement_text:
         raise HTTPException(status_code=400, detail="调研需求描述不能为空")
 
-    llm_handler = _build_llm_handler(request)
-    agent = MarketResearchAgent(llm_handler=llm_handler)
+    agent = MarketResearchAgent(llm_handler=None)
 
     recommendations = agent.recommend_skills(requirement_text)
 

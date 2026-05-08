@@ -127,11 +127,11 @@ class MarketResearchAgent:
     根据用户调研需求和选中的 PM Skills 生成结构化的市场调研报告。
     """
 
-    def __init__(self, llm_handler: LLMBackend | FallbackHandler):
+    def __init__(self, llm_handler: LLMBackend | FallbackHandler | None = None):
         """初始化市场调研生成器
 
         Args:
-            llm_handler: LLM 处理器
+            llm_handler: LLM 处理器（可选，recommend_skills 不需要）
         """
         self.llm_handler = llm_handler
         self.skill_loader = SkillLoader()
