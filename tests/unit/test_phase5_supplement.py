@@ -216,10 +216,11 @@ class TestErrorScenarios:
     """错误场景测试"""
 
     @pytest.mark.asyncio
+    @pytest.mark.timeout(45)
     async def test_coordinator_timeout(self):
         """测试 Coordinator 超时"""
         async def slow_process(*args, **kwargs):
-            await asyncio.sleep(100)
+            await asyncio.sleep(500)
 
         mock_coordinator = AsyncMock()
         mock_coordinator.process_request = slow_process

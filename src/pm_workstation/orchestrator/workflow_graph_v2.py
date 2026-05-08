@@ -159,10 +159,10 @@ class WorkflowNodesV2:
 
         thread = threading.Thread(target=_run_async, daemon=True)
         thread.start()
-        thread.join(timeout=120)  # 120 秒超时
+        thread.join(timeout=30)  # 30 秒超时
 
         if thread.is_alive():
-            raise TimeoutError("Coordinator call timed out after 120s")
+            raise TimeoutError("Coordinator call timed out after 30s")
 
         if result_holder["error"]:
             raise result_holder["error"]
