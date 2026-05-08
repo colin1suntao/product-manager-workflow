@@ -31,20 +31,9 @@ def get_skill_loader() -> SkillLoader:
     return _skill_loader
 
 
-def _build_llm_handler(request: Request):
-    """从请求中构建 LLM handler"""
-    from pm_workstation.api.app import _build_llm_handler as build_handler
-    provider_store = request.app.state.provider_store
-    # 获取默认配置
-    import asyncio
-    try:
-        loop = asyncio.get_event_loop()
-        config = loop.run_until_complete(provider_store.get_default_config())
-        if config:
-            return build_handler(config)
-    except Exception:
-        pass
-    return None
+def _get_llm_handler(request: Request):
+    """从 app.state 获取 LLM handler"""
+    return getattr(request.app.state, 'llm_handler', None)
 
 
 @router.post("/create", summary="创建调研任务")
@@ -140,7 +129,7 @@ async def _generate_research_report(
         _research_reports[report_id]["status"] = "running"
 
         # 获取 LLM handler
-        llm_handler = _build_llm_handler(request)
+        llm_handler = _get_llm_handler(request)
 
         if not llm_handler:
             raise Exception("LLM 未配置，请先配置 LLM Provider")

@@ -69,6 +69,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     except Exception:
         pass
 
+    app.state.llm_handler = llm_handler
     app.state.workflow_manager = WorkflowManager(llm_handler=llm_handler)
     yield
     # 关闭时清理
