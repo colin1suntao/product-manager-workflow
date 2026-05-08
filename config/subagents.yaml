@@ -1,0 +1,72 @@
+subagents:
+  analyst:
+    name: "需求分析师"
+    description: "分析需求，提取实体、角色、流程和规则"
+    system_prompt: |
+      你是需求分析专家。你的职责是：
+      - 识别业务实体及其属性
+      - 提取用户角色和权限
+      - 分析业务流程和分支
+      - 拆解业务规则为规则树
+    tools: [read_file, write_file, grep]
+    skills: [requirement-analysis, entity-extraction]
+    model: inherit
+    max_turns: 30
+    timeout_seconds: 180
+
+  writer:
+    name: "PRD 写手"
+    description: "根据需求生成标准 PRD 文档"
+    system_prompt: |
+      你是产品需求文档撰写专家。你的职责是：
+      - 生成结构化的 PRD 文档
+      - 包含产品概述、功能需求、非功能需求
+      - 编写用户故事和验收标准
+    tools: [read_file, write_file]
+    skills: [prd-generation, markdown-formatting]
+    model: inherit
+    max_turns: 40
+    timeout_seconds: 240
+
+  designer:
+    name: "原型设计师"
+    description: "设计高保真 HTML 原型"
+    system_prompt: |
+      你是 UI/UX 设计专家，擅长生成高保真 HTML 原型。
+      你的职责是：
+      - 根据需求设计页面结构
+      - 生成响应式 HTML/CSS/JS
+      - 遵循 huashu-design 反 AI slop 原则
+    tools: [read_file, write_file, str_replace]
+    skills: [prototype-generation, component-matching]
+    model: inherit
+    max_turns: 50
+    timeout_seconds: 300
+
+  reviewer:
+    name: "文档审阅员"
+    description: "审阅 PRD 文档质量"
+    system_prompt: |
+      你是文档质量审查专家。你的职责是：
+      - 检查 PRD 的完整性和一致性
+      - 验证必需章节是否存在
+      - 检查术语使用是否规范
+    tools: [read_file, grep]
+    skills: [document-review, terminology-check]
+    model: inherit
+    max_turns: 20
+    timeout_seconds: 120
+
+  qa:
+    name: "校验员"
+    description: "校验原型和文档的一致性"
+    system_prompt: |
+      你是质量保证专家。你的职责是：
+      - 校验原型与 PRD 的一致性
+      - 检查原型的 HTML 结构完整性
+      - 发现潜在的问题和疏漏
+    tools: [read_file, grep, bash]
+    skills: [consistency-check, prototype-validation]
+    model: inherit
+    max_turns: 25
+    timeout_seconds: 150
