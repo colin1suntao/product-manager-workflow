@@ -49,7 +49,6 @@ class TestHealthCheck:
 class TestWorkflowAPI:
     """工作流 API 测试"""
 
-    @pytest.mark.xfail(reason="Workflow executes in background thread, status may not be init")
     def test_start_workflow(self, client, auth_headers):
         """测试启动工作流"""
         response = client.post(
@@ -62,7 +61,7 @@ class TestWorkflowAPI:
         assert data["id"].startswith("wf-")
         assert data["user_id"] == "test-user-001"
         assert data["requirement_text"] == "我需要实现一个用户登录功能"
-        assert data["status"] == "init"
+        assert data["status"] in ("init", "parsing", "parsed")
 
     def test_start_workflow_missing_body(self, client, auth_headers):
         """测试缺少请求体"""
@@ -78,7 +77,6 @@ class TestWorkflowAPI:
         # JWT 认证要求必须提供 Token
         assert response.status_code == 401
 
-    @pytest.mark.xfail(reason="Workflow executes in background thread, status may not be init")
     def test_get_workflow_status(self, client, auth_headers):
         """测试查询工作流状态"""
         # 先创建工作流
@@ -94,7 +92,7 @@ class TestWorkflowAPI:
         assert response.status_code == 200
         data = response.json()
         assert data["id"] == workflow_id
-        assert data["status"] == "init"
+        assert data["status"] in ("init", "parsing", "parsed", "generating", "generated", "completed")
 
     def test_get_workflow_status_not_found(self, client, auth_headers):
         """测试查询不存在的工作流"""
@@ -116,7 +114,6 @@ class TestWorkflowAPI:
         response = client.get(f"/api/v1/workflows/{workflow_id}", headers=auth_headers)
         assert response.status_code == 403
 
-    @pytest.mark.xfail(reason="Workflow executes in background thread, status may not be pausable")
     def test_pause_workflow(self, client, auth_headers):
         """测试暂停工作流"""
         # 创建工作流
@@ -146,7 +143,6 @@ class TestWorkflowAPI:
         )
         assert response.status_code == 404
 
-    @pytest.mark.xfail(reason="Workflow executes in background thread, status may not be resumable")
     def test_resume_workflow(self, client, auth_headers):
         """测试恢复工作流"""
         # 创建工作流并暂停
@@ -173,7 +169,6 @@ class TestWorkflowAPI:
         data = response.json()
         assert data["status"] == "parsing"
 
-    @pytest.mark.xfail(reason="Workflow executes in background thread, deliverables may not be ready")
     def test_get_deliverables(self, client, auth_headers):
         """测试获取交付物"""
         # 创建工作流
