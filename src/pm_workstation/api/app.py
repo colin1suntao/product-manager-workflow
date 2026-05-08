@@ -3,9 +3,11 @@
 import os
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
+from pathlib import Path
 
-from fastapi import FastAPI
-from fastapi.responses import FileResponse
+from fastapi import FastAPI, Request
+from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.staticfiles import StaticFiles
 
 from pm_workstation.llm.provider_store import LLMProviderStore
 from pm_workstation.model_router.anthropic_adapter import AnthropicAdapter
@@ -15,6 +17,9 @@ from pm_workstation.model_router.openai_adapter import OpenAIAdapter
 from pm_workstation.orchestrator.workflow_manager import WorkflowManager
 
 ARTIFACTS_DIR = os.path.join(os.path.dirname(__file__), "..", "artifacts")
+
+# 前端静态文件目录 (Next.js 静态导出)
+FRONTEND_DIR = Path(__file__).parent.parent.parent.parent / "frontend" / "out"
 
 
 def _build_llm_handler(provider_config) -> FallbackHandler | None:
@@ -76,6 +81,7 @@ def create_app() -> FastAPI:
     from pm_workstation.api.routes.components import router as components_router
     from pm_workstation.api.routes.integrations import router as integrations_router
     from pm_workstation.api.routes.llm import router as llm_router
+    from pm_workstation.api.routes.skills import router as skills_router
     from pm_workstation.api.routes.workflows import router as workflows_router
 
     app = FastAPI(
@@ -91,6 +97,7 @@ def create_app() -> FastAPI:
     app.include_router(workflows_router, prefix="/api/v1", tags=["工作流"])
     app.include_router(components_router, prefix="/api/v1", tags=["组件库"])
     app.include_router(integrations_router, prefix="/api/v1", tags=["集成配置"])
+    app.include_router(skills_router, prefix="/api/v1", tags=["PM Skills"])
 
     # 健康检查
     @app.get("/health", tags=["健康检查"])
@@ -105,5 +112,33 @@ def create_app() -> FastAPI:
             return {"error": "Artifact not found"}
         media_type = "text/html" if filename.endswith(".html") else "text/markdown" if filename.endswith(".md") else "application/json"
         return FileResponse(filepath, media_type=media_type)
+
+    # 前端静态文件服务
+    if FRONTEND_DIR.exists():
+        # 挂载 Next.js 静态资源
+        next_static_dir = FRONTEND_DIR / "_next"
+        if next_static_dir.exists():
+            app.mount("/_next", StaticFiles(directory=str(next_static_dir)), name="next_static")
+        
+        # Catch-all 路由处理前端页面
+        @app.get("/{path:path}", response_class=HTMLResponse)
+        async def serve_frontend(request: Request, path: str):
+            # 尝试查找精确匹配的文件
+            file_path = FRONTEND_DIR / path
+            if file_path.is_file():
+                return FileResponse(str(file_path))
+            
+            # 尝试查找 index.html
+            if path and not path.endswith((".js", ".css", ".ico", ".png", ".jpg", ".svg")):
+                page_path = FRONTEND_DIR / path / "index.html"
+                if page_path.is_file():
+                    return FileResponse(str(page_path))
+            
+            # 默认返回 index.html (SPA 路由)
+            index_path = FRONTEND_DIR / "index.html"
+            if index_path.is_file():
+                return FileResponse(str(index_path))
+            
+            return HTMLResponse(content="<h1>Frontend not built</h1>", status_code=404)
 
     return app

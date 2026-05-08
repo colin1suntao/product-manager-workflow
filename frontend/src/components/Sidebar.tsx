@@ -7,6 +7,7 @@ import { authApi } from "@/lib/auth-api";
 const navItems = [
   { href: "/workflows", label: "工作流管理", icon: "📊" },
   { href: "/requirements", label: "需求输入", icon: "📝" },
+  { href: "/skills", label: "PM Skills", icon: "🎯" },
   { href: "/prototypes", label: "原型预览", icon: "🎨" },
   { href: "/documents", label: "文档查看", icon: "📄" },
   { href: "/reports", label: "校验报告", icon: "✅" },

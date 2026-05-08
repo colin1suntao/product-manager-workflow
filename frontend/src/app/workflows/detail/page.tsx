@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { workflowApi } from "@/lib/api";
 import type { WorkflowRun } from "@/types/api";
@@ -45,9 +45,17 @@ const STEPS = [
 ];
 
 export default function WorkflowDetailPage() {
-  const params = useParams();
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center h-64"><p className="text-gray-500">加载中...</p></div>}>
+      <WorkflowDetailContent />
+    </Suspense>
+  );
+}
+
+function WorkflowDetailContent() {
   const router = useRouter();
-  const runId = params.id as string;
+  const searchParams = useSearchParams();
+  const runId = searchParams.get("id") || "";
   const [run, setRun] = useState<WorkflowRun | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");

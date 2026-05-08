@@ -55,6 +55,7 @@ async def start_workflow(
         user_id=user_id,
         requirement_text=workflow_request.requirement_text,
         llm_provider_id=workflow_request.llm_provider_id,
+        skills=workflow_request.skills,
     )
 
     # 在后台线程执行工作流

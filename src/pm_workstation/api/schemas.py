@@ -14,6 +14,7 @@ class StartWorkflowRequest(BaseModel):
     """启动工作流请求"""
     requirement_text: str = Field(..., description="原始需求文本", min_length=1)
     llm_provider_id: str | None = Field(default=None, description="LLM Provider ID")
+    skills: list[str] | None = Field(default=None, description="PM Skills 技能名称列表")
 
 
 class WorkflowResponse(BaseModel):

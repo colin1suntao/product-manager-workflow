@@ -49,6 +49,9 @@ class WorkflowState(BaseModel):
     active_agents: list[str] = Field(default_factory=list, description="当前活跃的 Agent ID")
     coordinator_summary: str = Field(default="", description="Coordinator 汇总结果")
 
+    # PM Skills 相关字段
+    selected_skills: list[str] = Field(default_factory=list, description="用户选择的 PM Skills 技能名称列表")
+
     def update_status(self, status: WorkflowStatus) -> None:
         """更新工作流状态"""
         self.workflow_run.update_status(status)

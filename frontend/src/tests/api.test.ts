@@ -30,7 +30,7 @@ describe("workflowApi", () => {
     expect(result.total).toBe(2);
     expect(result.runs).toHaveLength(2);
     expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining("/api/v1/workflows/runs"),
+      expect.stringContaining("/api/v1/workflows"),
       expect.objectContaining({
         headers: expect.objectContaining({
           "Content-Type": "application/json",
@@ -83,7 +83,7 @@ describe("workflowApi", () => {
     });
     expect(result.id).toBe("wf-new");
     expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining("/api/v1/workflows/runs"),
+      expect.stringContaining("/api/v1/workflows"),
       expect.objectContaining({
         method: "POST",
         body: JSON.stringify({

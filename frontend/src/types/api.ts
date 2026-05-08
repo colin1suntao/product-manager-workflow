@@ -45,6 +45,7 @@ export interface WorkflowListResponse {
 export interface CreateWorkflowRequest {
   requirement_text: string;
   llm_provider_id?: string;
+  skills?: string[];
 }
 
 /** 工作流控制请求 */

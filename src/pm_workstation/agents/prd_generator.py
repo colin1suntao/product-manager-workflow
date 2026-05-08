@@ -18,17 +18,23 @@ class PRDGenerator:
         """
         self.llm_handler = llm_handler
 
-    async def generate(self, requirement_text: str, structured_requirement=None) -> str:
+    async def generate(
+        self,
+        requirement_text: str,
+        structured_requirement=None,
+        skills: list[str] | None = None,
+    ) -> str:
         """生成 PRD 文档
 
         Args:
             requirement_text: 原始需求文本
             structured_requirement: 结构化需求（可选）
+            skills: PM Skills 技能名称列表（可选）
 
         Returns:
             Markdown 格式的 PRD 文档
         """
-        prompt = self._build_prompt(requirement_text, structured_requirement)
+        prompt = self._build_prompt(requirement_text, structured_requirement, skills)
 
         response = await self.llm_handler.chat([
             LLMMessage(role="system", content=self._get_system_prompt()),
@@ -97,7 +103,7 @@ PRD 文档必须包含以下章节：
 
 **重要：只输出 PRD 文档内容本身，用 ```markdown 代码块包裹，不要输出任何解释文字。**"""
 
-    def _build_prompt(self, requirement_text: str, structured_requirement=None) -> str:
+    def _build_prompt(self, requirement_text: str, structured_requirement=None, skills: list[str] | None = None) -> str:
         """构建生成提示词"""
         parts = [f"""请根据以下产品需求，生成一份完整的产品需求文档 (PRD)：
 
@@ -105,6 +111,17 @@ PRD 文档必须包含以下章节：
 
 {requirement_text}
 """]
+
+        # 添加 PM Skills 指导
+        if skills:
+            parts.append("""
+## 应用的 PM Skills
+
+请在生成 PRD 时，参考以下产品经理技能的方法论和框架：
+""")
+            for skill_name in skills:
+                parts.append(f"- **{skill_name}**: 请将该技能的核心概念和最佳实践融入 PRD 文档中")
+            parts.append("")
 
         if structured_requirement:
             parts.append("""## 结构化需求分析
@@ -149,7 +166,8 @@ PRD 文档必须包含以下章节：
 2. 功能描述详细到可以直接指导开发
 3. 验收标准具体、可测试
 4. 优先级标注合理
-5. 使用专业的产品术语""")
+5. 使用专业的产品术语
+6. 如果提供了 PM Skills，请将相关框架和方法论自然融入文档中""")
 
         return "\n".join(parts)
 

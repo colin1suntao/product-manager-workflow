@@ -185,6 +185,13 @@ export default function LLMSettingsPage() {
       alert("请先填写 API Key");
       return;
     }
+    
+    const isCustom = form.provider_type === "custom";
+    if (isCustom && !form.base_url) {
+      alert("自定义 Provider 必须填写 Base URL");
+      return;
+    }
+    
     setFetchingModels(true);
     try {
       const data = await llmApi.listModels({
@@ -199,7 +206,11 @@ export default function LLMSettingsPage() {
         setAuthError("登录已过期，请重新登录");
         router.push("/auth/login");
       } else {
-        alert(msg);
+        let displayMsg = msg;
+        if (msg.includes("Base URL") || msg.includes("404")) {
+          displayMsg = msg + "\n\n常见原因：\n1. Base URL 缺少 /v1 路径\n2. Base URL 拼写错误\n3. 服务提供商地址变更\n\n示例：\n- OpenAI: https://api.openai.com/v1\n- DeepSeek: https://api.deepseek.com/v1\n- 通义千问: https://dashscope.aliyuncs.com/compatible-mode/v1";
+        }
+        alert(displayMsg);
       }
     } finally {
       setFetchingModels(false);
@@ -307,6 +318,9 @@ export default function LLMSettingsPage() {
                     className="w-full px-4 py-2 border border-gray-300 rounded-md"
                     placeholder="https://api.example.com/v1"
                   />
+                  <p className="mt-1 text-xs text-gray-500">
+                    OpenAI 兼容接口地址，通常包含 /v1 路径
+                  </p>
                 </div>
               )}
 

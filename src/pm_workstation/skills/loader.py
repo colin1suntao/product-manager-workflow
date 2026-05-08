@@ -1,6 +1,9 @@
 """技能加载器模块
 
 按需加载技能到 Agent 上下文。
+支持两种格式：
+1. 项目原生格式（YAML）
+2. Product-Manager-Skills 格式（Markdown with YAML front matter）
 """
 
 import logging
@@ -23,6 +26,12 @@ class Skill(BaseModel):
     tools: list[str] = Field(default_factory=list)
     steps: list[str] = Field(default_factory=list)
     output_format: str = ""
+    # PM Skills 扩展字段
+    intent: str = ""
+    skill_type: str = ""  # component/interactive/workflow
+    best_for: list[str] = Field(default_factory=list)
+    scenarios: list[str] = Field(default_factory=list)
+    estimated_time: str = ""
 
     def get_full_prompt(self) -> str:
         """获取完整的技能提示（包含步骤和输出格式）"""
@@ -43,6 +52,9 @@ class SkillLoader:
     """技能加载器
 
     从文件系统加载技能定义，支持按需加载。
+    支持两种格式：
+    1. 项目原生格式（YAML）
+    2. Product-Manager-Skills 格式（Markdown with YAML front matter）
     """
 
     def __init__(self, skills_dir: str | None = None):
@@ -58,7 +70,7 @@ class SkillLoader:
             logger.warning(f"Skills directory not found: {self.skills_dir}")
             return
 
-        # 支持 .yaml 和 .md 格式
+        # 加载项目原生格式（YAML）
         for file_path in self.skills_dir.glob("*.yaml"):
             try:
                 skill = self._load_from_yaml(file_path)
@@ -72,6 +84,130 @@ class SkillLoader:
                 self._skills[skill.name] = skill
             except Exception as e:
                 logger.error(f"Failed to load skill from {file_path}: {e}")
+
+        # 加载 PM Skills 格式（子目录中的 SKILL.md）
+        pm_skills_dir = self.skills_dir / "pm-skills"
+        if pm_skills_dir.exists():
+            self._load_pm_skills(pm_skills_dir)
+
+    def _load_pm_skills(self, pm_skills_dir: Path) -> None:
+        """加载 Product-Manager-Skills 格式的技能"""
+        for skill_dir in pm_skills_dir.iterdir():
+            if not skill_dir.is_dir():
+                continue
+
+            skill_file = skill_dir / "SKILL.md"
+            if not skill_file.exists():
+                continue
+
+            try:
+                skill = self._load_pm_skill(skill_file)
+                if skill:
+                    self._skills[skill.name] = skill
+            except Exception as e:
+                logger.error(f"Failed to load PM skill from {skill_file}: {e}")
+
+    def _load_pm_skill(self, file_path: Path) -> Skill | None:
+        """加载单个 PM Skill"""
+        content = file_path.read_text(encoding="utf-8")
+
+        # 解析 YAML front matter
+        front_matter = self._parse_front_matter(content)
+        if not front_matter:
+            return None
+
+        # 提取 Markdown 内容（去掉 front matter）
+        markdown_content = self._extract_markdown_content(content)
+
+        # 构建系统提示词
+        system_prompt = self._build_pm_skill_prompt(front_matter, markdown_content)
+
+        # 提取步骤
+        steps = self._extract_pm_skill_steps(markdown_content)
+
+        return Skill(
+            name=front_matter.get("name", file_path.parent.name),
+            description=front_matter.get("description", ""),
+            system_prompt=system_prompt,
+            tools=[],
+            steps=steps,
+            output_format="",
+            intent=front_matter.get("intent", ""),
+            skill_type=front_matter.get("type", ""),
+            best_for=front_matter.get("best_for", []),
+            scenarios=front_matter.get("scenarios", []),
+            estimated_time=front_matter.get("estimated_time", ""),
+        )
+
+    def _build_pm_skill_prompt(self, front_matter: dict, markdown_content: str) -> str:
+        """构建 PM Skill 的系统提示词"""
+        parts = []
+
+        # 添加意图说明
+        intent = front_matter.get("intent", "")
+        if intent:
+            parts.append(f"# {front_matter.get('name', '')}")
+            parts.append(f"\n{intent}\n")
+
+        # 添加最佳使用场景
+        best_for = front_matter.get("best_for", [])
+        if best_for:
+            parts.append("## 最佳使用场景")
+            for scenario in best_for:
+                parts.append(f"- {scenario}")
+            parts.append("")
+
+        # 添加使用场景示例
+        scenarios = front_matter.get("scenarios", [])
+        if scenarios:
+            parts.append("## 使用场景示例")
+            for scenario in scenarios:
+                parts.append(f"- {scenario}")
+            parts.append("")
+
+        # 添加完整的 Markdown 内容
+        parts.append("## 详细说明")
+        parts.append(markdown_content)
+
+        return "\n".join(parts)
+
+    def _extract_pm_skill_steps(self, markdown_content: str) -> list[str]:
+        """从 PM Skill 的 Markdown 内容中提取步骤"""
+        steps = []
+        in_steps_section = False
+
+        for line in markdown_content.split("\n"):
+            # 检测步骤部分
+            if re.match(r"^##\s+(Application|Steps|执行步骤)", line, re.IGNORECASE):
+                in_steps_section = True
+                continue
+
+            if in_steps_section:
+                # 遇到新的二级标题结束
+                if line.strip().startswith("## "):
+                    break
+
+                # 匹配三级标题作为步骤
+                step_match = re.match(r"^###\s+Step\s+\d+:\s+(.*)", line.strip())
+                if step_match:
+                    steps.append(step_match.group(1).strip())
+                    continue
+
+                # 匹配有序列表
+                step_match = re.match(r"^\d+\.\s+(.*)", line.strip())
+                if step_match:
+                    steps.append(step_match.group(1))
+
+        return steps
+
+    @staticmethod
+    def _extract_markdown_content(content: str) -> str:
+        """提取 Markdown 内容（去掉 front matter）"""
+        # 去掉 YAML front matter
+        match = re.match(r"^---\s*\n.*?\n---\s*\n", content, re.DOTALL)
+        if match:
+            return content[match.end():]
+        return content
 
     def _load_from_yaml(self, file_path: Path) -> Skill:
         """从 YAML 文件加载技能"""
@@ -173,6 +309,23 @@ class SkillLoader:
             技能名称列表
         """
         return list(self._skills.keys())
+
+    def list_pm_skills(self) -> list[dict[str, str]]:
+        """列出所有 PM Skills
+
+        Returns:
+            PM Skills 信息列表
+        """
+        return [
+            {
+                "name": skill.name,
+                "description": skill.description,
+                "type": skill.skill_type,
+                "best_for": ", ".join(skill.best_for[:3]) if skill.best_for else "",
+            }
+            for skill in self._skills.values()
+            if skill.skill_type
+        ]
 
     def get_skill_summary(self, skill_name: str) -> str | None:
         """获取技能摘要（名称和描述）"""

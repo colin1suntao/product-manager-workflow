@@ -90,6 +90,7 @@ class WorkflowManager:
         requirement_text: str,
         workflow_id: str | None = None,
         llm_provider_id: str | None = None,
+        skills: list[str] | None = None,
     ) -> WorkflowRun:
         """启动新的工作流
 
@@ -98,6 +99,7 @@ class WorkflowManager:
             requirement_text: 原始需求文本
             workflow_id: 可选的工作流ID，不提供则自动生成
             llm_provider_id: LLM Provider ID
+            skills: 可选的 PM Skills 技能名称列表
 
         Returns:
             工作流运行记录
@@ -109,6 +111,7 @@ class WorkflowManager:
             user_id=user_id,
             requirement_text=requirement_text,
             status=WorkflowStatus.INIT,
+            selected_skills=skills or [],
         )
         self._runs[run_id] = run
         self._save_to_file()
@@ -123,7 +126,10 @@ class WorkflowManager:
             print(f"[WorkflowManager] Run {run_id} not found")
             return
 
-        state = WorkflowState(workflow_run=run)
+        state = WorkflowState(
+            workflow_run=run,
+            selected_skills=run.selected_skills if hasattr(run, 'selected_skills') else [],
+        )
         print("[WorkflowManager] Created initial state")
 
         try:
