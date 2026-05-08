@@ -5,9 +5,6 @@ from pm_workstation.agents.clarification_generator import ClarificationGenerator
 from pm_workstation.agents.coordinator import CoordinatorAgent
 from pm_workstation.agents.entity_extractor import EntityExtractor
 from pm_workstation.agents.gap_detector import GapDetector
-from pm_workstation.agents.requirement_parser import RequirementParser
-from pm_workstation.agents.role_identifier import RoleIdentifier
-from pm_workstation.agents.rule_decomposer import RuleDecomposer
 from pm_workstation.agents.middlewares import (
     AuditMiddleware,
     ContextMiddleware,
@@ -19,6 +16,9 @@ from pm_workstation.agents.middlewares import (
     SummarizationMiddleware,
 )
 from pm_workstation.agents.registry import SubAgentConfig, SubAgentRegistry
+from pm_workstation.agents.requirement_parser import RequirementParser
+from pm_workstation.agents.role_identifier import RoleIdentifier
+from pm_workstation.agents.rule_decomposer import RuleDecomposer
 from pm_workstation.agents.task_tool import (
     ContextManager,
     IsolatedContext,

@@ -30,7 +30,25 @@ export default function ComponentsLibPage() {
   const [htmlPreview, setHtmlPreview] = useState("");
   const [usageExample, setUsageExample] = useState("");
 
-  const fetchComponents = useCallback(async () => {
+  useEffect(() => {
+    let ignore = false;
+    const load = async () => {
+      try {
+        const params = filterCategory ? { category: filterCategory } : undefined;
+        const data = await componentApi.list(params);
+        if (!ignore) setComponents(data.components);
+      } catch {
+        // ignore
+      } finally {
+        if (!ignore) setLoading(false);
+      }
+    };
+    load();
+    return () => { ignore = true; };
+  }, [filterCategory]);
+
+  const refetch = useCallback(async () => {
+    setLoading(true);
     try {
       const params = filterCategory ? { category: filterCategory } : undefined;
       const data = await componentApi.list(params);
@@ -41,10 +59,6 @@ export default function ComponentsLibPage() {
       setLoading(false);
     }
   }, [filterCategory]);
-
-  useEffect(() => {
-    fetchComponents();
-  }, [fetchComponents]);
 
   function resetForm() {
     setName("");
@@ -88,7 +102,7 @@ export default function ComponentsLibPage() {
         });
       }
       resetForm();
-      fetchComponents();
+      refetch();
     } catch {
       // ignore
     }
@@ -109,7 +123,7 @@ export default function ComponentsLibPage() {
     if (!confirm("确定要删除这个组件吗？")) return;
     try {
       await componentApi.delete(id);
-      fetchComponents();
+      refetch();
     } catch {
       // ignore
     }

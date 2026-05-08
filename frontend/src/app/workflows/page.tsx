@@ -49,34 +49,40 @@ export default function WorkflowsPage() {
     return "init";
   }
 
-  const fetchRuns = useCallback(async () => {
-    try {
-      const params = filterStatus ? { status: filterStatus } : undefined;
-      const data = await workflowApi.list(params);
-      setRuns(data.workflows || []);
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : "";
-      // 如果是认证错误，跳转到登录页
-      if (msg.includes("401") || msg.includes("认证") || msg.includes("未提供")) {
-        router.push("/auth/login");
-        return;
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const data = await workflowApi.list(filterStatus);
+        setRuns(data.runs);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "";
+        if (msg.includes("401") || msg.includes("认证") || msg.includes("未提供")) {
+          router.push("/auth/login");
+          return;
+        }
+        setError(msg || "加载失败");
+      } finally {
+        setLoading(false);
       }
-      setError(msg || "加载失败");
-    } finally {
-      setLoading(false);
-    }
+    };
+    load();
+    const timer = setInterval(load, 5000);
+    return () => clearInterval(timer);
   }, [filterStatus, router]);
 
-  useEffect(() => {
-    fetchRuns();
-    const timer = setInterval(fetchRuns, 5000);
-    return () => clearInterval(timer);
-  }, [fetchRuns]);
+  const refetch = async () => {
+    try {
+      const data = await workflowApi.list(filterStatus);
+      setRuns(data.runs);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "操作失败");
+    }
+  };
 
   async function handlePause(runId: string) {
     try {
       await workflowApi.pause(runId);
-      fetchRuns();
+      refetch();
     } catch (err) {
       setError(err instanceof Error ? err.message : "操作失败");
     }
@@ -85,7 +91,7 @@ export default function WorkflowsPage() {
   async function handleResume(runId: string) {
     try {
       await workflowApi.resume(runId);
-      fetchRuns();
+      refetch();
     } catch (err) {
       setError(err instanceof Error ? err.message : "操作失败");
     }
@@ -94,7 +100,7 @@ export default function WorkflowsPage() {
   async function handleCancel(runId: string) {
     try {
       await workflowApi.cancel(runId);
-      fetchRuns();
+      refetch();
     } catch (err) {
       setError(err instanceof Error ? err.message : "操作失败");
     }

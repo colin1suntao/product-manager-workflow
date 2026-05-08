@@ -48,30 +48,45 @@ export default function IntegrationsPage() {
   const [taskConfigId, setTaskConfigId] = useState("");
   const [taskDirection, setTaskDirection] = useState<"import" | "export">("import");
 
-  const fetchConfigs = useCallback(async () => {
+  useEffect(() => {
+    let ignore = false;
+    const load = async () => {
+      try {
+        const [configs, tasks] = await Promise.all([
+          integrationApi.listConfigs(),
+          integrationApi.listSyncTasks(),
+        ]);
+        if (!ignore) {
+          setIntegrationConfigs(configs.configs);
+          setSyncTasks(tasks.tasks);
+        }
+      } catch {
+        // ignore
+      } finally {
+        if (!ignore) setLoading(false);
+      }
+    };
+    load();
+    return () => { ignore = true; };
+  }, []);
+
+  const fetchConfigs = async () => {
     try {
       const data = await integrationApi.listConfigs();
-      setConfigs(data.configs);
+      setIntegrationConfigs(data.configs);
     } catch {
       // ignore
     }
-  }, []);
+  };
 
-  const fetchSyncTasks = useCallback(async () => {
+  const fetchSyncTasks = async () => {
     try {
       const data = await integrationApi.listSyncTasks();
       setSyncTasks(data.tasks);
     } catch {
       // ignore
-    } finally {
-      setLoading(false);
     }
-  }, []);
-
-  useEffect(() => {
-    fetchConfigs();
-    fetchSyncTasks();
-  }, [fetchConfigs, fetchSyncTasks]);
+  };
 
   function resetConfigForm() {
     setConfigName("");
