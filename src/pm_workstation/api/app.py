@@ -81,6 +81,7 @@ def create_app() -> FastAPI:
     from pm_workstation.api.routes.components import router as components_router
     from pm_workstation.api.routes.integrations import router as integrations_router
     from pm_workstation.api.routes.llm import router as llm_router
+    from pm_workstation.api.routes.market_research import router as market_research_router
     from pm_workstation.api.routes.skills import router as skills_router
     from pm_workstation.api.routes.workflows import router as workflows_router
 
@@ -98,6 +99,7 @@ def create_app() -> FastAPI:
     app.include_router(components_router, prefix="/api/v1", tags=["组件库"])
     app.include_router(integrations_router, prefix="/api/v1", tags=["集成配置"])
     app.include_router(skills_router, prefix="/api/v1", tags=["PM Skills"])
+    app.include_router(market_research_router, prefix="/api/v1", tags=["市场调研"])
 
     # 健康检查
     @app.get("/health", tags=["健康检查"])

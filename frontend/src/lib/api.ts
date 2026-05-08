@@ -196,3 +196,97 @@ export const reportApi = {
       `/api/v1/workflows/runs/${workflowId}/report`,
     ),
 };
+
+/** 市场调研 API */
+export const marketResearchApi = {
+  create: (data: {
+    title?: string;
+    requirement_text: string;
+    selected_skills: string[];
+    template_id?: string;
+  }) =>
+    fetchApi<{ task_id: string; report_id: string; status: string; message: string }>(
+      "/api/v1/market-research/create",
+      {
+        method: "POST",
+        body: JSON.stringify(data),
+      },
+    ),
+
+  list: () =>
+    fetchApi<{ reports: Array<{
+      id: string;
+      title: string;
+      status: string;
+      selected_skills: string[];
+      created_at: string;
+      completed_at: string | null;
+    }>; total: number }>("/api/v1/market-research/list"),
+
+  get: (reportId: string) =>
+    fetchApi<{
+      id: string;
+      title: string;
+      requirement_text: string;
+      selected_skills: string[];
+      report_content: string;
+      status: string;
+      created_at: string;
+      completed_at: string | null;
+    }>(`/api/v1/market-research/${reportId}`),
+
+  getStatus: (reportId: string) =>
+    fetchApi<{
+      report_id: string;
+      task_id: string;
+      status: string;
+      started_at: string | null;
+      completed_at: string | null;
+      error_message: string | null;
+    }>(`/api/v1/market-research/${reportId}/status`),
+
+  recommendSkills: (requirementText: string) =>
+    fetchApi<{
+      recommendations: Array<{
+        name: string;
+        description: string;
+        relevance_score: number;
+        category: string;
+      }>;
+      total: number;
+    }>("/api/v1/market-research/recommend-skills", {
+      method: "POST",
+      body: JSON.stringify({ requirement_text: requirementText }),
+    }),
+
+  saveTemplate: (data: {
+    name: string;
+    description?: string;
+    skill_names: string[];
+  }) =>
+    fetchApi<{ id: string; name: string; description: string; skill_names: string[]; message: string }>(
+      "/api/v1/market-research/templates",
+      {
+        method: "POST",
+        body: JSON.stringify(data),
+      },
+    ),
+
+  listTemplates: () =>
+    fetchApi<{
+      templates: Array<{
+        id: string;
+        name: string;
+        description: string;
+        skill_names: string[];
+        created_at: string;
+      }>;
+      total: number;
+    }>("/api/v1/market-research/templates/list"),
+
+  deleteTemplate: (templateId: string) =>
+    fetchApi<{ message: string }>(
+      `/api/v1/market-research/templates/${templateId}`,
+      { method: "DELETE" },
+    ),
+};
