@@ -14,7 +14,6 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { href: "/chat", label: "AI 会话", icon: "💬" },
-  { href: "/memory", label: "记忆管理", icon: "🧠" },
   {
     href: "/workflows",
     label: "工作流管理",
@@ -29,14 +28,22 @@ const navItems: NavItem[] = [
   { href: "/market-research", label: "市场调研", icon: "🔍" },
   { href: "/skills", label: "PM Skills", icon: "🎯" },
   { href: "/components-lib", label: "组件库", icon: "🧩" },
-  { href: "/integrations", label: "集成配置", icon: "⚙️" },
-  { href: "/settings/llm", label: "供应商配置", icon: "🤖" },
+  {
+    href: "/settings",
+    label: "系统设置",
+    icon: "⚙️",
+    children: [
+      { href: "/memory", label: "记忆管理", icon: "🧠" },
+      { href: "/integrations", label: "集成配置", icon: "🔗" },
+      { href: "/settings/llm", label: "供应商配置", icon: "🤖" },
+    ],
+  },
 ];
 
 export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
-  const [expandedItems, setExpandedItems] = useState<string[]>(["/workflows"]);
+  const [expandedItems, setExpandedItems] = useState<string[]>(["/workflows", "/settings"]);
 
   const handleLogout = async () => {
     // 先跳转到登录页，避免其他组件继续调用 API
