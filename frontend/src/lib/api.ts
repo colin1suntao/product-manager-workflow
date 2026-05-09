@@ -290,3 +290,81 @@ export const marketResearchApi = {
       { method: "DELETE" },
     ),
 };
+
+/** 会话交互 API */
+export const chatApi = {
+  createSession: (title?: string) =>
+    fetchApi<{ id: string; title: string; created_at: string; updated_at: string }>(
+      "/api/v1/chat/sessions",
+      {
+        method: "POST",
+        body: JSON.stringify({ title }),
+      },
+    ),
+
+  listSessions: () =>
+    fetchApi<{
+      sessions: Array<{
+        id: string;
+        title: string;
+        created_at: string;
+        updated_at: string;
+      }>;
+      total: number;
+    }>("/api/v1/chat/sessions"),
+
+  getSession: (sessionId: string) =>
+    fetchApi<{
+      id: string;
+      title: string;
+      created_at: string;
+      updated_at: string;
+    }>(`/api/v1/chat/sessions/${sessionId}`),
+
+  deleteSession: (sessionId: string) =>
+    fetchApi<{ message: string }>(
+      `/api/v1/chat/sessions/${sessionId}`,
+      { method: "DELETE" },
+    ),
+
+  sendMessage: (
+    sessionId: string,
+    data: {
+      content: string;
+      task_mode?: string;
+      selected_skills?: string[];
+    }
+  ) =>
+    fetchApi<{
+      user_message: {
+        id: string;
+        content: string;
+        created_at: string;
+      };
+      assistant_message: {
+        id: string;
+        content: string;
+        task_mode: string | null;
+        task_status: string | null;
+        artifacts: Array<{ name: string; url: string; type: string }>;
+        created_at: string;
+      };
+    }>(`/api/v1/chat/sessions/${sessionId}/messages`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  getMessages: (sessionId: string) =>
+    fetchApi<{
+      messages: Array<{
+        id: string;
+        role: "user" | "assistant" | "system";
+        content: string;
+        task_mode: string | null;
+        task_status: string | null;
+        artifacts: Array<{ name: string; url: string; type: string }>;
+        created_at: string;
+      }>;
+      total: number;
+    }>(`/api/v1/chat/sessions/${sessionId}/messages`),
+};

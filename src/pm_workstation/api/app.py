@@ -119,6 +119,7 @@ def _try_create_default_provider(store) -> None:
 def create_app() -> FastAPI:
     """创建 FastAPI 应用实例"""
     from pm_workstation.api.routes.auth import router as auth_router
+    from pm_workstation.api.routes.chat import router as chat_router
     from pm_workstation.api.routes.components import router as components_router
     from pm_workstation.api.routes.integrations import router as integrations_router
     from pm_workstation.api.routes.llm import router as llm_router
@@ -141,6 +142,7 @@ def create_app() -> FastAPI:
     app.include_router(integrations_router, prefix="/api/v1", tags=["集成配置"])
     app.include_router(skills_router, prefix="/api/v1", tags=["PM Skills"])
     app.include_router(market_research_router, prefix="/api/v1", tags=["市场调研"])
+    app.include_router(chat_router, prefix="/api/v1", tags=["会话交互"])
 
     # 健康检查
     @app.get("/health", tags=["健康检查"])
@@ -151,6 +153,15 @@ def create_app() -> FastAPI:
     @app.get("/artifacts/{workflow_id}/{filename}")
     async def serve_artifact(workflow_id: str, filename: str):
         filepath = os.path.join(ARTIFACTS_DIR, workflow_id, filename)
+        if not os.path.exists(filepath):
+            return {"error": "Artifact not found"}
+        media_type = "text/html" if filename.endswith(".html") else "text/markdown" if filename.endswith(".md") else "application/json"
+        return FileResponse(filepath, media_type=media_type)
+
+    # 静态文件服务 - Chat 产物
+    @app.get("/artifacts/chat/{filename}")
+    async def serve_chat_artifact(filename: str):
+        filepath = os.path.join(ARTIFACTS_DIR, "chat", filename)
         if not os.path.exists(filepath):
             return {"error": "Artifact not found"}
         media_type = "text/html" if filename.endswith(".html") else "text/markdown" if filename.endswith(".md") else "application/json"
