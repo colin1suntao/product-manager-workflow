@@ -20,11 +20,17 @@ from pm_workstation.chat.chat_models import (
     TaskStatus,
 )
 from pm_workstation.chat.task_router import TaskRouter
+from pm_workstation.memory.memory_manager import MemoryManager
+from pm_workstation.memory.memory_retriever import MemoryRetriever
+from pm_workstation.memory.soul_manager import SoulManager
 
 router = APIRouter(prefix="/chat", tags=["会话交互"])
 
 # 全局实例
 _chat_manager = ChatManager()
+_memory_manager = MemoryManager()
+_soul_manager = SoulManager()
+_memory_retriever = MemoryRetriever(_memory_manager)
 
 
 def _get_chat_manager() -> ChatManager:
@@ -36,7 +42,12 @@ def _get_coordinator(request: Request) -> CoordinatorChatAgent:
     """获取主 Agent"""
     llm_handler = getattr(request.app.state, "llm_handler", None)
     task_router = TaskRouter(llm_handler=llm_handler)
-    return CoordinatorChatAgent(llm_handler=llm_handler, task_router=task_router)
+    return CoordinatorChatAgent(
+        llm_handler=llm_handler,
+        task_router=task_router,
+        memory_retriever=_memory_retriever,
+        soul_manager=_soul_manager,
+    )
 
 
 # ============ 会话管理 ============
@@ -181,6 +192,7 @@ async def send_message(
         context=context,
         selected_skills=selected_skills,
         task_mode=task_mode,
+        user_id=user_id,
     )
 
     # 添加 Agent 响应

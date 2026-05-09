@@ -19,10 +19,12 @@ from pm_workstation.chat.chat_models import (
     TaskStatus,
 )
 from pm_workstation.chat.task_router import TaskRouter
+from pm_workstation.memory.memory_retriever import MemoryRetriever
+from pm_workstation.memory.soul_manager import SoulManager
 
 logger = logging.getLogger(__name__)
 
-SYSTEM_PROMPT = """你是一个专业的 AI 产品经理助手，负责帮助用户完成产品规划和管理工作。
+DEFAULT_SYSTEM_PROMPT = """你是一个专业的 AI 产品经理助手，负责帮助用户完成产品规划和管理工作。
 
 你的能力包括：
 1. **需求分析** - 帮助用户梳理和结构化产品需求
@@ -50,15 +52,57 @@ class CoordinatorChatAgent:
         self,
         llm_handler: Optional[LLMBackend] = None,
         task_router: Optional[TaskRouter] = None,
+        memory_retriever: Optional[MemoryRetriever] = None,
+        soul_manager: Optional[SoulManager] = None,
     ):
         """初始化主 Agent
 
         Args:
             llm_handler: LLM 处理器
             task_router: 任务路由器
+            memory_retriever: 记忆检索器
+            soul_manager: Soul 管理器
         """
         self.llm_handler = llm_handler
         self.task_router = task_router or TaskRouter(llm_handler)
+        self.memory_retriever = memory_retriever
+        self.soul_manager = soul_manager
+
+    async def build_system_prompt(self, user_id: str, context_text: str = "") -> str:
+        """构建包含 Soul 和记忆的增强系统提示词
+
+        Args:
+            user_id: 用户 ID
+            context_text: 上下文文本，用于检索相关记忆
+
+        Returns:
+            增强的系统提示词
+        """
+        parts = []
+
+        # 添加 Soul 提示词
+        if self.soul_manager:
+            soul = await self.soul_manager.get_active_soul(user_id)
+            soul_prompt = self.soul_manager.build_soul_prompt(soul)
+            parts.append(soul_prompt)
+        else:
+            parts.append(DEFAULT_SYSTEM_PROMPT)
+
+        # 添加记忆提示词
+        if self.memory_retriever and context_text:
+            memory_prompt = await self.memory_retriever.build_memory_prompt(
+                user_id=user_id,
+                context=context_text,
+            )
+            if memory_prompt:
+                parts.append(memory_prompt)
+
+            # 添加用户偏好
+            pref_prompt = await self.memory_retriever.get_user_preferences_prompt(user_id)
+            if pref_prompt:
+                parts.append(pref_prompt)
+
+        return "\n\n".join(parts)
 
     async def process_message(
         self,
@@ -66,6 +110,7 @@ class CoordinatorChatAgent:
         context: list[ChatMessage],
         selected_skills: Optional[list[str]] = None,
         task_mode: Optional[TaskMode] = None,
+        user_id: str = "default",
     ) -> CoordinatorResponse:
         """处理用户消息
 
@@ -74,6 +119,7 @@ class CoordinatorChatAgent:
             context: 上下文消息列表
             selected_skills: 选中的技能列表
             task_mode: 指定的任务模式（可选）
+            user_id: 用户 ID，用于记忆检索
 
         Returns:
             主 Agent 响应
@@ -84,8 +130,19 @@ class CoordinatorChatAgent:
         if not self.llm_handler:
             return await self._simple_process(message, selected_skills, task_mode)
 
+        # 构建上下文文本
+        context_text = message
+        if context:
+            recent_messages = context[-5:]
+            context_text += "\n" + "\n".join(
+                [f"{m.role}: {m.content[:100]}" for m in recent_messages]
+            )
+
+        # 构建增强系统提示词（包含 Soul 和记忆）
+        system_prompt = await self.build_system_prompt(user_id, context_text)
+
         # 使用 LLM 分析意图
-        intent = await self.analyze_intent(message, context)
+        intent = await self.analyze_intent(message, context, system_prompt=system_prompt)
 
         # 如果需要澄清
         if intent.requires_clarification:
@@ -133,13 +190,17 @@ class CoordinatorChatAgent:
         )
 
     async def analyze_intent(
-        self, message: str, context: list[ChatMessage]
+        self,
+        message: str,
+        context: list[ChatMessage],
+        system_prompt: Optional[str] = None,
     ) -> IntentAnalysis:
         """分析用户意图
 
         Args:
             message: 用户消息
             context: 上下文消息列表
+            system_prompt: 系统提示词（可选，包含 Soul 和记忆）
 
         Returns:
             意图分析结果
@@ -179,7 +240,7 @@ class CoordinatorChatAgent:
 
         try:
             response = await self.llm_handler.chat([
-                LLMMessage(role="system", content=SYSTEM_PROMPT),
+                LLMMessage(role="system", content=system_prompt or DEFAULT_SYSTEM_PROMPT),
                 LLMMessage(role="user", content=prompt),
             ])
 

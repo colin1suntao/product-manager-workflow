@@ -368,3 +368,215 @@ export const chatApi = {
       total: number;
     }>(`/api/v1/chat/sessions/${sessionId}/messages`),
 };
+
+/** 记忆管理 API */
+export const memoryApi = {
+  // Soul 管理
+  getActiveSoul: () =>
+    fetchApi<{
+      id: string;
+      name: string;
+      personality: string;
+      values: string[];
+      behavior_rules: string[];
+      communication_style: string;
+      expertise_areas: string[];
+      is_active: boolean;
+    }>("/api/v1/memory/soul"),
+
+  createSoul: (data: {
+    name: string;
+    personality: string;
+    values: string[];
+    behavior_rules: string[];
+    communication_style: string;
+    expertise_areas: string[];
+  }) =>
+    fetchApi<{ id: string; name: string; is_active: boolean; created_at: string }>(
+      "/api/v1/memory/soul",
+      { method: "POST", body: JSON.stringify(data) },
+    ),
+
+  updateSoul: (soulId: string, data: Record<string, unknown>) =>
+    fetchApi<{ id: string; name: string; updated_at: string }>(
+      `/api/v1/memory/soul/${soulId}`,
+      { method: "PUT", body: JSON.stringify(data) },
+    ),
+
+  listSouls: () =>
+    fetchApi<{
+      souls: Array<{ id: string; name: string; is_active: boolean; created_at: string }>;
+      total: number;
+    }>("/api/v1/memory/soul/list"),
+
+  activateSoul: (soulId: string) =>
+    fetchApi<{ message: string }>(
+      `/api/v1/memory/soul/${soulId}/activate`,
+      { method: "POST" },
+    ),
+
+  deleteSoul: (soulId: string) =>
+    fetchApi<{ message: string }>(
+      `/api/v1/memory/soul/${soulId}`,
+      { method: "DELETE" },
+    ),
+
+  // 偏好管理
+  createPreference: (data: { category: string; key: string; value: string }) =>
+    fetchApi<{ id: string; category: string; key: string; value: string; created_at: string }>(
+      "/api/v1/memory/preferences",
+      { method: "POST", body: JSON.stringify(data) },
+    ),
+
+  listPreferences: () =>
+    fetchApi<{
+      preferences: Array<{
+        id: string;
+        category: string;
+        key: string;
+        value: string;
+        created_at: string;
+      }>;
+      total: number;
+    }>("/api/v1/memory/preferences"),
+
+  updatePreference: (prefId: string, data: { value: string }) =>
+    fetchApi<{ message: string }>(
+      `/api/v1/memory/preferences/${prefId}`,
+      { method: "PUT", body: JSON.stringify(data) },
+    ),
+
+  deletePreference: (prefId: string) =>
+    fetchApi<{ message: string }>(
+      `/api/v1/memory/preferences/${prefId}`,
+      { method: "DELETE" },
+    ),
+
+  // 记忆管理
+  createMemory: (data: {
+    memory_type: string;
+    content: string;
+    summary: string;
+    tags?: string[];
+    importance?: number;
+  }) =>
+    fetchApi<{
+      id: string;
+      memory_type: string;
+      summary: string;
+      created_at: string;
+    }>("/api/v1/memory/entries", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  listMemories: (memoryType?: string) => {
+    const params = memoryType ? `?memory_type=${memoryType}` : "";
+    return fetchApi<{
+      memories: Array<{
+        id: string;
+        memory_type: string;
+        summary: string;
+        content: string;
+        tags: string[];
+        importance: number;
+        created_at: string;
+      }>;
+      total: number;
+    }>(`/api/v1/memory/entries${params}`);
+  },
+
+  getMemory: (memoryId: string) =>
+    fetchApi<{
+      id: string;
+      memory_type: string;
+      summary: string;
+      content: string;
+      tags: string[];
+      importance: number;
+      source: string;
+      context: Record<string, unknown>;
+      created_at: string;
+      last_accessed: string;
+      access_count: number;
+    }>(`/api/v1/memory/entries/${memoryId}`),
+
+  updateMemory: (memoryId: string, data: Record<string, unknown>) =>
+    fetchApi<{ message: string }>(
+      `/api/v1/memory/entries/${memoryId}`,
+      { method: "PUT", body: JSON.stringify(data) },
+    ),
+
+  deleteMemory: (memoryId: string) =>
+    fetchApi<{ message: string }>(
+      `/api/v1/memory/entries/${memoryId}`,
+      { method: "DELETE" },
+    ),
+
+  searchMemories: (query: string, memoryType?: string) => {
+    const params = new URLSearchParams({ q: query });
+    if (memoryType) params.set("memory_type", memoryType);
+    return fetchApi<{
+      results: Array<{
+        id: string;
+        memory_type: string;
+        summary: string;
+        relevance_score: number;
+        match_reason: string;
+      }>;
+      total: number;
+    }>(`/api/v1/memory/search?${params.toString()}`);
+  },
+
+  getStats: () =>
+    fetchApi<{
+      total_memories: number;
+      by_type: Record<string, number>;
+      top_tags: Array<[string, number]>;
+    }>("/api/v1/memory/stats"),
+
+  // 反思管理
+  triggerReflection: () =>
+    fetchApi<{
+      id: string;
+      period_start: string;
+      period_end: string;
+      total_tasks: number;
+      successful_tasks: number;
+      failed_tasks: number;
+      key_learnings: string[];
+      improvement_areas: string[];
+      action_items: string[];
+      created_at: string;
+    }>("/api/v1/memory/reflect", { method: "POST" }),
+
+  listReflections: () =>
+    fetchApi<{
+      reflections: Array<{
+        id: string;
+        period_start: string;
+        period_end: string;
+        total_tasks: number;
+        successful_tasks: number;
+        failed_tasks: number;
+        key_learnings: string[];
+        created_at: string;
+      }>;
+      total: number;
+    }>("/api/v1/memory/reflections"),
+
+  getLatestReflection: () =>
+    fetchApi<{
+      id?: string;
+      period_start?: string;
+      period_end?: string;
+      total_tasks?: number;
+      successful_tasks?: number;
+      failed_tasks?: number;
+      key_learnings?: string[];
+      improvement_areas?: string[];
+      action_items?: string[];
+      created_at?: string;
+      message?: string;
+    }>("/api/v1/memory/reflections/latest"),
+};
