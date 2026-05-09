@@ -82,38 +82,14 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
 
 def _try_create_default_provider(store) -> None:
-    """尝试从环境变量创建默认 LLM Provider 配置"""
-    import asyncio
-    from pm_workstation.llm.models import LLMProviderConfig, LLMProviderType
-
-    # 检查环境变量
-    api_key = os.environ.get("OPENAI_API_KEY") or os.environ.get("MCAI_LLM_API_KEY")
-    base_url = os.environ.get("OPENAI_BASE_URL") or os.environ.get("MCAI_LLM_BASE_URL", "https://api.openai.com/v1")
-    model = os.environ.get("OPENAI_MODEL") or os.environ.get("MCAI_LLM_MODEL", "gpt-4o-mini")
-
-    if not api_key:
-        return
-
-    # 判断 provider 类型
-    provider_type = LLMProviderType.OPENAI
-    if "anthropic" in base_url.lower():
-        provider_type = LLMProviderType.ANTHROPIC
-
-    config = LLMProviderConfig(
-        id="default-env",
-        name="Default (from env)",
-        provider_type=provider_type,
-        api_key=api_key,
-        base_url=base_url,
-        default_model=model,
-        is_active=True,
-        is_default=True,
-    )
-
-    try:
-        asyncio.get_event_loop().run_until_complete(store.create_config(config))
-    except Exception:
-        pass
+    """尝试从环境变量创建默认 LLM Provider 配置
+    
+    注意：为了安全性，不再自动从环境变量创建配置。
+    用户需要通过 UI 手动配置 LLM Provider。
+    """
+    # 已禁用自动创建配置功能
+    # 用户需要通过 /settings/llm 页面手动配置
+    pass
 
 
 def create_app() -> FastAPI:
