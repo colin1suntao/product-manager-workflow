@@ -128,11 +128,18 @@ async def _generate_research_report(
         _research_tasks[task_id]["started_at"] = datetime.now().isoformat()
         _research_reports[report_id]["status"] = "running"
 
-        # 获取 LLM handler
-        llm_handler = _get_llm_handler(request)
-
+        # 动态获取最新的 LLM handler（而不是依赖 app.state）
+        provider_store = request.app.state.provider_store
+        default_config = await provider_store.get_default_config()
+        
+        if not default_config:
+            raise Exception("LLM 未配置，请先在设置页面配置 LLM Provider")
+        
+        from pm_workstation.api.app import _build_llm_handler
+        llm_handler = _build_llm_handler(default_config)
+        
         if not llm_handler:
-            raise Exception("LLM 未配置，请先配置 LLM Provider")
+            raise Exception("LLM 配置无效，请检查 API Key 和模型配置")
 
         # 创建 agent
         agent = MarketResearchAgent(llm_handler=llm_handler)
