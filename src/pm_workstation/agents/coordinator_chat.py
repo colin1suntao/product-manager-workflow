@@ -369,9 +369,6 @@ class CoordinatorChatAgent:
         Returns:
             格式化的响应消息
         """
-        if result.status == TaskStatus.FAILED:
-            return f"任务执行失败：{result.error_message}\n\n请稍后重试，或尝试简化您的需求。"
-
         mode_labels = {
             TaskMode.REQUIREMENT: "需求分析",
             TaskMode.PROTOTYPE: "原型设计",
@@ -380,6 +377,21 @@ class CoordinatorChatAgent:
         }
 
         mode_label = mode_labels.get(mode, "任务")
+
+        if result.status == TaskStatus.FAILED:
+            # 检查是否是 LLM 相关错误
+            error_msg = result.error_message or ""
+            if "LLM" in error_msg or "Forbidden" in error_msg or "handler" in error_msg.lower():
+                return (
+                    f"**{mode_label}** 功能暂时不可用\n\n"
+                    f"当前 LLM 服务未正确配置，无法执行{mode_label}任务。\n\n"
+                    f"请在 **设置 > LLM 配置** 中配置有效的 LLM API Key 后重试。\n\n"
+                    f"如果您只是想了解系统功能，可以尝试：\n"
+                    f"- 查看 **PM Skills** 了解可用的技能\n"
+                    f"- 查看 **原型预览** 查看已生成的原型\n"
+                    f"- 查看 **文档查看** 查看已生成的文档"
+                )
+            return f"任务执行失败：{error_msg}\n\n请稍后重试，或尝试简化您的需求。"
 
         response = f"**{mode_label}** 任务已完成！\n\n"
 

@@ -112,7 +112,27 @@ class TaskRouter:
             raise ValueError("Missing requirement_text parameter")
 
         if not self.llm_handler:
-            raise ValueError("LLM handler is required for requirement analysis")
+            # 返回一个基本的需求分析结果，而不是抛出异常
+            return {
+                "output": f"""## 需求分析结果
+
+### 原始需求
+{requirement_text}
+
+### 初步分析
+由于 LLM 服务未配置，无法进行深度需求分析。以下是对您需求的初步理解：
+
+**需求概述**：{requirement_text[:200]}{'...' if len(requirement_text) > 200 else ''}
+
+### 建议
+1. 请配置 LLM 服务以获得更详细的需求分析
+2. 您可以手动补充以下信息：
+   - 功能需求列表
+   - 非功能需求（性能、安全等）
+   - 约束条件
+   - 验收标准
+"""
+            }
 
         # 使用需求解析器
         parser = RequirementParser(llm_handler=self.llm_handler)
@@ -147,6 +167,13 @@ class TaskRouter:
         requirement_text = params.get("requirement_text", "")
         if not requirement_text:
             raise ValueError("Missing requirement_text parameter")
+
+        if not self.llm_handler:
+            # 返回一个提示信息，而不是抛出异常
+            return {
+                "output": "原型设计功能需要 LLM 服务支持。\n\n请在 **设置 > LLM 配置** 中配置有效的 LLM API Key 后重试。",
+                "artifacts": [],
+            }
 
         # 加载技能内容
         skills_content = []
@@ -203,6 +230,13 @@ class TaskRouter:
         if not requirement_text:
             raise ValueError("Missing requirement_text parameter")
 
+        if not self.llm_handler:
+            # 返回一个提示信息，而不是抛出异常
+            return {
+                "output": "PRD 文档生成功能需要 LLM 服务支持。\n\n请在 **设置 > LLM 配置** 中配置有效的 LLM API Key 后重试。",
+                "artifacts": [],
+            }
+
         # 加载技能内容
         skills_content = []
         if selected_skills:
@@ -257,6 +291,13 @@ class TaskRouter:
         requirement_text = params.get("requirement_text", "")
         if not requirement_text:
             raise ValueError("Missing requirement_text parameter")
+
+        if not self.llm_handler:
+            # 返回一个提示信息，而不是抛出异常
+            return {
+                "output": "市场调研功能需要 LLM 服务支持。\n\n请在 **设置 > LLM 配置** 中配置有效的 LLM API Key 后重试。",
+                "artifacts": [],
+            }
 
         # 如果没有指定技能，使用默认的市场调研技能
         if not selected_skills:
