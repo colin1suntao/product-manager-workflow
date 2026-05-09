@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { workflowApi } from "@/lib/api";
 import type { WorkflowRun } from "@/types/api";
+import MarkdownViewer from "@/components/MarkdownViewer";
 
 export default function DocumentsPage() {
   const [runs, setRuns] = useState<WorkflowRun[]>([]);
@@ -103,17 +104,16 @@ export default function DocumentsPage() {
             </ul>
           </div>
 
-          <div className="flex-1 bg-white rounded-lg border border-gray-200 overflow-auto p-6">
+          <div className="flex-1 bg-white rounded-lg border border-gray-200 overflow-hidden">
             {docLoading ? (
               <div className="flex items-center justify-center h-full">
                 <p className="text-gray-500">文档加载中...</p>
               </div>
             ) : docContent ? (
-              <div className="prose prose-sm max-w-none">
-                <pre className="whitespace-pre-wrap font-sans text-sm text-gray-700 leading-relaxed">
-                  {docContent}
-                </pre>
-              </div>
+              <MarkdownViewer
+                content={docContent}
+                title={selectedRun?.requirement_text?.slice(0, 30) || selectedRun?.title || "产品文档"}
+              />
             ) : selectedRun ? (
               <div className="flex items-center justify-center h-full">
                 <p className="text-gray-500">文档生成中，请稍候...</p>

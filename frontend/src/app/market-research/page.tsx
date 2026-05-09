@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { marketResearchApi } from "@/lib/api";
 import { getAccessToken } from "@/lib/auth";
+import MarkdownViewer from "@/components/MarkdownViewer";
 
 interface SkillRecommendation {
   name: string;
@@ -455,10 +456,8 @@ export default function MarketResearchPage() {
                     <p className="text-gray-600">报告生成中，请稍候...</p>
                   </div>
                 ) : reportStatus === "completed" && reportContent ? (
-                  <div className="prose max-w-none">
-                    <pre className="whitespace-pre-wrap bg-gray-50 p-4 rounded-lg">
-                      {reportContent}
-                    </pre>
+                  <div className="h-[600px] border rounded-lg overflow-hidden">
+                    <MarkdownViewer content={reportContent} title={title || "市场调研报告"} />
                   </div>
                 ) : reportStatus === "failed" ? (
                   <div className="text-center py-8 text-red-600">报告生成失败</div>
@@ -516,9 +515,12 @@ export default function MarketResearchPage() {
             {selectedReport && reportContent && (
               <div className="border-t p-6">
                 <h3 className="text-lg font-semibold mb-4">报告内容</h3>
-                <pre className="whitespace-pre-wrap bg-gray-50 p-4 rounded-lg max-h-96 overflow-auto">
-                  {reportContent}
-                </pre>
+                <div className="h-[600px] border rounded-lg overflow-hidden">
+                  <MarkdownViewer
+                    content={reportContent}
+                    title={reports.find((r) => r.id === selectedReport)?.title || "市场调研报告"}
+                  />
+                </div>
               </div>
             )}
           </div>
