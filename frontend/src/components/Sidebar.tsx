@@ -16,7 +16,7 @@ const navItems = [
   { href: "/reports", label: "校验报告", icon: "✅" },
   { href: "/components-lib", label: "组件库", icon: "🧩" },
   { href: "/integrations", label: "集成配置", icon: "⚙️" },
-  { href: "/settings/llm", label: "LLM 配置", icon: "🤖" },
+  { href: "/settings/llm", label: "供应商配置", icon: "🤖" },
 ];
 
 export default function Sidebar() {

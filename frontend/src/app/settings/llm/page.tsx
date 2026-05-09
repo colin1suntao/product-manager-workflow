@@ -98,7 +98,7 @@ export default function LLMSettingsPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("确定删除此 LLM Provider？")) return;
+    if (!confirm("确定删除此供应商配置？")) return;
     try {
       await llmApi.delete(id);
       await loadProviders();
@@ -221,12 +221,12 @@ export default function LLMSettingsPage() {
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-4xl mx-auto">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">LLM Provider 配置</h1>
+          <h1 className="text-2xl font-bold text-gray-900">供应商配置</h1>
           <button
             onClick={() => { setShowForm(true); setEditingId(null); setForm({ name: "", provider_type: "openai", api_key: "", base_url: "", default_model: "" }); }}
             className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
           >
-            添加 Provider
+            添加供应商
           </button>
         </div>
 
@@ -244,7 +244,7 @@ export default function LLMSettingsPage() {
 
         {showForm && (
           <div className="bg-white rounded-lg shadow p-6 mb-6">
-            <h2 className="text-lg font-semibold mb-4">{editingId ? "编辑 Provider" : "添加 Provider"}</h2>
+            <h2 className="text-lg font-semibold mb-4">{editingId ? "编辑供应商" : "添加供应商"}</h2>
 
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">快速选择预设配置</label>
@@ -423,7 +423,7 @@ export default function LLMSettingsPage() {
 
           {providers.length === 0 && (
             <div className="text-center py-12 text-gray-500">
-              暂无 LLM Provider 配置，点击「添加 Provider」开始配置
+              暂无供应商配置，点击「添加供应商」开始配置
             </div>
           )}
         </div>
