@@ -111,9 +111,12 @@ class TaskRouter:
         if not requirement_text:
             raise ValueError("Missing requirement_text parameter")
 
+        if not self.llm_handler:
+            raise ValueError("LLM handler is required for requirement analysis")
+
         # 使用需求解析器
-        parser = RequirementParser()
-        structured_req = parser.parse(requirement_text)
+        parser = RequirementParser(llm_handler=self.llm_handler)
+        structured_req = await parser.parse(requirement_text)
 
         output = f"""## 需求分析结果
 
@@ -121,9 +124,9 @@ class TaskRouter:
 {requirement_text}
 
 ### 结构化需求
-- **功能需求**: {structured_req.get('functional_requirements', [])}
-- **非功能需求**: {structured_req.get('non_functional_requirements', [])}
-- **约束条件**: {structured_req.get('constraints', [])}
+- **功能需求**: {structured_req.functional_requirements if hasattr(structured_req, 'functional_requirements') else '已解析'}
+- **非功能需求**: {structured_req.non_functional_requirements if hasattr(structured_req, 'non_functional_requirements') else '已解析'}
+- **约束条件**: {structured_req.constraints if hasattr(structured_req, 'constraints') else '已解析'}
 """
         return {"output": output}
 
