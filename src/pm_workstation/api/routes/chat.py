@@ -408,24 +408,26 @@ async def compress_context(
     # 保留最近的 20 条消息，移除更早的消息
     keep_count = 20
     if len(messages) > keep_count:
-        # 只保留最近 keep_count 条
-        messages_to_keep = messages[-keep_count:]
-        # 重建消息列表（保留 keep_count 条）
-        for msg in messages[:-keep_count]:
-            await manager._delete_message(session_id, msg.id)
+        total = len(messages)
+        # 收集需要删除的消息 ID（先收集，避免迭代时列表被修改）
+        ids_to_remove = [m.id for m in messages[:-keep_count]]
+
+        # 逐个删除
+        for msg_id in ids_to_remove:
+            await manager._delete_message(session_id, msg_id)
 
         # 添加一条系统消息说明上下文已压缩
         compressed_msg = ChatMessage(
             id=uuid.uuid4().hex,
             session_id=session_id,
             role="system",
-            content=f"上下文已压缩。移除了 {len(messages) - keep_count} 条旧消息，保留了最近 {keep_count} 条消息。",
+            content=f"上下文已压缩。移除了 {len(ids_to_remove)} 条旧消息，保留了最近 {keep_count} 条消息。",
         )
         await manager.add_message(session_id, compressed_msg)
 
         return {
             "message": f"上下文已压缩",
-            "removed_count": len(messages) - keep_count,
+            "removed_count": len(ids_to_remove),
             "remaining_count": keep_count + 1,
         }
 
