@@ -107,8 +107,11 @@ class WorkflowNodesV2:
                 # 使用 Coordinator Agent 拆解任务
                 coordinator = _create_coordinator(llm_handler)
 
+                # 获取用户选择的 PM Skills
+                selected_skills = state.selected_skills if hasattr(state, 'selected_skills') else []
+
                 result = WorkflowNodesV2._call_coordinator_sync(
-                    coordinator, state.workflow_run.requirement_text
+                    coordinator, state.workflow_run.requirement_text, selected_skills=selected_skills
                 )
 
                 if result:
@@ -141,7 +144,7 @@ class WorkflowNodesV2:
             return WorkflowNodes.parsing_node(state, llm_handler)
 
     @staticmethod
-    def _call_coordinator_sync(coordinator: CoordinatorAgent, requirement_text: str) -> dict | None:
+    def _call_coordinator_sync(coordinator: CoordinatorAgent, requirement_text: str, selected_skills: list[str] | None = None) -> dict | None:
         """同步调用 Coordinator Agent，带超时控制"""
         import asyncio
         import threading
@@ -152,7 +155,7 @@ class WorkflowNodesV2:
             """在新线程中创建独立事件循环运行异步代码"""
             try:
                 result_holder["value"] = asyncio.run(
-                    coordinator.process_request(requirement_text)
+                    coordinator.process_request(requirement_text, selected_skills=selected_skills)
                 )
             except Exception as e:
                 result_holder["error"] = e

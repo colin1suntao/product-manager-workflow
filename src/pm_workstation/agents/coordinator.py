@@ -105,6 +105,7 @@ class CoordinatorAgent:
         self,
         requirement_text: str,
         state: dict[str, Any] | None = None,
+        selected_skills: list[str] | None = None,
     ) -> dict[str, Any]:
         """处理用户请求
 
@@ -113,20 +114,21 @@ class CoordinatorAgent:
         Args:
             requirement_text: 用户需求文本
             state: 可选的额外状态数据
+            selected_skills: 用户选择的 PM Skills 技能名称列表
 
         Returns:
             处理结果字典
         """
         start_time = time.monotonic()
 
-        # 步骤 1: 拆解任务
-        decomposition = await self._decompose_task(requirement_text)
+        # 步骤 1: 拆解任务（传入技能信息）
+        decomposition = await self._decompose_task(requirement_text, selected_skills=selected_skills)
         logger.info(
             f"Task decomposed: {len(decomposition.subtasks)} subtasks"
         )
 
-        # 步骤 2: 委派并收集结果
-        results = await self._delegate_and_collect(decomposition)
+        # 步骤 2: 委派并收集结果（传入技能信息）
+        results = await self._delegate_and_collect(decomposition, selected_skills=selected_skills)
 
         # 步骤 3: 汇总结果
         summary = await self._summarize_results(decomposition, results)
@@ -152,6 +154,7 @@ class CoordinatorAgent:
     async def _decompose_task(
         self,
         requirement_text: str,
+        selected_skills: list[str] | None = None,
     ) -> TaskDecomposition:
         """拆解任务
 
@@ -159,11 +162,12 @@ class CoordinatorAgent:
 
         Args:
             requirement_text: 用户需求文本
+            selected_skills: 用户选择的 PM Skills 技能名称列表
 
         Returns:
             任务拆解结果
         """
-        prompt = self._build_decomposition_prompt(requirement_text)
+        prompt = self._build_decomposition_prompt(requirement_text, selected_skills=selected_skills)
 
         try:
             response = await self.llm_handler.chat([
@@ -174,11 +178,11 @@ class CoordinatorAgent:
             return self._parse_decomposition_response(response.content)
         except Exception as e:
             logger.warning(f"LLM decomposition failed: {e}, using default plan")
-            return self._create_default_decomposition(requirement_text)
+            return self._create_default_decomposition(requirement_text, selected_skills=selected_skills)
 
-    def _build_decomposition_prompt(self, requirement_text: str) -> str:
+    def _build_decomposition_prompt(self, requirement_text: str, selected_skills: list[str] | None = None) -> str:
         """构建任务拆解提示"""
-        return f"""请分析以下需求并拆解为可执行的子任务：
+        prompt = f"""请分析以下需求并拆解为可执行的子任务：
 
 ## 需求描述
 
@@ -190,8 +194,21 @@ class CoordinatorAgent:
 2. 每个子任务应该有明确的描述和期望输出
 3. 标记可以并行执行的子任务
 4. 指定合理的执行顺序
+"""
 
+        if selected_skills:
+            skills_text = "\n".join([f"- {s}" for s in selected_skills])
+            prompt += f"""
+## 用户已选择的 PM Skills
+
+用户在需求输入时选择了以下 PM Skills，请在任务拆解时充分利用这些技能：
+{skills_text}
+"""
+
+        prompt += """
 请输出 JSON 格式的任务分解计划。"""
+
+        return prompt
 
     def _parse_decomposition_response(self, content: str) -> TaskDecomposition:
         """解析任务拆解响应
@@ -221,6 +238,7 @@ class CoordinatorAgent:
     def _create_default_decomposition(
         self,
         requirement_text: str,
+        selected_skills: list[str] | None = None,
     ) -> TaskDecomposition:
         """创建默认任务分解
 
@@ -228,15 +246,20 @@ class CoordinatorAgent:
 
         Args:
             requirement_text: 用户需求文本
+            selected_skills: 用户选择的 PM Skills 技能名称列表
 
         Returns:
             默认任务拆解
         """
+        skills_suffix = ""
+        if selected_skills:
+            skills_suffix = f"\n\n用户选择的技能: {', '.join(selected_skills)}"
+
         subtasks = [
             SubTask(
                 id="task-analyze",
                 agent_id="analyst",
-                description=f"分析需求: {requirement_text[:100]}...",
+                description=f"分析需求: {requirement_text[:100]}...{skills_suffix}",
                 expected_output="结构化需求分析",
                 timeout=180,
                 can_run_parallel=False,
@@ -244,7 +267,7 @@ class CoordinatorAgent:
             SubTask(
                 id="task-prd",
                 agent_id="writer",
-                description="生成 PRD 文档",
+                description=f"生成 PRD 文档{skills_suffix}",
                 expected_output="PRD Markdown 文档",
                 timeout=240,
                 can_run_parallel=True,
@@ -252,7 +275,7 @@ class CoordinatorAgent:
             SubTask(
                 id="task-prototype",
                 agent_id="designer",
-                description="设计原型",
+                description=f"设计原型{skills_suffix}",
                 expected_output="HTML 原型",
                 timeout=300,
                 can_run_parallel=True,
@@ -268,6 +291,7 @@ class CoordinatorAgent:
     async def _delegate_and_collect(
         self,
         decomposition: TaskDecomposition,
+        selected_skills: list[str] | None = None,
     ) -> dict[str, TaskResult]:
         """委派子任务并收集结果
 
@@ -275,6 +299,7 @@ class CoordinatorAgent:
 
         Args:
             decomposition: 任务拆解结果
+            selected_skills: 用户选择的 PM Skills 技能名称列表
 
         Returns:
             子任务结果映射 {task_id: TaskResult}
@@ -302,6 +327,7 @@ class CoordinatorAgent:
                     agent_id=task.agent_id,
                     task_description=task.description,
                     timeout=task.timeout,
+                    user_skills=selected_skills,
                 )
                 for task in parallel_tasks
             ]
@@ -316,6 +342,7 @@ class CoordinatorAgent:
                 agent_id=task.agent_id,
                 task_description=task.description,
                 timeout=task.timeout,
+                user_skills=selected_skills,
             )
             results[result.task_id] = result
 

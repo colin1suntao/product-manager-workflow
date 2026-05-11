@@ -48,6 +48,7 @@ class TaskRequest(BaseModel):
     task_description: str
     context: dict[str, Any] = Field(default_factory=dict)
     timeout: int | None = None
+    user_skills: list[str] | None = Field(default=None, description="用户选择的 PM Skills")
 
 
 class TaskResult(BaseModel):
@@ -203,6 +204,7 @@ class SubAgentExecutor:
         task: str,
         context: IsolatedContext | dict[str, Any],
         timeout: int | None = None,
+        user_skills: list[str] | None = None,
     ) -> str:
         """执行子 Agent 任务
 
@@ -211,6 +213,7 @@ class SubAgentExecutor:
             task: 任务描述
             context: 上下文数据
             timeout: 超时时间（秒），如果为 None 则使用配置的超时
+            user_skills: 用户选择的 PM Skills 技能名称列表
 
         Returns:
             执行结果字符串
@@ -222,7 +225,7 @@ class SubAgentExecutor:
         effective_timeout = timeout or config.timeout_seconds
 
         # 构建消息
-        messages = self._build_messages(config, task, context)
+        messages = self._build_messages(config, task, context, user_skills=user_skills)
 
         # 获取 LLM 处理器
         llm_handler = self._get_llm_handler(config)
@@ -244,6 +247,7 @@ class SubAgentExecutor:
         config: SubAgentConfig,
         task: str,
         context: IsolatedContext | dict[str, Any],
+        user_skills: list[str] | None = None,
     ) -> list[LLMMessage]:
         """构建 LLM 消息
 
@@ -251,6 +255,7 @@ class SubAgentExecutor:
             config: Sub-agent 配置
             task: 任务描述
             context: 上下文数据（IsolatedContext 或字典）
+            user_skills: 用户选择的 PM Skills 技能名称列表
 
         Returns:
             消息列表
@@ -261,6 +266,12 @@ class SubAgentExecutor:
         skills_info = self._get_skills_info(config.skills)
         if skills_info:
             system_prompt += "\n\n## 可用技能\n" + skills_info
+
+        # 如果有用户选择的 PM Skills，也注入
+        if user_skills:
+            user_skills_info = self._get_skills_info(user_skills)
+            if user_skills_info:
+                system_prompt += "\n\n## 用户选择的 PM Skills\n" + user_skills_info
 
         user_message = task
 
@@ -338,6 +349,7 @@ class TaskDelegationTool:
         task_description: str,
         context: dict[str, Any] | None = None,
         timeout: int | None = None,
+        user_skills: list[str] | None = None,
     ) -> TaskResult:
         """委派任务到指定 Sub-agent
 
@@ -346,6 +358,7 @@ class TaskDelegationTool:
             task_description: 任务描述
             context: 上下文数据
             timeout: 超时时间（秒）
+            user_skills: 用户选择的 PM Skills 技能名称列表
 
         Returns:
             任务执行结果
@@ -372,6 +385,7 @@ class TaskDelegationTool:
                 task=task_description,
                 context=isolated_ctx,
                 timeout=timeout,
+                user_skills=user_skills,
             )
             duration = time.monotonic() - start_time
 
@@ -429,6 +443,7 @@ class TaskDelegationTool:
                     task_description=task.task_description,
                     context=task.context,
                     timeout=task.timeout,
+                    user_skills=task.user_skills,
                 )
 
         results = await asyncio.gather(
