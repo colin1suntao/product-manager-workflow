@@ -40,7 +40,19 @@ def _get_chat_manager() -> ChatManager:
 
 def _get_coordinator(request: Request) -> CoordinatorChatAgent:
     """获取主 Agent"""
-    llm_handler = getattr(request.app.state, "llm_handler", None)
+    # 动态获取最新的 LLM handler
+    provider_store = request.app.state.provider_store
+    llm_handler = None
+    
+    try:
+        import asyncio
+        default_config = asyncio.run(provider_store.get_default_config())
+        if default_config:
+            from pm_workstation.api.app import _build_llm_handler
+            llm_handler = _build_llm_handler(default_config)
+    except Exception:
+        pass
+    
     task_router = TaskRouter(llm_handler=llm_handler)
     return CoordinatorChatAgent(
         llm_handler=llm_handler,
