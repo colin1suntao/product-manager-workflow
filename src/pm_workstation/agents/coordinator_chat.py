@@ -381,7 +381,7 @@ class CoordinatorChatAgent:
         if result.status == TaskStatus.FAILED:
             # 检查是否是 LLM 相关错误
             error_msg = result.error_message or ""
-            if "LLM" in error_msg or "Forbidden" in error_msg or "handler" in error_msg.lower():
+            if "LLM" in error_msg or "Forbidden" in error_msg or "handler" in error_msg.lower() or "Authentication" in error_msg or "401" in error_msg or "invalid" in error_msg.lower():
                 return (
                     f"**{mode_label}** 功能暂时不可用\n\n"
                     f"当前 LLM 服务未正确配置，无法执行{mode_label}任务。\n\n"

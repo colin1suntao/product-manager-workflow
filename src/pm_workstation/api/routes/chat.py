@@ -40,19 +40,25 @@ def _get_chat_manager() -> ChatManager:
 
 def _get_coordinator(request: Request) -> CoordinatorChatAgent:
     """获取主 Agent"""
-    # 动态获取最新的 LLM handler
-    provider_store = request.app.state.provider_store
+    return _build_coordinator_from_store(request.app.state.provider_store)
+
+
+def _build_coordinator_from_store(provider_store, provider_id: str | None = None, model_name: str | None = None) -> CoordinatorChatAgent:
+    """根据指定 provider 和模型构建 Coordinator"""
+    import asyncio
+    from pm_workstation.api.app import _build_llm_handler
+
     llm_handler = None
-    
     try:
-        import asyncio
-        default_config = asyncio.run(provider_store.get_default_config())
-        if default_config:
-            from pm_workstation.api.app import _build_llm_handler
-            llm_handler = _build_llm_handler(default_config)
+        if provider_id:
+            config = asyncio.run(provider_store.get_config(provider_id))
+        else:
+            config = asyncio.run(provider_store.get_default_config())
+        if config:
+            llm_handler = _build_llm_handler(config, model_override=model_name)
     except Exception:
         pass
-    
+
     task_router = TaskRouter(llm_handler=llm_handler)
     return CoordinatorChatAgent(
         llm_handler=llm_handler,
@@ -167,7 +173,7 @@ async def send_message(
     """发送消息并获取 Agent 响应
 
     Args:
-        body: 包含 content, task_mode（可选）, selected_skills（可选）的请求体
+        body: 包含 content, task_mode（可选）, selected_skills（可选）, provider_id（可选）, model_name（可选）的请求体
     """
     # 验证会话存在
     session = await manager.get_session(session_id)
@@ -184,6 +190,15 @@ async def send_message(
     task_mode_str = body.get("task_mode")
     task_mode = TaskMode(task_mode_str) if task_mode_str else None
     selected_skills = body.get("selected_skills", [])
+    provider_id = body.get("provider_id")
+    model_name = body.get("model_name")
+
+    # 如果指定了 provider_id 或 model_name，使用对应的 coordinator
+    if provider_id or model_name:
+        from pm_workstation.api.app import app_state_provider_store
+        coordinator = _build_coordinator_from_store(
+            app_state_provider_store, provider_id=provider_id, model_name=model_name
+        )
 
     # 添加用户消息
     user_message = ChatMessage(

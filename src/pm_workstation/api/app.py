@@ -21,12 +21,16 @@ ARTIFACTS_DIR = os.path.join(os.path.dirname(__file__), "..", "artifacts")
 # 前端静态文件目录 (Next.js 静态导出)
 FRONTEND_DIR = Path(__file__).parent.parent.parent.parent / "frontend" / "out"
 
+# 全局 provider_store 引用，供其他模块访问
+app_state_provider_store = None
 
-def _build_llm_handler(provider_config) -> FallbackHandler | None:
+
+def _build_llm_handler(provider_config, model_override: str | None = None) -> FallbackHandler | None:
     """从 LLM Provider 配置构建 llm_handler
 
     Args:
         provider_config: LLMProviderConfig 对象
+        model_override: 可选的模型名称覆盖
 
     Returns:
         FallbackHandler 实例，如果配置无效则返回 None
@@ -34,8 +38,10 @@ def _build_llm_handler(provider_config) -> FallbackHandler | None:
     if not provider_config or not provider_config.is_active:
         return None
 
+    model = model_override or provider_config.default_model
+
     config = LLMConfig(
-        model=provider_config.default_model,
+        model=model,
         api_key=provider_config.api_key,
         base_url=provider_config.base_url,
         temperature=0.7,
@@ -76,6 +82,11 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     app.state.llm_handler = llm_handler
     app.state.workflow_manager = WorkflowManager(llm_handler=llm_handler)
+    
+    # 暴露 provider_store 给其他模块使用
+    global app_state_provider_store
+    app_state_provider_store = app.state.provider_store
+    
     yield
     # 关闭时清理
     pass

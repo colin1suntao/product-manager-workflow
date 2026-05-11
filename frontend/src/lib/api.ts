@@ -333,6 +333,8 @@ export const chatApi = {
       content: string;
       task_mode?: string;
       selected_skills?: string[];
+      provider_id?: string;
+      model_name?: string;
     }
   ) =>
     fetchApi<{

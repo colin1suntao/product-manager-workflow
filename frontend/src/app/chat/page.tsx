@@ -7,6 +7,7 @@ import ChatSidebar from "@/components/chat/ChatSidebar";
 import ChatInput from "@/components/chat/ChatInput";
 import MessageList from "@/components/chat/MessageList";
 import TaskModeSelector from "@/components/chat/TaskModeSelector";
+import ModelSelector from "@/components/chat/ModelSelector";
 
 interface ChatSession {
   id: string;
@@ -32,6 +33,8 @@ export default function ChatPage() {
   const [loading, setLoading] = useState(false);
   const [sessionsLoading, setSessionsLoading] = useState(true);
   const [selectedMode, setSelectedMode] = useState<string | null>(null);
+  const [selectedProvider, setSelectedProvider] = useState<string | null>(null);
+  const [selectedModel, setSelectedModel] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -128,6 +131,8 @@ export default function ChatPage() {
       const response = await chatApi.sendMessage(activeSessionId, {
         content,
         task_mode: selectedMode || undefined,
+        provider_id: selectedProvider || undefined,
+        model_name: selectedModel || undefined,
       });
 
       // Update messages with actual response
@@ -190,10 +195,20 @@ export default function ChatPage() {
           </div>
 
           {/* Task Mode Selector */}
-          <div className="mt-3">
-            <TaskModeSelector
-              selectedMode={selectedMode}
-              onSelectMode={setSelectedMode}
+          <div className="mt-3 flex items-center gap-3">
+            <div className="flex-1">
+              <TaskModeSelector
+                selectedMode={selectedMode}
+                onSelectMode={setSelectedMode}
+              />
+            </div>
+            <ModelSelector
+              selectedModel={selectedModel}
+              selectedProvider={selectedProvider}
+              onSelect={(providerId, model) => {
+                setSelectedProvider(providerId);
+                setSelectedModel(model);
+              }}
             />
           </div>
         </div>
