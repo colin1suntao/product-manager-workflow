@@ -173,3 +173,20 @@ class ChatManager:
         """
         messages = self._messages.get(session_id, [])
         return messages[-limit:] if len(messages) > limit else messages
+
+    async def _delete_message(self, session_id: str, message_id: str) -> bool:
+        """删除单条消息（内部方法）
+
+        Args:
+            session_id: 会话 ID
+            message_id: 消息 ID
+
+        Returns:
+            是否删除成功
+        """
+        messages = self._messages.get(session_id, [])
+        for i, msg in enumerate(messages):
+            if msg.id == message_id:
+                messages.pop(i)
+                return True
+        return False

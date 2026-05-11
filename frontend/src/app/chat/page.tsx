@@ -23,6 +23,11 @@ interface Message {
   task_mode?: string | null;
   task_status?: string | null;
   artifacts?: Array<{ name: string; url: string; type: string }>;
+  thinking_time_ms?: number;
+  token_usage?: { prompt_tokens: number; completion_tokens: number; total_tokens: number };
+  tool_calls?: Array<{ tool_name: string; tool_type: string; description: string }>;
+  context_length?: number;
+  context_limit?: number;
   created_at: string;
 }
 
@@ -36,6 +41,9 @@ export default function ChatPage() {
   const [selectedProvider, setSelectedProvider] = useState<string | null>(null);
   const [selectedModel, setSelectedModel] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [contextLength, setContextLength] = useState(0);
+  const [contextLimit, setContextLimit] = useState(128000);
+  const [compressing, setCompressing] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Load sessions on mount
@@ -107,6 +115,23 @@ export default function ChatPage() {
     }
   };
 
+  const handleCompressContext = async () => {
+    if (!activeSessionId) return;
+    try {
+      setCompressing(true);
+      const result = await chatApi.compressContext(activeSessionId);
+      setContextLength(0);
+      await loadMessages(activeSessionId);
+      setError(`上下文已压缩，移除了 ${result.removed_count} 条旧消息`);
+      setTimeout(() => setError(null), 3000);
+    } catch (error) {
+      console.error("Failed to compress context:", error);
+      setError("压缩上下文失败");
+    } finally {
+      setCompressing(false);
+    }
+  };
+
   const handleSendMessage = async (content: string) => {
     if (!activeSessionId) {
       // Auto-create session if none exists
@@ -151,6 +176,14 @@ export default function ChatPage() {
         ];
       });
 
+      // Update context length from response
+      if (response.assistant_message.context_length) {
+        setContextLength(response.assistant_message.context_length);
+      }
+      if (response.assistant_message.context_limit) {
+        setContextLimit(response.assistant_message.context_limit);
+      }
+
       // Refresh sessions to update title
       loadSessions();
     } catch (error) {
@@ -190,6 +223,34 @@ export default function ChatPage() {
                 <span className="text-sm text-gray-500">
                   {messages.length} 条消息
                 </span>
+                {/* Context Length Indicator */}
+                {contextLength > 0 && (
+                  <div className="flex items-center gap-2">
+                    <div className="w-24 h-2 bg-gray-200 rounded-full overflow-hidden" title={`上下文: ${(contextLength / 1024).toFixed(0)}KB / ${(contextLimit / 1024).toFixed(0)}KB`}>
+                      <div
+                        className={`h-full rounded-full transition-all ${
+                          contextLength / contextLimit > 0.8
+                            ? "bg-red-500"
+                            : contextLength / contextLimit > 0.5
+                            ? "bg-yellow-500"
+                            : "bg-green-500"
+                        }`}
+                        style={{ width: `${Math.min(100, (contextLength / contextLimit) * 100)}%` }}
+                      />
+                    </div>
+                    <span className="text-xs text-gray-400">
+                      {Math.round((contextLength / contextLimit) * 100)}%
+                    </span>
+                    <button
+                      onClick={handleCompressContext}
+                      disabled={compressing}
+                      className="text-xs px-2 py-1 border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50"
+                      title="压缩上下文以释放空间"
+                    >
+                      {compressing ? "压缩中..." : "压缩"}
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>

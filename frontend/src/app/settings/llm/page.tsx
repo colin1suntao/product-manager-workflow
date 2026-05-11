@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, FormEvent } from "react";
+import { useState, useEffect, useRef, FormEvent, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { llmApi, LLMProvider, LLMProviderCreate, LLMTestResult } from "@/lib/llm";
 import { isAuthenticated } from "@/lib/auth";
@@ -152,6 +152,63 @@ export default function LLMSettingsPage() {
     setAvailableModels([]);
   };
 
+  // 当 API Key 和 Base URL 填写完整后，自动获取模型列表（防抖 800ms）
+  const autoFetchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const doFetchModels = useCallback(async (apiKey: string, baseUrl: string | undefined, providerType: string) => {
+    if (!apiKey) return;
+    const isCustom = providerType === "custom";
+    if (isCustom && !baseUrl) return;
+
+    setFetchingModels(true);
+    try {
+      const data = await llmApi.listModels({
+        provider_type: providerType as "openai" | "anthropic" | "custom",
+        api_key: apiKey,
+        base_url: baseUrl || undefined,
+      });
+      setAvailableModels(data.models);
+      // 如果当前 default_model 为空且只有一个模型，自动选中
+      setForm(prev => {
+        if (!prev.default_model && data.models.length === 1) {
+          return { ...prev, default_model: data.models[0].id };
+        }
+        return prev;
+      });
+    } catch {
+      // 静默失败，不打扰用户
+    } finally {
+      setFetchingModels(false);
+    }
+  }, []);
+
+  // 监听 form 变化，自动获取模型列表
+  useEffect(() => {
+    if (autoFetchTimer.current) {
+      clearTimeout(autoFetchTimer.current);
+    }
+
+    // 编辑已有供应商时不自动获取
+    if (editingId) return;
+
+    const hasKey = !!form.api_key;
+    const needsBaseUrl = form.provider_type === "custom";
+    const hasBaseUrl = !!form.base_url;
+
+    if (!hasKey) return;
+    if (needsBaseUrl && !hasBaseUrl) return;
+
+    autoFetchTimer.current = setTimeout(() => {
+      doFetchModels(form.api_key, form.base_url, form.provider_type);
+    }, 800);
+
+    return () => {
+      if (autoFetchTimer.current) {
+        clearTimeout(autoFetchTimer.current);
+      }
+    };
+  }, [form.api_key, form.base_url, form.provider_type, editingId, doFetchModels]);
+
   const handleQuickTest = async () => {
     if (!form.api_key) {
       alert("请先填写 API Key");
@@ -192,29 +249,11 @@ export default function LLMSettingsPage() {
       return;
     }
     
-    setFetchingModels(true);
-    try {
-      const data = await llmApi.listModels({
-        provider_type: form.provider_type,
-        api_key: form.api_key,
-        base_url: form.base_url || undefined,
-      });
-      setAvailableModels(data.models);
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : "获取模型列表失败";
-      if (msg.includes("401") || msg.includes("认证")) {
-        setAuthError("登录已过期，请重新登录");
-        router.push("/auth/login");
-      } else {
-        let displayMsg = msg;
-        if (msg.includes("Base URL") || msg.includes("404")) {
-          displayMsg = msg + "\n\n常见原因：\n1. Base URL 缺少 /v1 路径\n2. Base URL 拼写错误\n3. 服务提供商地址变更\n\n示例：\n- OpenAI: https://api.openai.com/v1\n- DeepSeek: https://api.deepseek.com/v1\n- 通义千问: https://dashscope.aliyuncs.com/compatible-mode/v1";
-        }
-        alert(displayMsg);
-      }
-    } finally {
-      setFetchingModels(false);
+    // 清除防抖计时器，立即执行
+    if (autoFetchTimer.current) {
+      clearTimeout(autoFetchTimer.current);
     }
+    await doFetchModels(form.api_key, form.base_url, form.provider_type);
   };
 
   return (

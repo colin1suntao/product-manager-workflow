@@ -84,6 +84,15 @@ class ChatSession(BaseModel):
     metadata: dict[str, Any] = {}
 
 
+class ToolCall(BaseModel):
+    """工具/技能调用记录"""
+    tool_name: str
+    tool_type: Literal["skill", "function", "agent"]
+    duration_ms: int = 0
+    status: str = "success"
+    description: str = ""
+
+
 class ChatMessage(BaseModel):
     """会话消息"""
     id: str = Field(default_factory=lambda: __import__("uuid").uuid4().hex)
@@ -95,4 +104,9 @@ class ChatMessage(BaseModel):
     task_status: Optional[TaskStatus] = None
     task_result: Optional[TaskResult] = None
     artifacts: list[Artifact] = []
+    thinking_time_ms: int = 0
+    token_usage: dict[str, int] = Field(default_factory=lambda: {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0})
+    tool_calls: list[ToolCall] = []
+    context_length: int = 0
+    context_limit: int = 128000
     created_at: datetime = Field(default_factory=datetime.now)

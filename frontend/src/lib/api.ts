@@ -349,6 +349,11 @@ export const chatApi = {
         task_mode: string | null;
         task_status: string | null;
         artifacts: Array<{ name: string; url: string; type: string }>;
+        thinking_time_ms: number;
+        token_usage: { prompt_tokens: number; completion_tokens: number; total_tokens: number };
+        tool_calls: Array<{ tool_name: string; tool_type: string; description: string }>;
+        context_length: number;
+        context_limit: number;
         created_at: string;
       };
     }>(`/api/v1/chat/sessions/${sessionId}/messages`, {
@@ -365,10 +370,24 @@ export const chatApi = {
         task_mode: string | null;
         task_status: string | null;
         artifacts: Array<{ name: string; url: string; type: string }>;
+        thinking_time_ms: number;
+        token_usage: { prompt_tokens: number; completion_tokens: number; total_tokens: number };
+        tool_calls: Array<{ tool_name: string; tool_type: string; description: string }>;
+        context_length: number;
+        context_limit: number;
         created_at: string;
       }>;
       total: number;
     }>(`/api/v1/chat/sessions/${sessionId}/messages`),
+
+  compressContext: (sessionId: string) =>
+    fetchApi<{
+      message: string;
+      removed_count: number;
+      remaining_count: number;
+    }>(`/api/v1/chat/sessions/${sessionId}/compress`, {
+      method: "POST",
+    }),
 };
 
 /** 记忆管理 API */

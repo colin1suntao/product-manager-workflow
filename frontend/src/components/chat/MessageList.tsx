@@ -10,6 +10,11 @@ interface Message {
   task_mode?: string | null;
   task_status?: string | null;
   artifacts?: Array<{ name: string; url: string; type: string }>;
+  thinking_time_ms?: number;
+  token_usage?: { prompt_tokens: number; completion_tokens: number; total_tokens: number };
+  tool_calls?: Array<{ tool_name: string; tool_type: string; description: string }>;
+  context_length?: number;
+  context_limit?: number;
   created_at: string;
 }
 
@@ -119,6 +124,41 @@ export default function MessageList({ messages, loading = false }: MessageListPr
                       {artifact.name}
                     </a>
                   ))}
+                </div>
+              </div>
+            )}
+
+            {/* Message Metadata: thinking time, tokens, tool calls */}
+            {message.role === "assistant" && (message.thinking_time_ms || message.token_usage?.total_tokens || (message.tool_calls && message.tool_calls.length > 0)) && (
+              <div className="mt-2 pt-2 border-t border-gray-100">
+                <div className="flex flex-wrap items-center gap-3 text-xs text-gray-400">
+                  {message.thinking_time_ms ? (
+                    <span className="flex items-center gap-1" title="思考时间">
+                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      {message.thinking_time_ms >= 1000
+                        ? `${(message.thinking_time_ms / 1000).toFixed(1)}s`
+                        : `${message.thinking_time_ms}ms`}
+                    </span>
+                  ) : null}
+                  {message.token_usage?.total_tokens ? (
+                    <span className="flex items-center gap-1" title={`输入 ${message.token_usage.prompt_tokens?.toLocaleString() || 0} / 输出 ${message.token_usage.completion_tokens?.toLocaleString() || 0} tokens`}>
+                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      {message.token_usage.total_tokens?.toLocaleString()} tokens
+                    </span>
+                  ) : null}
+                  {message.tool_calls && message.tool_calls.length > 0 && (
+                    <span className="flex items-center gap-1" title={message.tool_calls.map(t => t.description).join("\n")}>
+                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                      {message.tool_calls.length} 个工具
+                    </span>
+                  )}
                 </div>
               </div>
             )}
