@@ -33,6 +33,7 @@ export interface WorkflowRun {
   verification_report_url?: string;
   error?: string;
   error_message?: string;
+  selected_skills?: string[];
 }
 
 /** 工作流列表响应 */

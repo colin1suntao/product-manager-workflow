@@ -13,6 +13,7 @@ export interface LLMProvider {
   api_key: string;
   base_url?: string;
   default_model: string;
+  available_models?: string[];
   is_active: boolean;
   is_default: boolean;
   created_at: string;
@@ -25,15 +26,18 @@ export interface LLMProviderCreate {
   api_key: string;
   base_url?: string;
   default_model: string;
+  available_models?: string[];
   is_active?: boolean;
   is_default?: boolean;
 }
 
 export interface LLMProviderUpdate {
   name?: string;
+  provider_type?: string;
   api_key?: string;
   base_url?: string;
   default_model?: string;
+  available_models?: string[];
   is_active?: boolean;
   is_default?: boolean;
 }

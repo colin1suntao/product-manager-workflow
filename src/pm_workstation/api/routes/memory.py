@@ -291,12 +291,20 @@ async def create_memory(
 @router.get("/entries", summary="列出记忆")
 async def list_memories(
     memory_type: str = None,
+    page: int = 1,
+    size: int = 20,
     user_id: str = Depends(get_current_user),
     manager: MemoryManager = Depends(_get_memory_manager),
 ) -> dict:
-    """列出用户的记忆"""
+    """列出用户的记忆（支持分页和类型筛选）"""
     mt = MemoryType(memory_type) if memory_type else None
-    memories = await manager.list_memories(user_id=user_id, memory_type=mt)
+    memories = await manager.list_memories(
+        user_id=user_id,
+        memory_type=mt,
+        limit=size,
+        offset=(page - 1) * size,
+    )
+    all_memories = await manager.list_memories(user_id=user_id, memory_type=mt)
 
     return {
         "memories": [
@@ -311,7 +319,9 @@ async def list_memories(
             }
             for m in memories
         ],
-        "total": len(memories),
+        "total": len(all_memories),
+        "page": page,
+        "size": size,
     }
 
 

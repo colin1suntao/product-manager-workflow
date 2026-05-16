@@ -6,8 +6,24 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
+
+# 路由导入
+from pm_workstation.api.routes.auth import router as auth_router
+from pm_workstation.api.routes.channels import router as channels_router
+from pm_workstation.api.routes.chat import router as chat_router
+from pm_workstation.api.routes.component_library import router as component_library_router
+from pm_workstation.api.routes.components import router as components_router
+from pm_workstation.api.routes.integrations import router as integrations_router
+from pm_workstation.api.routes.knowledge_base import router as knowledge_base_router
+from pm_workstation.api.routes.llm import router as llm_router
+from pm_workstation.api.routes.market_research import router as market_research_router
+from pm_workstation.api.routes.memory import router as memory_router
+from pm_workstation.api.routes.skills import router as skills_router
+from pm_workstation.api.routes.token_usage import router as token_usage_router
+from pm_workstation.api.routes.workflows import router as workflows_router
 
 from pm_workstation.llm.provider_store import LLMProviderStore
 from pm_workstation.model_router.anthropic_adapter import AnthropicAdapter
@@ -105,21 +121,46 @@ def _try_create_default_provider(store) -> None:
 
 def create_app() -> FastAPI:
     """创建 FastAPI 应用实例"""
-    from pm_workstation.api.routes.auth import router as auth_router
-    from pm_workstation.api.routes.chat import router as chat_router
-    from pm_workstation.api.routes.components import router as components_router
-    from pm_workstation.api.routes.integrations import router as integrations_router
-    from pm_workstation.api.routes.llm import router as llm_router
-    from pm_workstation.api.routes.market_research import router as market_research_router
-    from pm_workstation.api.routes.memory import router as memory_router
-    from pm_workstation.api.routes.skills import router as skills_router
-    from pm_workstation.api.routes.workflows import router as workflows_router
+    global app_state_provider_store
+
+    @asynccontextmanager
+    async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+        # 初始化 LLM Provider Store
+        provider_store = LLMProviderStore()
+        app_state_provider_store = provider_store
+        # 设置到 app.state 供依赖注入使用
+        app.state.provider_store = provider_store
+        
+        # 尝试构建默认 LLM handler
+        llm_handler = None
+        try:
+            default_config = await provider_store.get_default_config()
+            if default_config:
+                llm_handler = _build_llm_handler(default_config)
+        except Exception:
+            pass
+        
+        # 初始化 Workflow Manager（带 LLM handler 和 provider_store）
+        workflow_manager = WorkflowManager(llm_handler=llm_handler, provider_store=provider_store)
+        app.state.llm_handler = llm_handler
+        app.state.workflow_manager = workflow_manager
+        
+        yield
 
     app = FastAPI(
         title="PM Workstation API",
-        description="产品经理多Agent协作工作站 API",
-        version="0.1.0",
+        description="Product Manager Workstation Backend API",
+        version="1.0.0",
         lifespan=lifespan,
+    )
+
+    # CORS 配置 - 允许所有来源（开发环境）
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
     )
 
     # 注册路由
@@ -127,11 +168,15 @@ def create_app() -> FastAPI:
     app.include_router(llm_router, prefix="/api/v1", tags=["LLM 配置"])
     app.include_router(workflows_router, prefix="/api/v1", tags=["工作流"])
     app.include_router(components_router, prefix="/api/v1", tags=["组件库"])
+    app.include_router(component_library_router, prefix="/api/v1", tags=["组件模板库"])
     app.include_router(integrations_router, prefix="/api/v1", tags=["集成配置"])
+    app.include_router(knowledge_base_router, prefix="/api/v1", tags=["知识库"])
     app.include_router(skills_router, prefix="/api/v1", tags=["PM Skills"])
     app.include_router(market_research_router, prefix="/api/v1", tags=["市场调研"])
     app.include_router(chat_router, prefix="/api/v1", tags=["会话交互"])
+    app.include_router(channels_router, prefix="/api/v1", tags=["渠道管理"])
     app.include_router(memory_router, prefix="/api/v1", tags=["记忆管理"])
+    app.include_router(token_usage_router, prefix="/api/v1", tags=["模型用量"])
 
     # 健康检查
     @app.get("/health", tags=["健康检查"])

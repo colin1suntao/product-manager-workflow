@@ -162,10 +162,10 @@ class WorkflowNodesV2:
 
         thread = threading.Thread(target=_run_async, daemon=True)
         thread.start()
-        thread.join(timeout=30)  # 30 秒超时
+        thread.join(timeout=120)  # 120 秒超时（包含多个 LLM 调用）
 
         if thread.is_alive():
-            raise TimeoutError("Coordinator call timed out after 30s")
+            raise TimeoutError("Coordinator call timed out after 120s")
 
         if result_holder["error"]:
             raise result_holder["error"]
@@ -202,25 +202,43 @@ class WorkflowNodesV2:
                 skills = state.selected_skills if hasattr(state, 'selected_skills') else []
 
                 if llm_handler:
-                    if not state.prototype_html:
+                    # 并行生成原型和 PRD
+                    import threading
+                    results = {"prototype": None, "prd": None}
+                    errors = {"prototype": None, "prd": None}
+
+                    def _gen_prototype():
                         try:
-                            prototype_html = WorkflowNodes._call_llm_sync(
+                            results["prototype"] = WorkflowNodes._call_llm_sync(
                                 llm_handler, "prototype", req_text, skills=skills
                             )
-                            if prototype_html:
-                                state.prototype_html = prototype_html
                         except Exception as e:
-                            logger.warning(f"[GeneratingNodeV2] Prototype failed: {e}")
+                            errors["prototype"] = e
 
-                    if not state.prd_document:
+                    def _gen_prd():
                         try:
-                            prd_document = WorkflowNodes._call_llm_sync(
+                            results["prd"] = WorkflowNodes._call_llm_sync(
                                 llm_handler, "prd", req_text, skills=skills
                             )
-                            if prd_document:
-                                state.prd_document = prd_document
                         except Exception as e:
-                            logger.warning(f"[GeneratingNodeV2] PRD failed: {e}")
+                            errors["prd"] = e
+
+                    t1 = threading.Thread(target=_gen_prototype, daemon=True)
+                    t2 = threading.Thread(target=_gen_prd, daemon=True)
+                    t1.start()
+                    t2.start()
+                    t1.join(timeout=60)
+                    t2.join(timeout=60)
+
+                    if results["prototype"]:
+                        state.prototype_html = results["prototype"]
+                    elif errors["prototype"]:
+                        logger.warning(f"[GeneratingNodeV2] Prototype failed: {errors['prototype']}")
+
+                    if results["prd"]:
+                        state.prd_document = results["prd"]
+                    elif errors["prd"]:
+                        logger.warning(f"[GeneratingNodeV2] PRD failed: {errors['prd']}")
 
                 # 兜底
                 if not state.prototype_html:

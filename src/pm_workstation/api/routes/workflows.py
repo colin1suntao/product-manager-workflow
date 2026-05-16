@@ -37,6 +37,8 @@ def _convert_run_to_response(run) -> WorkflowResponse:
         verification_report=run.verification_report.model_dump() if run.verification_report else None,
         verification_report_url=run.verification_report_url,
         error_message=run.error_message,
+        selected_skills=run.selected_skills if hasattr(run, 'selected_skills') else [],
+        llm_provider_id=run.llm_provider_id if hasattr(run, 'llm_provider_id') else None,
     )
 
 

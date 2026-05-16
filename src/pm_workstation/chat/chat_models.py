@@ -65,13 +65,23 @@ class TaskPlan(BaseModel):
     dependencies: list[str] = []
 
 
+class ThinkingStep(BaseModel):
+    step_name: str
+    description: str
+    duration_ms: int = 0
+    status: str = "completed"
+    detail: str = ""
+
+
 class CoordinatorResponse(BaseModel):
-    """主 Agent 响应"""
     message: str
     task_plans: list[TaskPlan] = []
     task_results: list[TaskResult] = []
     requires_user_input: bool = False
     suggested_actions: list[str] = []
+    thinking_process: list[ThinkingStep] = []
+    model_id: str = ""
+    intent_analysis: Optional[IntentAnalysis] = None
 
 
 class ChatSession(BaseModel):
@@ -87,14 +97,13 @@ class ChatSession(BaseModel):
 class ToolCall(BaseModel):
     """工具/技能调用记录"""
     tool_name: str
-    tool_type: Literal["skill", "function", "agent"]
+    tool_type: Literal["skill", "function", "agent", "template"]
     duration_ms: int = 0
     status: str = "success"
     description: str = ""
 
 
 class ChatMessage(BaseModel):
-    """会话消息"""
     id: str = Field(default_factory=lambda: __import__("uuid").uuid4().hex)
     session_id: str
     role: Literal["user", "assistant", "system"]
@@ -105,6 +114,9 @@ class ChatMessage(BaseModel):
     task_result: Optional[TaskResult] = None
     artifacts: list[Artifact] = []
     thinking_time_ms: int = 0
+    thinking_process: list[ThinkingStep] = []
+    model_id: str = ""
+    intent_summary: str = ""
     token_usage: dict[str, int] = Field(default_factory=lambda: {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0})
     tool_calls: list[ToolCall] = []
     context_length: int = 0

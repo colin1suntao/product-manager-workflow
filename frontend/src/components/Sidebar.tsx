@@ -18,6 +18,7 @@ interface WorkflowSummary {
   title: string;
   status: string;
   created_at: string;
+  selected_skills?: string[];
 }
 
 const navItems: NavItem[] = [
@@ -35,8 +36,11 @@ const navItems: NavItem[] = [
     ],
   },
   { href: "/market-research", label: "市场调研", icon: "🔍" },
+  { href: "/channels", label: "渠道接入", icon: "📡" },
+  { href: "/usage", label: "模型用量", icon: "📈" },
   { href: "/skills", label: "PM Skills", icon: "🎯" },
-  { href: "/components-lib", label: "组件库", icon: "🧩" },
+  { href: "/knowledge-base", label: "知识库", icon: "📚" },
+  { href: "/component-library", label: "组件库", icon: "🧩" },
   {
     href: "/settings",
     label: "系统设置",
@@ -93,11 +97,12 @@ export default function Sidebar() {
     try {
       const data = await workflowApi.list({ page: 1, size: 5 });
       if (data && data.workflows) {
-        setRecentWorkflows(data.workflows.map((w: { id: string; title?: string; status: string; created_at: string }) => ({
+        setRecentWorkflows(data.workflows.map((w: { id: string; title?: string; status: string; created_at: string; selected_skills?: string[] }) => ({
           id: w.id,
           title: w.title || "未命名工作流",
           status: w.status,
           created_at: w.created_at,
+          selected_skills: w.selected_skills,
         })));
       }
     } catch {
@@ -195,16 +200,30 @@ export default function Sidebar() {
                           <Link
                             key={wf.id}
                             href={`/workflows/detail?id=${wf.id}`}
-                            className={`flex items-center justify-between px-3 py-1.5 rounded text-xs transition-colors ${
+                            className={`flex flex-col px-3 py-1.5 rounded text-xs transition-colors ${
                               pathname === `/workflows/detail` && pathname.includes(wf.id)
                                 ? "bg-blue-50 text-blue-700"
                                 : "text-gray-500 hover:bg-gray-50"
                             }`}
                           >
-                            <span className="truncate max-w-[120px]">{wf.title}</span>
-                            <span className={`shrink-0 ${STATUS_COLORS[wf.status] || "text-gray-400"}`}>
-                              {STATUS_LABELS[wf.status] || wf.status}
-                            </span>
+                            <div className="flex items-center justify-between w-full">
+                              <span className="truncate max-w-[120px]">{wf.title}</span>
+                              <span className={`shrink-0 ${STATUS_COLORS[wf.status] || "text-gray-400"}`}>
+                                {STATUS_LABELS[wf.status] || wf.status}
+                              </span>
+                            </div>
+                            {wf.selected_skills && wf.selected_skills.length > 0 && (
+                              <div className="flex flex-wrap gap-1 mt-1">
+                                {wf.selected_skills.slice(0, 3).map((s) => (
+                                  <span key={s} className="px-1 py-0.5 bg-blue-50 text-blue-600 rounded text-[10px] border border-blue-100">
+                                    {s}
+                                  </span>
+                                ))}
+                                {wf.selected_skills.length > 3 && (
+                                  <span className="text-[10px] text-gray-400">+{wf.selected_skills.length - 3}</span>
+                                )}
+                              </div>
+                            )}
                           </Link>
                         ))}
                       </div>

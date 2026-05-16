@@ -54,13 +54,28 @@ export default function ModelSelector({
       if (data.providers) {
         const models: ProviderModel[] = [];
         for (const p of data.providers) {
-          models.push({
-            provider_id: p.id,
-            provider_name: p.name,
-            provider_type: p.provider_type,
-            model: p.default_model,
-            is_default: p.is_default,
-          });
+          // If provider has available_models and it's not empty, show each as separate option
+          const available = p.available_models as string[] | undefined;
+          if (Array.isArray(available) && available.length > 0) {
+            for (const m of available) {
+              models.push({
+                provider_id: p.id,
+                provider_name: p.name,
+                provider_type: p.provider_type,
+                model: m,
+                is_default: p.is_default && m === p.default_model,
+              });
+            }
+          } else {
+            // Fallback: show only default_model (even if available_models is empty array)
+            models.push({
+              provider_id: p.id,
+              provider_name: p.name,
+              provider_type: p.provider_type,
+              model: p.default_model,
+              is_default: p.is_default,
+            });
+          }
         }
         setProviders(models);
 

@@ -100,7 +100,7 @@ class WorkflowNodes:
 
         thread = threading.Thread(target=_run_async, daemon=True)
         thread.start()
-        thread.join(timeout=90)  # 90秒超时（原型和PRD各90秒，加上parsing 60秒，总计不超过3分钟）
+        thread.join(timeout=60)  # 60秒超时
 
         elapsed = time.time() - start_time
 

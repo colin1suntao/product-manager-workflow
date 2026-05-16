@@ -3,7 +3,7 @@
 提供 Product-Manager-Skills 的管理和查询接口。
 """
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 
 from pm_workstation.api.dependencies import get_provider_store
 from pm_workstation.auth.dependencies import get_current_user
@@ -141,3 +141,81 @@ async def apply_skill(
         "full_prompt": skill.get_full_prompt(),
         "requirement_text": requirement_text,
     }
+
+
+@router.post("/import", summary="导入技能")
+async def import_skill(
+    request: dict,
+    user_id: str = Depends(get_current_user),
+) -> dict:
+    """导入用户自定义技能
+
+    支持两种格式：
+    1. content: SKILL.md 格式内容（含 YAML front matter）
+    2. 直接传入技能字段（name, description, system_prompt 等）
+    """
+    loader = get_skill_loader()
+
+    content = request.get("content", "").strip()
+
+    try:
+        if content:
+            skill = loader.import_skill(content)
+        else:
+            skill = loader.import_skill_from_dict(request)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    return {
+        "name": skill.name,
+        "description": skill.description,
+        "type": skill.skill_type or "component",
+        "message": f"技能 '{skill.name}' 导入成功",
+    }
+
+
+@router.post("/import/file", summary="通过文件上传导入技能")
+async def import_skill_file(
+    file: UploadFile = File(...),
+    user_id: str = Depends(get_current_user),
+) -> dict:
+    """通过上传 SKILL.md 文件导入技能"""
+    loader = get_skill_loader()
+
+    if not file.filename or not file.filename.endswith(".md"):
+        raise HTTPException(status_code=400, detail="仅支持 .md 文件")
+
+    try:
+        content = (await file.read()).decode("utf-8")
+    except Exception:
+        raise HTTPException(status_code=400, detail="文件编码错误，请使用 UTF-8 编码")
+
+    try:
+        skill = loader.import_skill(content, filename=file.filename)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    return {
+        "name": skill.name,
+        "description": skill.description,
+        "type": skill.skill_type or "component",
+        "message": f"技能 '{skill.name}' 导入成功",
+    }
+
+
+@router.delete("/{skill_name}", summary="删除已导入的技能")
+async def delete_skill(
+    skill_name: str,
+    user_id: str = Depends(get_current_user),
+) -> dict:
+    """删除用户导入的技能（内置技能不可删除）"""
+    loader = get_skill_loader()
+
+    if not loader.is_imported(skill_name):
+        raise HTTPException(status_code=400, detail=f"技能 '{skill_name}' 不是导入的技能，无法删除")
+
+    success = loader.delete_skill(skill_name)
+    if not success:
+        raise HTTPException(status_code=404, detail=f"技能 '{skill_name}' 不存在")
+
+    return {"message": f"技能 '{skill_name}' 已删除"}

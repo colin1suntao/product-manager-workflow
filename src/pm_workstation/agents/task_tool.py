@@ -70,6 +70,24 @@ class TaskDecomposition(BaseModel):
     subtasks: list[SubTask]
     execution_order: list[str]  # 子任务 ID 列表
 
+    @classmethod
+    def _flatten_execution_order(cls, v):
+        """展平嵌套的 execution_order（LLM 可能返回嵌套列表表示并行任务）"""
+        if not isinstance(v, list):
+            return v
+        result = []
+        for item in v:
+            if isinstance(item, list):
+                result.extend(item)
+            else:
+                result.append(item)
+        return result
+
+    def __init__(self, **data):
+        if 'execution_order' in data:
+            data['execution_order'] = self._flatten_execution_order(data['execution_order'])
+        super().__init__(**data)
+
 
 class ContextManager:
     """上下文管理器

@@ -55,14 +55,169 @@ class SkillLoader:
     支持两种格式：
     1. 项目原生格式（YAML）
     2. Product-Manager-Skills 格式（Markdown with YAML front matter）
+    3. 用户导入的技能（存储在 user-skills/ 目录）
     """
 
     def __init__(self, skills_dir: str | None = None):
         self.skills_dir = Path(skills_dir) if skills_dir else Path(
             Path(__file__).parent.parent / "skills"
         )
+        self._user_skills_dir = self.skills_dir / "user-skills"
         self._skills: dict[str, Skill] = {}
+        self._imported_skills: set[str] = set()
         self._load_all()
+
+    def import_skill(self, content: str, filename: str = "") -> Skill:
+        """从 SKILL.md 格式内容导入技能
+
+        Args:
+            content: SKILL.md 格式内容（含 YAML front matter）
+            filename: 可选的文件名（用于持久化）
+
+        Returns:
+            导入的 Skill 对象
+
+        Raises:
+            ValueError: 内容解析失败或技能名已存在
+        """
+        front_matter = self._parse_front_matter(content)
+        if not front_matter:
+            raise ValueError("无法解析 YAML front matter，请确保内容以 --- 开头和结尾")
+
+        name = front_matter.get("name", "").strip()
+        if not name:
+            raise ValueError("技能名称 (name) 不能为空")
+
+        if name in self._skills:
+            raise ValueError(f"技能 '{name}' 已存在")
+
+        markdown_content = self._extract_markdown_content(content)
+        system_prompt = self._build_pm_skill_prompt(front_matter, markdown_content)
+        steps = self._extract_pm_skill_steps(markdown_content)
+
+        skill = Skill(
+            name=name,
+            description=front_matter.get("description", ""),
+            system_prompt=system_prompt,
+            tools=[],
+            steps=steps,
+            output_format="",
+            intent=front_matter.get("intent", ""),
+            skill_type=front_matter.get("type", "component"),
+            best_for=front_matter.get("best_for", []),
+            scenarios=front_matter.get("scenarios", []),
+            estimated_time=front_matter.get("estimated_time", ""),
+        )
+
+        self._skills[name] = skill
+        self._imported_skills.add(name)
+
+        self._persist_imported_skill(content, name, filename)
+
+        return skill
+
+    def import_skill_from_dict(self, data: dict) -> Skill:
+        """从字典格式导入技能（适用于 JSON API）
+
+        Args:
+            data: 包含技能字段的字典
+
+        Returns:
+            导入的 Skill 对象
+
+        Raises:
+            ValueError: 技能名已存在或必填字段缺失
+        """
+        name = data.get("name", "").strip()
+        if not name:
+            raise ValueError("技能名称 (name) 不能为空")
+
+        if name in self._skills:
+            raise ValueError(f"技能 '{name}' 已存在")
+
+        skill = Skill(
+            name=name,
+            description=data.get("description", ""),
+            system_prompt=data.get("system_prompt", ""),
+            tools=data.get("tools", []),
+            steps=data.get("steps", []),
+            output_format=data.get("output_format", ""),
+            intent=data.get("intent", ""),
+            skill_type=data.get("type", "component"),
+            best_for=data.get("best_for", []),
+            scenarios=data.get("scenarios", []),
+            estimated_time=data.get("estimated_time", ""),
+        )
+
+        self._skills[name] = skill
+        self._imported_skills.add(name)
+
+        content = self._skill_to_skilly(skill)
+        self._persist_imported_skill(content, name)
+
+        return skill
+
+    def delete_skill(self, name: str) -> bool:
+        """删除已导入的技能
+
+        Args:
+            name: 技能名称
+
+        Returns:
+            是否成功删除
+        """
+        if name not in self._imported_skills:
+            return False
+
+        self._skills.pop(name, None)
+        self._imported_skills.discard(name)
+
+        skill_file = self._user_skills_dir / f"{name}.md"
+        if skill_file.exists():
+            skill_file.unlink()
+
+        return True
+
+    def is_imported(self, name: str) -> bool:
+        """检查技能是否为用户导入的"""
+        return name in self._imported_skills
+
+    def _persist_imported_skill(self, content: str, name: str, filename: str = "") -> None:
+        """将导入的技能持久化到 user-skills 目录"""
+        self._user_skills_dir.mkdir(parents=True, exist_ok=True)
+
+        if filename and not filename.endswith(".md"):
+            filename = f"{filename}.md"
+        if not filename:
+            filename = f"{name}.md"
+
+        skill_file = self._user_skills_dir / filename
+        skill_file.write_text(content, encoding="utf-8")
+
+    def _skill_to_skilly(self, skill: Skill) -> str:
+        """将 Skill 对象转换为 SKILL.md 格式内容"""
+        lines = ["---"]
+        lines.append(f"name: {skill.name}")
+        lines.append(f"description: {skill.description}")
+        if skill.intent:
+            lines.append(f"intent: {skill.intent}")
+        if skill.skill_type:
+            lines.append(f"type: {skill.skill_type}")
+        if skill.best_for:
+            lines.append(f"best_for:")
+            for item in skill.best_for:
+                lines.append(f"  - {item}")
+        if skill.scenarios:
+            lines.append(f"scenarios:")
+            for item in skill.scenarios:
+                lines.append(f"  - {item}")
+        if skill.estimated_time:
+            lines.append(f"estimated_time: {skill.estimated_time}")
+        lines.append("---")
+        lines.append("")
+        if skill.system_prompt:
+            lines.append(skill.system_prompt)
+        return "\n".join(lines)
 
     def _load_all(self) -> None:
         """加载技能目录下的所有技能定义"""
@@ -90,6 +245,9 @@ class SkillLoader:
         if pm_skills_dir.exists():
             self._load_pm_skills(pm_skills_dir)
 
+        # 加载用户导入的技能
+        self._load_user_skills()
+
     def _load_pm_skills(self, pm_skills_dir: Path) -> None:
         """加载 Product-Manager-Skills 格式的技能"""
         for skill_dir in pm_skills_dir.iterdir():
@@ -106,6 +264,44 @@ class SkillLoader:
                     self._skills[skill.name] = skill
             except Exception as e:
                 logger.error(f"Failed to load PM skill from {skill_file}: {e}")
+
+    def _load_user_skills(self) -> None:
+        """加载用户导入的技能"""
+        if not self._user_skills_dir.exists():
+            return
+
+        for file_path in sorted(self._user_skills_dir.glob("*.md")):
+            try:
+                content = file_path.read_text(encoding="utf-8")
+                front_matter = self._parse_front_matter(content)
+                if not front_matter:
+                    continue
+
+                name = front_matter.get("name", file_path.stem)
+                if name in self._skills:
+                    continue
+
+                markdown_content = self._extract_markdown_content(content)
+                system_prompt = self._build_pm_skill_prompt(front_matter, markdown_content)
+                steps = self._extract_pm_skill_steps(markdown_content)
+
+                skill = Skill(
+                    name=name,
+                    description=front_matter.get("description", ""),
+                    system_prompt=system_prompt,
+                    tools=[],
+                    steps=steps,
+                    output_format="",
+                    intent=front_matter.get("intent", ""),
+                    skill_type=front_matter.get("type", "component"),
+                    best_for=front_matter.get("best_for", []),
+                    scenarios=front_matter.get("scenarios", []),
+                    estimated_time=front_matter.get("estimated_time", ""),
+                )
+                self._skills[name] = skill
+                self._imported_skills.add(name)
+            except Exception as e:
+                logger.error(f"Failed to load user skill from {file_path}: {e}")
 
     def _load_pm_skill(self, file_path: Path) -> Skill | None:
         """加载单个 PM Skill"""

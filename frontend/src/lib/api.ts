@@ -335,6 +335,7 @@ export const chatApi = {
       selected_skills?: string[];
       provider_id?: string;
       model_name?: string;
+      template_id?: string;
     }
   ) =>
     fetchApi<{
@@ -491,8 +492,11 @@ export const memoryApi = {
       body: JSON.stringify(data),
     }),
 
-  listMemories: (memoryType?: string) => {
-    const params = memoryType ? `?memory_type=${memoryType}` : "";
+  listMemories: (memoryType?: string, page = 1, size = 20) => {
+    const params = new URLSearchParams();
+    if (memoryType) params.set("memory_type", memoryType);
+    params.set("page", String(page));
+    params.set("size", String(size));
     return fetchApi<{
       memories: Array<{
         id: string;
@@ -504,7 +508,9 @@ export const memoryApi = {
         created_at: string;
       }>;
       total: number;
-    }>(`/api/v1/memory/entries${params}`);
+      page: number;
+      size: number;
+    }>(`/api/v1/memory/entries?${params.toString()}`);
   },
 
   getMemory: (memoryId: string) =>
@@ -600,4 +606,251 @@ export const memoryApi = {
       created_at?: string;
       message?: string;
     }>("/api/v1/memory/reflections/latest"),
+};
+
+export const tokenUsageApi = {
+  getOverview: (days: number = 30) =>
+    fetchApi<{
+      total_tokens: number;
+      total_prompt_tokens: number;
+      total_completion_tokens: number;
+      total_calls: number;
+      model_count: number;
+      daily_usage: Array<{
+        date: string;
+        total_tokens: number;
+        prompt_tokens: number;
+        completion_tokens: number;
+        call_count: number;
+      }>;
+      model_usage: Array<{
+        model_id: string;
+        total_tokens: number;
+        prompt_tokens: number;
+        completion_tokens: number;
+        call_count: number;
+        last_used_at: string | null;
+      }>;
+    }>(`/api/v1/token-usage/overview?days=${days}`),
+
+  getRecords: (limit: number = 100, offset: number = 0) =>
+    fetchApi<{
+      records: Array<{
+        id: string;
+        model_id: string;
+        provider_id: string;
+        source: string;
+        prompt_tokens: number;
+        completion_tokens: number;
+        total_tokens: number;
+        created_at: string;
+      }>;
+      total: number;
+    }>(`/api/v1/token-usage/records?limit=${limit}&offset=${offset}`),
+};
+
+/** 知识库 API */
+export const knowledgeBaseApi = {
+  listTemplates: (type?: string) => {
+    const qs = type ? `?type=${type}` : "";
+    return fetchApi<{
+      templates: Array<{
+        id: string;
+        name: string;
+        description: string;
+        type: string;
+        type_label: string;
+        tags: string[];
+        content_preview: string;
+        created_at: string;
+        updated_at: string;
+      }>;
+      total: number;
+    }>(`/api/v1/knowledge-base/templates${qs}`);
+  },
+
+  getTemplate: (id: string) =>
+    fetchApi<{
+      id: string;
+      name: string;
+      description: string;
+      type: string;
+      type_label: string;
+      content: string;
+      tags: string[];
+      created_at: string;
+      updated_at: string;
+    }>(`/api/v1/knowledge-base/templates/${id}`),
+
+  createTemplate: (data: { name: string; description?: string; type: string; content?: string; tags?: string[] }) =>
+    fetchApi<{ id: string; name: string; type: string; message: string }>("/api/v1/knowledge-base/templates", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  updateTemplate: (id: string, data: { name?: string; description?: string; content?: string; tags?: string[] }) =>
+    fetchApi<{ id: string; name: string; message: string }>(`/api/v1/knowledge-base/templates/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+
+  deleteTemplate: (id: string) =>
+    fetchApi<{ message: string }>(`/api/v1/knowledge-base/templates/${id}`, {
+      method: "DELETE",
+    }),
+
+  getTypes: () =>
+    fetchApi<{
+      types: Array<{ value: string; label: string }>;
+    }>("/api/v1/knowledge-base/types"),
+};
+
+/** 组件库 API (原型组件模板) */
+export const componentLibraryApi = {
+  listTemplates: () =>
+    fetchApi<{
+      templates: Array<{
+        id: string;
+        name: string;
+        description: string;
+        tags: string[];
+        content_preview: string;
+        created_at: string;
+        updated_at: string;
+      }>;
+      total: number;
+    }>("/api/v1/component-library/templates"),
+
+  getTemplate: (id: string) =>
+    fetchApi<{
+      id: string;
+      name: string;
+      description: string;
+      content: string;
+      tags: string[];
+      created_at: string;
+      updated_at: string;
+    }>(`/api/v1/component-library/templates/${id}`),
+
+  createTemplate: (data: { name: string; description?: string; content?: string; tags?: string[] }) =>
+    fetchApi<{ id: string; name: string; message: string }>("/api/v1/component-library/templates", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  updateTemplate: (id: string, data: { name?: string; description?: string; content?: string; tags?: string[] }) =>
+    fetchApi<{ id: string; name: string; message: string }>(`/api/v1/component-library/templates/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+
+  deleteTemplate: (id: string) =>
+    fetchApi<{ message: string }>(`/api/v1/component-library/templates/${id}`, {
+      method: "DELETE",
+    }),
+};
+
+/** 技能管理 API */
+export const skillsApi = {
+  import: (data: { content?: string; name?: string; description?: string; system_prompt?: string; steps?: string[]; type?: string; best_for?: string[]; scenarios?: string[]; estimated_time?: string }) =>
+    fetchApi<{ name: string; description: string; type: string; message: string }>("/api/v1/skills/import", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  importFile: (file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    const token = getAccessToken();
+    return fetch("/api/v1/skills/import/file", {
+      method: "POST",
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: formData,
+    }).then(async (res) => {
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ detail: res.statusText }));
+        throw new Error(err.detail || "导入失败");
+      }
+      return res.json() as Promise<{ name: string; description: string; type: string; message: string }>;
+    });
+  },
+
+  delete: (name: string) =>
+    fetchApi<{ message: string }>(`/api/v1/skills/${encodeURIComponent(name)}`, {
+      method: "DELETE",
+    }),
+};
+
+export const channelsApi = {
+  list: () =>
+    fetchApi<{
+      channels: Array<{
+        id: string;
+        name: string;
+        channel_type: string;
+        status: string;
+        config: Record<string, string>;
+        webhook_url: string;
+        message_count: number;
+        last_error: string | null;
+        created_at: string;
+        updated_at: string;
+      }>;
+      total: number;
+    }>("/api/v1/channels"),
+
+  create: (data: { name: string; channel_type: string; config: Record<string, string> }) =>
+    fetchApi<{
+      id: string;
+      name: string;
+      channel_type: string;
+      status: string;
+      webhook_url: string;
+      last_error: string | null;
+    }>("/api/v1/channels", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  get: (id: string) =>
+    fetchApi<{
+      id: string;
+      name: string;
+      channel_type: string;
+      status: string;
+      config: Record<string, string>;
+      webhook_url: string;
+      message_count: number;
+      last_error: string | null;
+      created_at: string;
+      updated_at: string;
+    }>(`/api/v1/channels/${id}`),
+
+  update: (id: string, data: { name?: string; config?: Record<string, string>; status?: string }) =>
+    fetchApi<{
+      id: string;
+      name: string;
+      channel_type: string;
+      status: string;
+      webhook_url: string;
+      last_error: string | null;
+    }>(`/api/v1/channels/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+
+  delete: (id: string) =>
+    fetchApi<{ message: string }>(`/api/v1/channels/${id}`, {
+      method: "DELETE",
+    }),
+
+  test: (id: string) =>
+    fetchApi<{
+      valid: boolean;
+      error: string | null;
+      webhook_url: string;
+      message: string;
+    }>(`/api/v1/channels/${id}/test`, {
+      method: "POST",
+    }),
 };

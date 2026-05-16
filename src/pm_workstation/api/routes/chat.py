@@ -3,6 +3,7 @@
 提供会话管理、消息发送和任务执行的 REST API 接口。
 """
 
+import asyncio
 import time
 import uuid
 from datetime import datetime
@@ -19,9 +20,11 @@ from pm_workstation.chat.chat_models import (
     TaskMode,
     TaskResult,
     TaskStatus,
+    ThinkingStep,
     ToolCall,
 )
 from pm_workstation.chat.task_router import TaskRouter
+from pm_workstation.llm.token_usage import TokenUsageStore
 from pm_workstation.memory.memory_manager import MemoryManager
 from pm_workstation.memory.memory_retriever import MemoryRetriever
 from pm_workstation.memory.soul_manager import SoulManager
@@ -33,6 +36,7 @@ _chat_manager = ChatManager()
 _memory_manager = MemoryManager()
 _soul_manager = SoulManager()
 _memory_retriever = MemoryRetriever(_memory_manager)
+_token_usage_store = TokenUsageStore()
 
 
 def _get_chat_manager() -> ChatManager:
@@ -40,22 +44,21 @@ def _get_chat_manager() -> ChatManager:
     return _chat_manager
 
 
-def _get_coordinator(request: Request) -> CoordinatorChatAgent:
+async def _get_coordinator(request: Request) -> CoordinatorChatAgent:
     """获取主 Agent"""
-    return _build_coordinator_from_store(request.app.state.provider_store)
+    return await _build_coordinator_from_store(request.app.state.provider_store)
 
 
-def _build_coordinator_from_store(provider_store, provider_id: str | None = None, model_name: str | None = None) -> CoordinatorChatAgent:
+async def _build_coordinator_from_store(provider_store, provider_id: str | None = None, model_name: str | None = None) -> CoordinatorChatAgent:
     """根据指定 provider 和模型构建 Coordinator"""
-    import asyncio
     from pm_workstation.api.app import _build_llm_handler
 
     llm_handler = None
     try:
         if provider_id:
-            config = asyncio.run(provider_store.get_config(provider_id))
+            config = await provider_store.get_config(provider_id)
         else:
-            config = asyncio.run(provider_store.get_default_config())
+            config = await provider_store.get_default_config()
         if config:
             llm_handler = _build_llm_handler(config, model_override=model_name)
     except Exception:
@@ -194,11 +197,12 @@ async def send_message(
     selected_skills = body.get("selected_skills", [])
     provider_id = body.get("provider_id")
     model_name = body.get("model_name")
+    template_id = body.get("template_id")
 
     # 如果指定了 provider_id 或 model_name，使用对应的 coordinator
     if provider_id or model_name:
         from pm_workstation.api.app import app_state_provider_store
-        coordinator = _build_coordinator_from_store(
+        coordinator = await _build_coordinator_from_store(
             app_state_provider_store, provider_id=provider_id, model_name=model_name
         )
 
@@ -215,6 +219,39 @@ async def send_message(
     # 获取上下文
     context = await manager.get_context_messages(session_id, limit=10)
 
+    # 如果指定了模板，加载模板内容并注入上下文
+    template_info = None
+    if template_id:
+        try:
+            from pm_workstation.knowledge_base.store import TemplateStore
+            from pm_workstation.component_library.store import ComponentTemplateStore
+            ts = TemplateStore()
+            tmpl = await ts.get(template_id)
+            if tmpl:
+                template_info = {"id": tmpl.id, "name": tmpl.name, "type": tmpl.type.value, "content": tmpl.content}
+                template_context = ChatMessage(
+                    id="template_ctx",
+                    session_id=session_id,
+                    role="system",
+                    content=f"[模板: {tmpl.name}]\n{tmpl.content}",
+                )
+                context = list(context) + [template_context]
+            else:
+                # 尝试从组件库查找
+                cs = ComponentTemplateStore()
+                comp = await cs.get(template_id)
+                if comp:
+                    template_info = {"id": comp.id, "name": comp.name, "type": "prototype", "content": comp.content}
+                    template_context = ChatMessage(
+                        id="template_ctx",
+                        session_id=session_id,
+                        role="system",
+                        content=f"[组件模板: {comp.name}]\n{comp.content}",
+                    )
+                    context = list(context) + [template_context]
+        except Exception:
+            pass
+
     # 计算当前上下文长度（所有消息的字符数总和）
     all_messages = await manager.get_messages(session_id)
     context_length = sum(len(m.content) for m in all_messages)
@@ -222,17 +259,40 @@ async def send_message(
 
     # 处理消息（记录耗时）
     start_time = time.monotonic()
-    response = await coordinator.process_message(
-        message=content,
-        context=context,
-        selected_skills=selected_skills,
-        task_mode=task_mode,
-        user_id=user_id,
-    )
+    try:
+        response = await asyncio.wait_for(
+            coordinator.process_message(
+                message=content,
+                context=context,
+                selected_skills=selected_skills,
+                task_mode=task_mode,
+                user_id=user_id,
+            ),
+            timeout=60.0,
+        )
+    except asyncio.TimeoutError:
+        response = CoordinatorResponse(
+            message="处理超时，请简化您的需求后重试。",
+            thinking_process=[
+                ThinkingStep(
+                    step_name="timeout",
+                    description="处理超时",
+                    status="failed",
+                    detail="请求处理超过 60 秒限制，请简化需求后重试",
+                )
+            ],
+        )
     thinking_time_ms = int((time.monotonic() - start_time) * 1000)
 
     # 统计工具/技能调用
     tool_calls = []
+    if template_info:
+        tool_calls.append(ToolCall(
+            tool_name=template_info["name"],
+            tool_type="template",
+            status="used",
+            description=f"使用了模板: {template_info['name']} ({template_info['type']})",
+        ))
     if selected_skills:
         for skill in selected_skills:
             tool_calls.append(ToolCall(
@@ -259,6 +319,15 @@ async def send_message(
     }
 
     # 添加 Agent 响应
+    intent_summary = ""
+    if response.intent_analysis:
+        ia = response.intent_analysis
+        intent_summary = f"{ia.intent}"
+        if ia.task_mode:
+            intent_summary += f" -> {ia.task_mode.value}"
+        if ia.confidence:
+            intent_summary += f" ({ia.confidence:.0%})"
+
     assistant_message = ChatMessage(
         id=uuid.uuid4().hex,
         session_id=session_id,
@@ -267,6 +336,9 @@ async def send_message(
         task_mode=task_mode,
         task_status=TaskStatus.COMPLETED if response.task_results else None,
         thinking_time_ms=thinking_time_ms,
+        thinking_process=response.thinking_process,
+        model_id=response.model_id,
+        intent_summary=intent_summary,
         token_usage=token_usage,
         tool_calls=tool_calls,
         context_length=context_length,
@@ -282,6 +354,15 @@ async def send_message(
         assistant_message.artifacts = result.artifacts
 
     await manager.add_message(session_id, assistant_message)
+
+    # Record token usage
+    _token_usage_store.record(
+        model_id=response.model_id,
+        prompt_tokens=token_usage.get("prompt_tokens", 0),
+        completion_tokens=token_usage.get("completion_tokens", 0),
+        total_tokens=token_usage.get("total_tokens", 0),
+        source="chat",
+    )
 
     return {
         "user_message": {
@@ -299,9 +380,21 @@ async def send_message(
                 for a in assistant_message.artifacts
             ],
             "thinking_time_ms": assistant_message.thinking_time_ms,
+            "thinking_process": [
+                {
+                    "step_name": s.step_name,
+                    "description": s.description,
+                    "duration_ms": s.duration_ms,
+                    "status": s.status,
+                    "detail": s.detail,
+                }
+                for s in assistant_message.thinking_process
+            ],
+            "model_id": assistant_message.model_id,
+            "intent_summary": assistant_message.intent_summary,
             "token_usage": assistant_message.token_usage,
             "tool_calls": [
-                {"tool_name": t.tool_name, "tool_type": t.tool_type, "description": t.description}
+                {"tool_name": t.tool_name, "tool_type": t.tool_type, "description": t.description, "duration_ms": t.duration_ms, "status": t.status}
                 for t in assistant_message.tool_calls
             ],
             "context_length": assistant_message.context_length,
@@ -341,9 +434,21 @@ async def get_messages(
                     for a in m.artifacts
                 ],
                 "thinking_time_ms": m.thinking_time_ms,
+                "thinking_process": [
+                    {
+                        "step_name": s.step_name,
+                        "description": s.description,
+                        "duration_ms": s.duration_ms,
+                        "status": s.status,
+                        "detail": s.detail,
+                    }
+                    for s in m.thinking_process
+                ],
+                "model_id": m.model_id,
+                "intent_summary": m.intent_summary,
                 "token_usage": m.token_usage,
                 "tool_calls": [
-                    {"tool_name": t.tool_name, "tool_type": t.tool_type, "description": t.description}
+                    {"tool_name": t.tool_name, "tool_type": t.tool_type, "description": t.description, "duration_ms": t.duration_ms, "status": t.status}
                     for t in m.tool_calls
                 ],
                 "context_length": m.context_length,

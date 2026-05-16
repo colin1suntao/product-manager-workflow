@@ -249,6 +249,23 @@ function WorkflowDetailContent() {
         <div className="text-sm text-gray-500 mt-4">
           进度: {run.completed_steps}/{run.total_steps}
         </div>
+
+        {/* 已选技能 */}
+        {run.selected_skills && run.selected_skills.length > 0 && (
+          <div className="mt-4 pt-4 border-t border-gray-100">
+            <h3 className="text-sm font-medium text-gray-600 mb-2">已选技能</h3>
+            <div className="flex flex-wrap gap-1.5">
+              {run.selected_skills.map((skill) => (
+                <span
+                  key={skill}
+                  className="px-2 py-0.5 bg-blue-50 text-blue-700 rounded text-xs border border-blue-200"
+                >
+                  {skill}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* 错误信息 */}

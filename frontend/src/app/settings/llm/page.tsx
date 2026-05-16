@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, FormEvent, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { llmApi, LLMProvider, LLMProviderCreate, LLMTestResult } from "@/lib/llm";
+import { llmApi, LLMProvider, LLMProviderCreate, LLMProviderUpdate, LLMTestResult } from "@/lib/llm";
 import { isAuthenticated } from "@/lib/auth";
 
 const PROVIDER_PRESETS: { type: "openai" | "anthropic" | "custom"; name: string; model: string; url?: string }[] = [
@@ -27,6 +27,7 @@ export default function LLMSettingsPage() {
   const [fetchingModels, setFetchingModels] = useState(false);
   const [availableModels, setAvailableModels] = useState<{ id: string }[]>([]);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [showApiKey, setShowApiKey] = useState(false);
   const [form, setForm] = useState<LLMProviderCreate>({
     name: "",
     provider_type: "openai",
@@ -76,14 +77,32 @@ export default function LLMSettingsPage() {
     e.preventDefault();
     setLoading(true);
     try {
+      const modelIds = availableModels.map((m) => m.id);
       if (editingId) {
-        await llmApi.update(editingId, form);
+        // 编辑模式：API Key 留空或为 masked 值表示不更新
+        const updatePayload: LLMProviderUpdate = {
+          name: form.name,
+          provider_type: form.provider_type,
+          base_url: form.base_url || undefined,
+          default_model: form.default_model,
+          available_models: modelIds,
+        };
+        // 只有当 api_key 不为空且不是 masked 值时才更新
+        if (form.api_key && !form.api_key.includes("...") && form.api_key !== "***") {
+          updatePayload.api_key = form.api_key;
+        }
+        await llmApi.update(editingId, updatePayload);
       } else {
-        await llmApi.create(form);
+        const createPayload: LLMProviderCreate = {
+          ...form,
+          available_models: modelIds,
+        };
+        await llmApi.create(createPayload);
       }
       setShowForm(false);
       setEditingId(null);
       setForm({ name: "", provider_type: "openai", api_key: "", base_url: "", default_model: "" });
+      setShowApiKey(false);
       await loadProviders();
     } catch (e) {
       const msg = e instanceof Error ? e.message : "";
@@ -139,6 +158,22 @@ export default function LLMSettingsPage() {
         console.error("Failed to set default", e);
       }
     }
+  };
+
+  const handleEdit = (provider: LLMProvider) => {
+    setEditingId(provider.id);
+    setShowForm(true);
+    setShowApiKey(false);
+    setForm({
+      name: provider.name,
+      provider_type: provider.provider_type as "openai" | "anthropic" | "custom",
+      api_key: provider.api_key, // 保留 masked API Key 值
+      base_url: provider.base_url || "",
+      default_model: provider.default_model,
+    });
+    setAvailableModels(
+      (provider.available_models || []).map((m) => ({ id: m }))
+    );
   };
 
   const applyPreset = (preset: typeof PROVIDER_PRESETS[0]) => {
@@ -337,14 +372,31 @@ export default function LLMSettingsPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">API Key</label>
-                <input
-                  type="password"
-                  value={form.api_key}
-                  onChange={(e) => setForm({ ...form, api_key: e.target.value })}
-                  required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md"
-                  placeholder="sk-..."
-                />
+                <div className="flex gap-2">
+                  <input
+                    type={showApiKey ? "text" : "password"}
+                    value={form.api_key}
+                    onChange={(e) => setForm({ ...form, api_key: e.target.value })}
+                    required={!editingId}
+                    className="flex-1 px-4 py-2 border border-gray-300 rounded-md"
+                    placeholder={editingId ? "留空或 masked 值表示不更新" : "sk-..."}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowApiKey(!showApiKey)}
+                    className="px-3 py-2 border border-gray-300 rounded-md hover:bg-gray-100"
+                    title={showApiKey ? "隐藏" : "显示"}
+                  >
+                    {showApiKey ? (
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/></svg>
+                    ) : (
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg>
+                    )}
+                  </button>
+                </div>
+                {editingId && (
+                  <p className="mt-1 text-xs text-gray-500">留空或保留 masked 值则不更新 API Key</p>
+                )}
               </div>
 
               {(form.provider_type === "custom" || form.base_url) && (
@@ -442,10 +494,29 @@ export default function LLMSettingsPage() {
                     {p.provider_type} · {p.default_model} · {p.api_key}
                   </p>
                   {p.base_url && <p className="text-xs text-gray-400">{p.base_url}</p>}
+                  {p.available_models && p.available_models.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {p.available_models.map((m) => (
+                        <span
+                          key={m}
+                          className={`px-1.5 py-0.5 rounded text-xs border ${
+                            m === p.default_model
+                              ? "bg-blue-50 text-blue-700 border-blue-200 font-medium"
+                              : "bg-gray-50 text-gray-600 border-gray-200"
+                          }`}
+                        >
+                          {m}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 <div className="flex gap-2">
                   <button onClick={() => handleTest(p.id)} className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-100">
                     测试
+                  </button>
+                  <button onClick={() => handleEdit(p)} className="px-3 py-1 text-sm border border-blue-300 text-blue-700 rounded-md hover:bg-blue-50">
+                    编辑
                   </button>
                   {!p.is_default && (
                     <button onClick={() => handleSetDefault(p.id)} className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-100">

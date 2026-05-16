@@ -31,6 +31,8 @@ class WorkflowResponse(BaseModel):
     verification_report: dict | None = Field(default=None, description="校验报告")
     verification_report_url: str | None = Field(default=None, description="校验报告URL")
     error_message: str | None = Field(default=None, description="错误信息")
+    selected_skills: list[str] = Field(default_factory=list, description="用户选择的 PM Skills")
+    llm_provider_id: str | None = Field(default=None, description="使用的 LLM Provider ID")
 
 
 class WorkflowListResponse(BaseModel):
@@ -72,6 +74,7 @@ class LLMProviderConfigCreate(BaseModel):
     api_key: str = Field(..., description="API Key", min_length=1)
     base_url: str | None = Field(default=None, description="API Base URL", max_length=500)
     default_model: str = Field(..., description="默认模型名称", min_length=1, max_length=100)
+    available_models: list[str] = Field(default_factory=list, description="可用模型列表")
     is_active: bool = Field(default=True, description="是否启用")
     is_default: bool = Field(default=False, description="是否为默认 Provider")
 
@@ -82,6 +85,7 @@ class LLMProviderConfigUpdate(BaseModel):
     api_key: str | None = Field(default=None, description="API Key", min_length=1)
     base_url: str | None = Field(default=None, description="API Base URL", max_length=500)
     default_model: str | None = Field(default=None, description="默认模型名称", min_length=1, max_length=100)
+    available_models: list[str] | None = Field(default=None, description="可用模型列表")
     is_active: bool | None = Field(default=None, description="是否启用")
     is_default: bool | None = Field(default=None, description="是否为默认 Provider")
 
@@ -94,6 +98,7 @@ class LLMProviderConfigResponse(BaseModel):
     api_key: str
     base_url: str | None
     default_model: str
+    available_models: list[str] = Field(default_factory=list)
     is_active: bool
     is_default: bool
     created_at: str

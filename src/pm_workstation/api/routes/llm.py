@@ -55,6 +55,7 @@ async def create_provider(
         api_key=request.api_key,
         base_url=request.base_url,
         default_model=request.default_model,
+        available_models=request.available_models,
         is_active=request.is_active,
         is_default=is_default,
     )

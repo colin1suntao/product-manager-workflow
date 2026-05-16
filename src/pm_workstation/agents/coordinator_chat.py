@@ -5,6 +5,7 @@
 
 import json
 import logging
+import time
 from datetime import datetime
 from typing import Any, Optional
 
@@ -17,6 +18,7 @@ from pm_workstation.chat.chat_models import (
     TaskPlan,
     TaskResult,
     TaskStatus,
+    ThinkingStep,
 )
 from pm_workstation.chat.task_router import TaskRouter
 from pm_workstation.memory.memory_retriever import MemoryRetriever
@@ -112,25 +114,22 @@ class CoordinatorChatAgent:
         task_mode: Optional[TaskMode] = None,
         user_id: str = "default",
     ) -> CoordinatorResponse:
-        """处理用户消息
-
-        Args:
-            message: 用户消息
-            context: 上下文消息列表
-            selected_skills: 选中的技能列表
-            task_mode: 指定的任务模式（可选）
-            user_id: 用户 ID，用于记忆检索
-
-        Returns:
-            主 Agent 响应
-        """
         logger.info(f"Processing message: {message[:50]}...")
 
-        # 如果没有 LLM 处理器，使用简单模式
+        thinking_process: list[ThinkingStep] = []
+        model_id = ""
+        if self.llm_handler:
+            try:
+                if hasattr(self.llm_handler, 'get_model_name'):
+                    model_id = self.llm_handler.get_model_name()
+                elif hasattr(self.llm_handler, 'get_current_model'):
+                    model_id = self.llm_handler.get_current_model().get_model_name()
+            except Exception:
+                pass
+
         if not self.llm_handler:
             return await self._simple_process(message, selected_skills, task_mode)
 
-        # 构建上下文文本
         context_text = message
         if context:
             recent_messages = context[-5:]
@@ -138,22 +137,52 @@ class CoordinatorChatAgent:
                 [f"{m.role}: {m.content[:100]}" for m in recent_messages]
             )
 
-        # 构建增强系统提示词（包含 Soul 和记忆）
+        # Step 1: Build system prompt with Soul + Memory
+        t0 = time.monotonic()
         system_prompt = await self.build_system_prompt(user_id, context_text)
+        thinking_process.append(ThinkingStep(
+            step_name="context_building",
+            description="构建上下文",
+            duration_ms=int((time.monotonic() - t0) * 1000),
+            detail="加载 Soul 人设、检索相关记忆、获取用户偏好",
+        ))
 
-        # 使用 LLM 分析意图
+        # Step 2: Analyze intent
+        t0 = time.monotonic()
         intent = await self.analyze_intent(message, context, system_prompt=system_prompt)
+        intent_duration = int((time.monotonic() - t0) * 1000)
+        intent_desc = f"识别意图: {intent.intent}" + (f" (置信度: {intent.confidence:.0%})" if intent.confidence else "")
+        if intent.task_mode:
+            intent_desc += f" -> 任务模式: {intent.task_mode.value}"
+        thinking_process.append(ThinkingStep(
+            step_name="intent_analysis",
+            description="意图分析",
+            duration_ms=intent_duration,
+            detail=intent_desc,
+        ))
 
-        # 如果需要澄清
         if intent.requires_clarification:
+            thinking_process.append(ThinkingStep(
+                step_name="clarification",
+                description="需求澄清",
+                detail="用户需求不够明确，需要进一步确认",
+            ))
             return CoordinatorResponse(
                 message=self._format_clarification_message(intent),
                 requires_user_input=True,
+                thinking_process=thinking_process,
+                model_id=model_id,
+                intent_analysis=intent,
             )
 
-        # 确定任务模式
         effective_mode = task_mode or intent.task_mode
         if not effective_mode:
+            thinking_process.append(ThinkingStep(
+                step_name="mode_selection",
+                description="模式选择",
+                status="pending",
+                detail="无法确定任务模式，需要用户指定",
+            ))
             return CoordinatorResponse(
                 message="我理解您的需求，但不确定应该执行哪种任务。请选择一个任务模式：\n\n"
                 "1. **需求分析** - 梳理和结构化需求\n"
@@ -163,9 +192,26 @@ class CoordinatorChatAgent:
                 "请告诉我您需要哪种帮助，或者直接描述您的需求。",
                 requires_user_input=True,
                 suggested_actions=["需求分析", "原型设计", "文档撰写", "市场调研"],
+                thinking_process=thinking_process,
+                model_id=model_id,
+                intent_analysis=intent,
             )
 
-        # 创建任务计划
+        # Step 3: Task routing
+        mode_labels = {
+            TaskMode.REQUIREMENT: "需求分析",
+            TaskMode.PROTOTYPE: "原型设计",
+            TaskMode.PRD: "文档撰写",
+            TaskMode.MARKET_RESEARCH: "市场调研",
+        }
+        thinking_process.append(ThinkingStep(
+            step_name="task_routing",
+            description="任务路由",
+            detail=f"路由到 {mode_labels.get(effective_mode, effective_mode.value)} Agent",
+        ))
+
+        # Step 4: Execute task
+        t0 = time.monotonic()
         task_plan = TaskPlan(
             task_id=f"task-{datetime.now().strftime('%Y%m%d%H%M%S')}",
             task_mode=effective_mode,
@@ -173,20 +219,32 @@ class CoordinatorChatAgent:
             params={"requirement_text": message},
         )
 
-        # 执行任务
         result = await self.task_router.execute_task(
             mode=effective_mode,
             params={"requirement_text": message},
             selected_skills=selected_skills,
         )
+        task_duration = int((time.monotonic() - t0) * 1000)
 
-        # 格式化响应
+        skill_desc = ""
+        if selected_skills:
+            skill_desc = f" (使用技能: {', '.join(selected_skills)})"
+        thinking_process.append(ThinkingStep(
+            step_name="task_execution",
+            description="任务执行",
+            duration_ms=task_duration,
+            detail=f"执行 {mode_labels.get(effective_mode, effective_mode.value)}{skill_desc}",
+        ))
+
         response_message = await self._format_response(result, effective_mode)
 
         return CoordinatorResponse(
             message=response_message,
             task_plans=[task_plan],
             task_results=[result],
+            thinking_process=thinking_process,
+            model_id=model_id,
+            intent_analysis=intent,
         )
 
     async def analyze_intent(
@@ -303,21 +361,24 @@ class CoordinatorChatAgent:
         selected_skills: Optional[list[str]] = None,
         task_mode: Optional[TaskMode] = None,
     ) -> CoordinatorResponse:
-        """简单处理模式（无 LLM 时使用）
+        thinking_process: list[ThinkingStep] = []
 
-        Args:
-            message: 用户消息
-            selected_skills: 选中的技能列表
-            task_mode: 指定的任务模式
+        thinking_process.append(ThinkingStep(
+            step_name="intent_analysis",
+            description="意图分析",
+            detail="关键词匹配模式（LLM 未配置）",
+        ))
 
-        Returns:
-            主 Agent 响应
-        """
-        # 使用简单意图分析
         intent = self._simple_intent_analysis(message)
         effective_mode = task_mode or intent.task_mode
 
         if not effective_mode:
+            thinking_process.append(ThinkingStep(
+                step_name="mode_selection",
+                description="模式选择",
+                status="pending",
+                detail="无法确定任务模式",
+            ))
             return CoordinatorResponse(
                 message="请选择一个任务模式：\n\n"
                 "1. **需求分析** - 梳理和结构化需求\n"
@@ -326,21 +387,41 @@ class CoordinatorChatAgent:
                 "4. **市场调研** - 进行市场分析",
                 requires_user_input=True,
                 suggested_actions=["需求分析", "原型设计", "文档撰写", "市场调研"],
+                thinking_process=thinking_process,
+                intent_analysis=intent,
             )
 
-        # 执行任务
+        mode_labels = {
+            TaskMode.REQUIREMENT: "需求分析",
+            TaskMode.PROTOTYPE: "原型设计",
+            TaskMode.PRD: "文档撰写",
+            TaskMode.MARKET_RESEARCH: "市场调研",
+        }
+        thinking_process.append(ThinkingStep(
+            step_name="task_routing",
+            description="任务路由",
+            detail=f"路由到 {mode_labels.get(effective_mode, effective_mode.value)} Agent",
+        ))
+
         result = await self.task_router.execute_task(
             mode=effective_mode,
             params={"requirement_text": message},
             selected_skills=selected_skills,
         )
 
-        # 格式化响应
+        thinking_process.append(ThinkingStep(
+            step_name="task_execution",
+            description="任务执行",
+            detail=f"执行 {mode_labels.get(effective_mode, effective_mode.value)}",
+        ))
+
         response_message = await self._format_response(result, effective_mode)
 
         return CoordinatorResponse(
             message=response_message,
             task_results=[result],
+            thinking_process=thinking_process,
+            intent_analysis=intent,
         )
 
     def _format_clarification_message(self, intent: IntentAnalysis) -> str:

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { workflowApi } from "@/lib/api";
+import { workflowApi, skillsApi } from "@/lib/api";
 import { getAccessToken } from "@/lib/auth";
 
 interface PMSkill {
@@ -53,6 +53,14 @@ function RequirementsContent() {
   const [skillFilter, setSkillFilter] = useState<string>("");
   const [skillSearch, setSkillSearch] = useState("");
 
+  // 技能导入相关状态
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importContent, setImportContent] = useState("");
+  const [importTab, setImportTab] = useState<"paste" | "upload">("paste");
+  const [importing, setImporting] = useState(false);
+  const [importError, setImportError] = useState("");
+  const [importSuccess, setImportSuccess] = useState("");
+
   // 加载 PM Skills
   useEffect(() => {
     loadSkills();
@@ -88,6 +96,47 @@ function RequirementsContent() {
         ? prev.filter((name) => name !== skillName)
         : [...prev, skillName]
     );
+  };
+
+  const handleImport = async () => {
+    setImportError("");
+    setImportSuccess("");
+    setImporting(true);
+
+    try {
+      let result;
+      if (importTab === "upload") {
+        const fileInput = document.getElementById("skill-file-input") as HTMLInputElement;
+        const file = fileInput?.files?.[0];
+        if (!file) {
+          setImportError("请选择要上传的文件");
+          setImporting(false);
+          return;
+        }
+        result = await skillsApi.importFile(file);
+      } else {
+        if (!importContent.trim()) {
+          setImportError("请粘贴技能内容");
+          setImporting(false);
+          return;
+        }
+        result = await skillsApi.import({ content: importContent });
+      }
+
+      setImportSuccess(result.message);
+      setImportContent("");
+      const fileInput = document.getElementById("skill-file-input") as HTMLInputElement;
+      if (fileInput) fileInput.value = "";
+      loadSkills();
+      setTimeout(() => {
+        setShowImportModal(false);
+        setImportSuccess("");
+      }, 1500);
+    } catch (err) {
+      setImportError(err instanceof Error ? err.message : "导入失败");
+    } finally {
+      setImporting(false);
+    }
   };
 
   const filteredSkills = skills.filter((skill) => {
@@ -230,13 +279,22 @@ function RequirementsContent() {
                 PM Skills 技能选择
                 <span className="text-gray-400 font-normal ml-1">(可选)</span>
               </label>
-              <button
-                type="button"
-                onClick={() => setShowSkills(!showSkills)}
-                className="text-sm text-blue-600 hover:text-blue-700"
-              >
-                {showSkills ? "收起" : "展开"}技能选择
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowImportModal(true)}
+                  className="text-sm text-green-600 hover:text-green-700 border border-green-300 px-2 py-0.5 rounded"
+                >
+                  + 导入技能
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowSkills(!showSkills)}
+                  className="text-sm text-blue-600 hover:text-blue-700"
+                >
+                  {showSkills ? "收起" : "展开"}技能选择
+                </button>
+              </div>
             </div>
 
             {showSkills && (
@@ -409,6 +467,115 @@ function RequirementsContent() {
           </div>
         </form>
       </div>
+
+      {/* 导入技能弹窗 */}
+      {showImportModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => { if (!importing) setShowImportModal(false); }}>
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl mx-4 max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-gray-900">导入技能</h2>
+                <button
+                  type="button"
+                  onClick={() => setShowImportModal(false)}
+                  className="text-gray-400 hover:text-gray-600 text-xl leading-none"
+                >
+                  ×
+                </button>
+              </div>
+
+              {/* Tab 切换 */}
+              <div className="flex gap-2 mb-4">
+                <button
+                  type="button"
+                  onClick={() => { setImportTab("paste"); setImportError(""); setImportSuccess(""); }}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                    importTab === "paste"
+                      ? "bg-blue-600 text-white"
+                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  }`}
+                >
+                  粘贴内容
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setImportTab("upload"); setImportError(""); setImportSuccess(""); }}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                    importTab === "upload"
+                      ? "bg-blue-600 text-white"
+                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  }`}
+                >
+                  上传文件
+                </button>
+              </div>
+
+              {/* 粘贴内容 */}
+              {importTab === "paste" && (
+                <div>
+                  <p className="text-xs text-gray-500 mb-2">
+                    粘贴 SKILL.md 格式内容（需包含 YAML front matter）
+                  </p>
+                  <textarea
+                    value={importContent}
+                    onChange={(e) => setImportContent(e.target.value)}
+                    placeholder={`---\nname: my-custom-skill\ndescription: 我的自定义技能\nintent: 用于处理特定需求\ntype: component\nbest_for:\n  - 场景一\n  - 场景二\n---\n\n## Application\n\n### Step 1: 第一步\n...`}
+                    rows={12}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono resize-y"
+                  />
+                </div>
+              )}
+
+              {/* 上传文件 */}
+              {importTab === "upload" && (
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+                  <input
+                    id="skill-file-input"
+                    type="file"
+                    accept=".md"
+                    onChange={() => { setImportError(""); setImportSuccess(""); }}
+                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                  />
+                  <p className="text-xs text-gray-400 mt-2">仅支持 .md 文件（SKILL.md 格式）</p>
+                </div>
+              )}
+
+              {/* 错误提示 */}
+              {importError && (
+                <div className="mt-3 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
+                  {importError}
+                </div>
+              )}
+
+              {/* 成功提示 */}
+              {importSuccess && (
+                <div className="mt-3 p-3 bg-green-50 border border-green-200 text-green-700 rounded-lg text-sm">
+                  {importSuccess}
+                </div>
+              )}
+
+              {/* 操作按钮 */}
+              <div className="mt-4 flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowImportModal(false)}
+                  className="px-4 py-2 text-sm text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200"
+                >
+                  取消
+                </button>
+                <button
+                  type="button"
+                  onClick={handleImport}
+                  disabled={importing}
+                  className="px-4 py-2 text-sm text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {importing ? "导入中..." : "确认导入"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

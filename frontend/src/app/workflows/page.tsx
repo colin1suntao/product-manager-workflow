@@ -194,6 +194,20 @@ export default function WorkflowsPage() {
                 <span>ID: {run.id}</span>
               </div>
 
+              {/* 已选技能 */}
+              {run.selected_skills && run.selected_skills.length > 0 && (
+                <div className="mb-3 flex flex-wrap gap-1.5">
+                  {run.selected_skills.map((skill) => (
+                    <span
+                      key={skill}
+                      className="px-2 py-0.5 bg-blue-50 text-blue-700 rounded text-xs border border-blue-200"
+                    >
+                      {skill}
+                    </span>
+                  ))}
+                </div>
+              )}
+
               {run.error_message && (
                 <p className="text-sm text-red-600 mb-3">{run.error_message}</p>
               )}
