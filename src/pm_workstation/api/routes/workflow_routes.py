@@ -60,15 +60,20 @@ async def list_workflows() -> dict:
     }
 
 
-@router.get("/{workflow_id}", summary="获取工作流详情")
-async def get_workflow_detail(workflow_id: str) -> dict:
-    """获取工作流的详细信息（无需认证）"""
-    workflow = get_workflow_by_id(workflow_id)
+@router.get("/search", summary="搜索工作流")
+async def search_workflows_api(query: str) -> dict:
+    """搜索工作流（无需认证）
     
-    if not workflow:
-        raise HTTPException(status_code=404, detail="工作流不存在")
+    Args:
+        query: 搜索关键词
+    """
+    workflows = search_workflows(query)
     
-    return workflow.model_dump()
+    return {
+        "workflows": [_workflow_to_template(w).model_dump() for w in workflows],
+        "total": len(workflows),
+        "query": query,
+    }
 
 
 @router.get("/category/{category}", summary="按分类获取工作流")
@@ -85,20 +90,36 @@ async def list_workflows_by_category(category: str) -> dict:
     }
 
 
-@router.get("/search", summary="搜索工作流")
-async def search_workflows_api(query: str) -> dict:
-    """搜索工作流（无需认证）
+@router.get("/categories", summary="获取工作流分类")
+async def list_categories() -> dict:
+    """获取所有工作流分类（无需认证）"""
+    workflows = get_all_workflows()
     
-    Args:
-        query: 搜索关键词
-    """
-    workflows = search_workflows(query)
+    categories = {}
+    for w in workflows:
+        if w.category not in categories:
+            categories[w.category] = {
+                "name": w.category,
+                "workflows_count": 0,
+                "description": _get_category_description(w.category),
+            }
+        categories[w.category]["workflows_count"] += 1
     
     return {
-        "workflows": [_workflow_to_template(w).model_dump() for w in workflows],
-        "total": len(workflows),
-        "query": query,
+        "categories": list(categories.values()),
+        "total": len(categories),
     }
+
+
+@router.get("/{workflow_id}", summary="获取工作流详情")
+async def get_workflow_detail(workflow_id: str) -> dict:
+    """获取工作流的详细信息（无需认证）"""
+    workflow = get_workflow_by_id(workflow_id)
+    
+    if not workflow:
+        raise HTTPException(status_code=404, detail="工作流不存在")
+    
+    return workflow.model_dump()
 
 
 @router.post("/{workflow_id}/execute", summary="执行工作流")
@@ -241,27 +262,6 @@ async def get_execution_artifacts(execution_id: str) -> dict:
             for a in artifacts
         ],
         "total": len(artifacts),
-    }
-
-
-@router.get("/categories", summary="获取工作流分类")
-async def list_categories() -> dict:
-    """获取所有工作流分类（无需认证）"""
-    workflows = get_all_workflows()
-    
-    categories = {}
-    for w in workflows:
-        if w.category not in categories:
-            categories[w.category] = {
-                "name": w.category,
-                "workflows_count": 0,
-                "description": _get_category_description(w.category),
-            }
-        categories[w.category]["workflows_count"] += 1
-    
-    return {
-        "categories": list(categories.values()),
-        "total": len(categories),
     }
 
 

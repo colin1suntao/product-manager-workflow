@@ -24,6 +24,70 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/artifact-manager", tags=["产物管理"])
 
 
+@router.get("/search", summary="搜索产物")
+async def search_artifacts(
+    query: str,
+    limit: int = 20,
+    user_id: str = Depends(get_current_user),
+) -> dict:
+    """搜索产物
+    
+    Args:
+        query: 搜索关键词
+        limit: 最大数量
+    """
+    manager = get_artifact_manager()
+    artifacts = await manager.search(user_id=user_id, query=query, limit=limit)
+    
+    return {
+        "artifacts": [
+            {
+                "artifact_id": a.artifact_id,
+                "name": a.name,
+                "type": a.type.value,
+                "preview_url": a.preview_url,
+                "created_at": a.created_at.isoformat(),
+            }
+            for a in artifacts
+        ],
+        "total": len(artifacts),
+        "query": query,
+    }
+
+
+@router.get("/session/{session_id}", summary="获取会话产物")
+async def list_session_artifacts(
+    session_id: str,
+    user_id: str = Depends(get_current_user),
+) -> dict:
+    """获取会话的所有产物
+    
+    Args:
+        session_id: 会话 ID
+    """
+    manager = get_artifact_manager()
+    artifacts = await manager.list_by_session(session_id)
+    
+    # 过滤用户权限
+    artifacts = [a for a in artifacts if a.user_id == user_id]
+    
+    return {
+        "session_id": session_id,
+        "artifacts": [
+            {
+                "artifact_id": a.artifact_id,
+                "name": a.name,
+                "type": a.type.value,
+                "current_version": a.current_version,
+                "preview_url": a.preview_url,
+                "created_at": a.created_at.isoformat(),
+            }
+            for a in artifacts
+        ],
+        "total": len(artifacts),
+    }
+
+
 @router.post("", summary="创建产物")
 async def create_artifact(
     body: dict,
@@ -390,70 +454,6 @@ async def list_artifacts(
             for a in artifacts
         ],
         "total": len(artifacts),
-    }
-
-
-@router.get("/session/{session_id}", summary="获取会话产物")
-async def list_session_artifacts(
-    session_id: str,
-    user_id: str = Depends(get_current_user),
-) -> dict:
-    """获取会话的所有产物
-    
-    Args:
-        session_id: 会话 ID
-    """
-    manager = get_artifact_manager()
-    artifacts = await manager.list_by_session(session_id)
-    
-    # 过滤用户权限
-    artifacts = [a for a in artifacts if a.user_id == user_id]
-    
-    return {
-        "session_id": session_id,
-        "artifacts": [
-            {
-                "artifact_id": a.artifact_id,
-                "name": a.name,
-                "type": a.type.value,
-                "current_version": a.current_version,
-                "preview_url": a.preview_url,
-                "created_at": a.created_at.isoformat(),
-            }
-            for a in artifacts
-        ],
-        "total": len(artifacts),
-    }
-
-
-@router.get("/search", summary="搜索产物")
-async def search_artifacts(
-    query: str,
-    limit: int = 20,
-    user_id: str = Depends(get_current_user),
-) -> dict:
-    """搜索产物
-    
-    Args:
-        query: 搜索关键词
-        limit: 最大数量
-    """
-    manager = get_artifact_manager()
-    artifacts = await manager.search(user_id=user_id, query=query, limit=limit)
-    
-    return {
-        "artifacts": [
-            {
-                "artifact_id": a.artifact_id,
-                "name": a.name,
-                "type": a.type.value,
-                "preview_url": a.preview_url,
-                "created_at": a.created_at.isoformat(),
-            }
-            for a in artifacts
-        ],
-        "total": len(artifacts),
-        "query": query,
     }
 
 

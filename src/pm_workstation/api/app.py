@@ -241,3 +241,6 @@ def create_app() -> FastAPI:
             return HTMLResponse(content="<h1>Frontend not built</h1>", status_code=404)
 
     return app
+
+
+app = create_app()
