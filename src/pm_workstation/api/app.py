@@ -25,6 +25,8 @@ from pm_workstation.api.routes.skills import router as skills_router
 from pm_workstation.api.routes.token_usage import router as token_usage_router
 from pm_workstation.api.routes.workflows import router as workflows_router
 from pm_workstation.api.routes.streaming_chat import router as streaming_chat_router
+from pm_workstation.api.routes.workflow_routes import router as workflow_routes_router
+from pm_workstation.api.routes.artifact_routes import router as artifact_routes_router
 
 from pm_workstation.llm.provider_store import LLMProviderStore
 from pm_workstation.model_router.anthropic_adapter import AnthropicAdapter
@@ -181,6 +183,8 @@ def create_app() -> FastAPI:
     app.include_router(market_research_router, prefix="/api/v1", tags=["市场调研"])
     app.include_router(chat_router, prefix="/api/v1", tags=["会话交互"])
     app.include_router(streaming_chat_router, prefix="/api/v1", tags=["会话交互-流式"])
+    app.include_router(workflow_routes_router, prefix="/api/v1", tags=["工作流编排"])
+    app.include_router(artifact_routes_router, prefix="/api/v1", tags=["产物管理"])
     app.include_router(channels_router, prefix="/api/v1", tags=["渠道管理"])
     app.include_router(memory_router, prefix="/api/v1", tags=["记忆管理"])
     app.include_router(token_usage_router, prefix="/api/v1", tags=["模型用量"])

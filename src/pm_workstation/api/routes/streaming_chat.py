@@ -34,11 +34,15 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/chat", tags=["会话交互-流式"])
 
-_chat_manager = ChatManager()
-_memory_manager = MemoryManager()
-_soul_manager = SoulManager()
-_memory_retriever = MemoryRetriever(_memory_manager)
-_token_usage_store = TokenUsageStore()
+# 使用 chat.py 中的共享实例
+from pm_workstation.api.routes.chat import (
+    _chat_manager,
+    _memory_manager,
+    _soul_manager,
+    _memory_retriever,
+    _token_usage_store,
+    _get_chat_manager,
+)
 
 
 async def _build_llm_handler_for_streaming(request: Request, provider_id: str | None = None, model_name: str | None = None):
@@ -97,7 +101,7 @@ async def stream_message(
     - done: 完成
     - error: 错误
     """
-    session = await _chat_manager.get_session(session_id)
+    session = await _get_chat_manager().get_session(session_id)
     if not session:
         raise HTTPException(status_code=404, detail="会话不存在")
     if session.user_id != user_id:
@@ -205,10 +209,10 @@ async def stream_message(
                 content=content,
                 task_mode=task_mode,
             )
-            await _chat_manager.add_message(session_id, user_message)
+            await _get_chat_manager().add_message(session_id, user_message)
 
             # 获取上下文
-            context_messages = await _chat_manager.get_context_messages(session_id, limit=10)
+            context_messages = await _get_chat_manager().get_context_messages(session_id, limit=10)
 
             # 如果有模板，注入模板内容
             if template_id:
@@ -355,7 +359,7 @@ async def stream_message(
                     "total_tokens": total_tokens,
                 },
             )
-            await _chat_manager.add_message(session_id, assistant_message)
+            await _get_chat_manager().add_message(session_id, assistant_message)
 
             # Record token usage
             _token_usage_store.record(
