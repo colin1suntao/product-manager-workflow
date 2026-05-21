@@ -24,6 +24,7 @@ from pm_workstation.api.routes.memory import router as memory_router
 from pm_workstation.api.routes.skills import router as skills_router
 from pm_workstation.api.routes.token_usage import router as token_usage_router
 from pm_workstation.api.routes.workflows import router as workflows_router
+from pm_workstation.api.routes.streaming_chat import router as streaming_chat_router
 
 from pm_workstation.llm.provider_store import LLMProviderStore
 from pm_workstation.model_router.anthropic_adapter import AnthropicAdapter
@@ -79,6 +80,8 @@ def _build_llm_handler(provider_config, model_override: str | None = None) -> Fa
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """应用生命周期管理"""
+    from pm_workstation.agents.pm_sub_agents import register_pm_sub_agents
+    
     # 启动时初始化
     app.state.provider_store = LLMProviderStore()
 
@@ -102,6 +105,9 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # 暴露 provider_store 给其他模块使用
     global app_state_provider_store
     app_state_provider_store = app.state.provider_store
+    
+    # 注册 PM Sub-Agents
+    register_pm_sub_agents()
     
     yield
     # 关闭时清理
@@ -174,6 +180,7 @@ def create_app() -> FastAPI:
     app.include_router(skills_router, prefix="/api/v1", tags=["PM Skills"])
     app.include_router(market_research_router, prefix="/api/v1", tags=["市场调研"])
     app.include_router(chat_router, prefix="/api/v1", tags=["会话交互"])
+    app.include_router(streaming_chat_router, prefix="/api/v1", tags=["会话交互-流式"])
     app.include_router(channels_router, prefix="/api/v1", tags=["渠道管理"])
     app.include_router(memory_router, prefix="/api/v1", tags=["记忆管理"])
     app.include_router(token_usage_router, prefix="/api/v1", tags=["模型用量"])
