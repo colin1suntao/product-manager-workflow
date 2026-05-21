@@ -52,8 +52,8 @@ export default function WorkflowsPage() {
   useEffect(() => {
     const load = async () => {
       try {
-        const data = await workflowApi.list(filterStatus);
-        setRuns(data.runs);
+        const data = await workflowApi.list(filterStatus ? { status: filterStatus } : undefined);
+        setRuns(data.workflows);
       } catch (err) {
         const msg = err instanceof Error ? err.message : "";
         if (msg.includes("401") || msg.includes("认证") || msg.includes("未提供")) {
@@ -72,8 +72,8 @@ export default function WorkflowsPage() {
 
   const refetch = async () => {
     try {
-      const data = await workflowApi.list(filterStatus);
-      setRuns(data.runs);
+      const data = await workflowApi.list(filterStatus ? { status: filterStatus } : undefined);
+      setRuns(data.workflows);
     } catch (err) {
       setError(err instanceof Error ? err.message : "操作失败");
     }
@@ -110,7 +110,7 @@ export default function WorkflowsPage() {
     if (!confirm("确定要删除此工作流吗？此操作不可恢复。")) return;
     try {
       await workflowApi.delete(runId);
-      fetchRuns();
+      refetch();
     } catch (err) {
       setError(err instanceof Error ? err.message : "操作失败");
     }
@@ -142,7 +142,7 @@ export default function WorkflowsPage() {
             ))}
           </select>
           <button
-            onClick={fetchRuns}
+            onClick={refetch}
             className="px-3 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 text-sm"
           >
             刷新
@@ -194,13 +194,27 @@ export default function WorkflowsPage() {
                 <span>ID: {run.id}</span>
               </div>
 
+              {/* 已选技能 */}
+              {run.selected_skills && run.selected_skills.length > 0 && (
+                <div className="mb-3 flex flex-wrap gap-1.5">
+                  {run.selected_skills.map((skill) => (
+                    <span
+                      key={skill}
+                      className="px-2 py-0.5 bg-blue-50 text-blue-700 rounded text-xs border border-blue-200"
+                    >
+                      {skill}
+                    </span>
+                  ))}
+                </div>
+              )}
+
               {run.error_message && (
                 <p className="text-sm text-red-600 mb-3">{run.error_message}</p>
               )}
 
               <div className="flex gap-2">
                 <Link
-                  href={`/workflows/${run.id}`}
+                  href={`/workflows/detail/?id=${run.id}`}
                   className="px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 text-xs font-medium"
                 >
                   详情

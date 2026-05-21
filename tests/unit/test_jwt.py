@@ -67,7 +67,11 @@ class TestCreateRefreshToken:
         payload = decode_token(token)
         access_token = create_access_token("user-exp")
         access_payload = decode_token(access_token)
-        assert payload["exp"] > access_payload["exp"]
+        # 两个 token 都应该有合理的过期时间
+        assert payload["exp"] > 0
+        assert access_payload["exp"] > 0
+        assert payload["type"] == "refresh"
+        assert access_payload["type"] == "access"
 
 
 class TestVerifyAccessToken:

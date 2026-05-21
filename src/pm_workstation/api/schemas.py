@@ -14,6 +14,7 @@ class StartWorkflowRequest(BaseModel):
     """启动工作流请求"""
     requirement_text: str = Field(..., description="原始需求文本", min_length=1)
     llm_provider_id: str | None = Field(default=None, description="LLM Provider ID")
+    skills: list[str] | None = Field(default=None, description="PM Skills 技能名称列表")
 
 
 class WorkflowResponse(BaseModel):
@@ -30,6 +31,8 @@ class WorkflowResponse(BaseModel):
     verification_report: dict | None = Field(default=None, description="校验报告")
     verification_report_url: str | None = Field(default=None, description="校验报告URL")
     error_message: str | None = Field(default=None, description="错误信息")
+    selected_skills: list[str] = Field(default_factory=list, description="用户选择的 PM Skills")
+    llm_provider_id: str | None = Field(default=None, description="使用的 LLM Provider ID")
 
 
 class WorkflowListResponse(BaseModel):
@@ -71,6 +74,7 @@ class LLMProviderConfigCreate(BaseModel):
     api_key: str = Field(..., description="API Key", min_length=1)
     base_url: str | None = Field(default=None, description="API Base URL", max_length=500)
     default_model: str = Field(..., description="默认模型名称", min_length=1, max_length=100)
+    available_models: list[str] = Field(default_factory=list, description="可用模型列表")
     is_active: bool = Field(default=True, description="是否启用")
     is_default: bool = Field(default=False, description="是否为默认 Provider")
 
@@ -81,6 +85,7 @@ class LLMProviderConfigUpdate(BaseModel):
     api_key: str | None = Field(default=None, description="API Key", min_length=1)
     base_url: str | None = Field(default=None, description="API Base URL", max_length=500)
     default_model: str | None = Field(default=None, description="默认模型名称", min_length=1, max_length=100)
+    available_models: list[str] | None = Field(default=None, description="可用模型列表")
     is_active: bool | None = Field(default=None, description="是否启用")
     is_default: bool | None = Field(default=None, description="是否为默认 Provider")
 
@@ -93,6 +98,7 @@ class LLMProviderConfigResponse(BaseModel):
     api_key: str
     base_url: str | None
     default_model: str
+    available_models: list[str] = Field(default_factory=list)
     is_active: bool
     is_default: bool
     created_at: str
@@ -137,3 +143,72 @@ class LLMTestResponse(BaseModel):
     response_time_ms: int = Field(..., description="响应时间 (毫秒)")
     model: str = Field(..., description="模型名称")
     message: str = Field(..., description="测试消息")
+
+
+# --- 市场调研相关 Schema ---
+
+class CreateResearchRequest(BaseModel):
+    """创建市场调研任务请求"""
+    title: str | None = Field(default=None, description="调研标题")
+    requirement_text: str = Field(..., description="调研需求描述", min_length=1)
+    selected_skills: list[str] = Field(default_factory=list, description="选中的技能列表")
+    template_id: str | None = Field(default=None, description="使用的模板 ID")
+
+
+class ResearchTaskResponse(BaseModel):
+    """调研任务响应"""
+    task_id: str = Field(..., description="任务 ID")
+    report_id: str = Field(..., description="报告 ID")
+    status: str = Field(..., description="任务状态")
+    message: str = Field(..., description="提示消息")
+
+
+class ResearchReportResponse(BaseModel):
+    """调研报告响应"""
+    id: str = Field(..., description="报告 ID")
+    title: str = Field(..., description="报告标题")
+    requirement_text: str = Field(..., description="调研需求")
+    selected_skills: list[str] = Field(..., description="使用的技能")
+    report_content: str = Field(..., description="报告内容 (Markdown)")
+    status: str = Field(..., description="报告状态")
+    created_at: str = Field(..., description="创建时间")
+    completed_at: str | None = Field(default=None, description="完成时间")
+
+
+class ResearchListResponse(BaseModel):
+    """调研报告列表响应"""
+    reports: list[dict] = Field(..., description="报告列表")
+    total: int = Field(..., description="总数")
+
+
+class SkillRecommendationRequest(BaseModel):
+    """技能推荐请求"""
+    requirement_text: str = Field(..., description="调研需求描述", min_length=1)
+
+
+class SkillRecommendationResponse(BaseModel):
+    """技能推荐响应"""
+    recommendations: list[dict] = Field(..., description="推荐的技能列表")
+    total: int = Field(..., description="推荐数量")
+
+
+class SaveTemplateRequest(BaseModel):
+    """保存调研模板请求"""
+    name: str = Field(..., description="模板名称", min_length=1)
+    description: str = Field(default="", description="模板描述")
+    skill_names: list[str] = Field(..., description="技能名称列表", min_length=1)
+
+
+class TemplateResponse(BaseModel):
+    """调研模板响应"""
+    id: str = Field(..., description="模板 ID")
+    name: str = Field(..., description="模板名称")
+    description: str = Field(..., description="模板描述")
+    skill_names: list[str] = Field(..., description="技能名称列表")
+    created_at: str = Field(..., description="创建时间")
+
+
+class TemplateListResponse(BaseModel):
+    """模板列表响应"""
+    templates: list[dict] = Field(..., description="模板列表")
+    total: int = Field(..., description="总数")

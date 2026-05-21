@@ -1,34 +1,255 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { authApi } from "@/lib/auth-api";
+import { workflowApi } from "@/lib/api";
 
-const navItems = [
-  { href: "/workflows", label: "工作流管理", icon: "📊" },
-  { href: "/requirements", label: "需求输入", icon: "📝" },
-  { href: "/prototypes", label: "原型预览", icon: "🎨" },
-  { href: "/documents", label: "文档查看", icon: "📄" },
-  { href: "/reports", label: "校验报告", icon: "✅" },
-  { href: "/components-lib", label: "组件库", icon: "🧩" },
-  { href: "/integrations", label: "集成配置", icon: "⚙️" },
-  { href: "/settings/llm", label: "LLM 配置", icon: "🤖" },
+interface NavItem {
+  href: string;
+  label: string;
+  icon: string;
+  children?: { href: string; label: string; icon: string }[];
+}
+
+interface WorkflowSummary {
+  id: string;
+  title: string;
+  status: string;
+  created_at: string;
+  selected_skills?: string[];
+}
+
+const navItems: NavItem[] = [
+  { href: "/chat", label: "AI 会话", icon: "💬" },
+  {
+    href: "/workflows",
+    label: "工作流管理",
+    icon: "📊",
+    children: [
+      { href: "/requirements", label: "需求输入", icon: "📝" },
+      { href: "/workflows", label: "工作流列表", icon: "📋" },
+      { href: "/prototypes", label: "原型预览", icon: "🎨" },
+      { href: "/documents", label: "文档查看", icon: "📄" },
+      { href: "/reports", label: "校验报告", icon: "✅" },
+    ],
+  },
+  { href: "/market-research", label: "市场调研", icon: "🔍" },
+  { href: "/channels", label: "渠道接入", icon: "📡" },
+  { href: "/usage", label: "模型用量", icon: "📈" },
+  { href: "/skills", label: "PM Skills", icon: "🎯" },
+  { href: "/knowledge-base", label: "知识库", icon: "📚" },
+  { href: "/component-library", label: "组件库", icon: "🧩" },
+  {
+    href: "/settings",
+    label: "系统设置",
+    icon: "⚙️",
+    children: [
+      { href: "/memory", label: "记忆管理", icon: "🧠" },
+      { href: "/integrations", label: "集成配置", icon: "🔗" },
+      { href: "/settings/llm", label: "供应商配置", icon: "🤖" },
+    ],
+  },
 ];
+
+const STATUS_LABELS: Record<string, string> = {
+  completed: "已完成",
+  failed: "失败",
+  running: "运行中",
+  init: "初始化",
+  parsing: "解析中",
+  parsed: "已解析",
+  generating: "生成中",
+  generated: "已生成",
+  verifying: "校验中",
+  verified: "已校验",
+  waiting_user_input: "等待输入",
+  cancelled: "已取消",
+};
+
+const STATUS_COLORS: Record<string, string> = {
+  completed: "text-green-600",
+  failed: "text-red-600",
+  running: "text-blue-600",
+  init: "text-gray-500",
+  parsing: "text-blue-500",
+  waiting_user_input: "text-yellow-600",
+  cancelled: "text-gray-400",
+};
 
 export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
+  const [expandedItems, setExpandedItems] = useState<string[]>(["/workflows", "/settings"]);
+  const [recentWorkflows, setRecentWorkflows] = useState<WorkflowSummary[]>([]);
+  const [workflowsLoading, setWorkflowsLoading] = useState(false);
+
+  // 加载最近工作流
+  useEffect(() => {
+    if (expandedItems.includes("/workflows")) {
+      loadRecentWorkflows();
+    }
+  }, [expandedItems]);
+
+  const loadRecentWorkflows = async () => {
+    setWorkflowsLoading(true);
+    try {
+      const data = await workflowApi.list({ page: 1, size: 5 });
+      if (data && data.workflows) {
+        setRecentWorkflows(data.workflows.map((w: { id: string; title?: string; status: string; created_at: string; selected_skills?: string[] }) => ({
+          id: w.id,
+          title: w.title || "未命名工作流",
+          status: w.status,
+          created_at: w.created_at,
+          selected_skills: w.selected_skills,
+        })));
+      }
+    } catch {
+      // 静默失败
+    } finally {
+      setWorkflowsLoading(false);
+    }
+  };
 
   const handleLogout = async () => {
-    // 先跳转到登录页，避免其他组件继续调用 API
     router.push("/auth/login");
-    
-    // 然后在后台执行登出操作
     try {
       await authApi.logout();
     } catch {
-      // 即使登出失败，也已经跳转了
+      // ignore
     }
+  };
+
+  const toggleExpanded = (href: string) => {
+    setExpandedItems((prev) =>
+      prev.includes(href) ? prev.filter((item) => item !== href) : [...prev, href]
+    );
+  };
+
+  const isActive = (href: string) => {
+    return pathname === href || pathname.startsWith(`${href}/`);
+  };
+
+  const isChildActive = (children: { href: string }[]) => {
+    return children.some((child) => pathname === child.href || pathname.startsWith(`${child.href}/`));
+  };
+
+  const formatTime = (iso: string) => {
+    const d = new Date(iso);
+    const now = new Date();
+    const diff = now.getTime() - d.getTime();
+    if (diff < 3600000) return `${Math.floor(diff / 60000)}分钟前`;
+    if (diff < 86400000) return `${Math.floor(diff / 3600000)}小时前`;
+    return d.toLocaleDateString("zh-CN", { month: "short", day: "numeric" });
+  };
+
+  const renderNavItem = (item: NavItem) => {
+    if (item.children) {
+      const expanded = expandedItems.includes(item.href);
+      const active = isActive(item.href) || isChildActive(item.children);
+
+      return (
+        <li key={item.href}>
+          <button
+            onClick={() => toggleExpanded(item.href)}
+            className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+              active ? "bg-blue-50 text-blue-700" : "text-gray-600 hover:bg-gray-100"
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <span className="text-base">{item.icon}</span>
+              {item.label}
+            </div>
+            <svg
+              className={`w-4 h-4 transition-transform ${expanded ? "rotate-90" : ""}`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+          {expanded && (
+            <ul className="ml-4 mt-1 space-y-1">
+              {item.children.map((child) => (
+                <li key={child.href}>
+                  <Link
+                    href={child.href}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      isActive(child.href)
+                        ? "bg-blue-50 text-blue-700"
+                        : "text-gray-600 hover:bg-gray-100"
+                    }`}
+                  >
+                    <span className="text-sm">{child.icon}</span>
+                    {child.label}
+                  </Link>
+                </li>
+              ))}
+              {/* 最近工作流列表 */}
+              {item.href === "/workflows" && (
+                <li>
+                  <div className="mt-1 pt-1 border-t border-gray-100">
+                    {workflowsLoading ? (
+                      <div className="px-3 py-2 text-xs text-gray-400">加载中...</div>
+                    ) : recentWorkflows.length > 0 ? (
+                      <div className="space-y-0.5">
+                        <div className="px-3 py-1 text-xs text-gray-400 font-medium">最近工作流</div>
+                        {recentWorkflows.map((wf) => (
+                          <Link
+                            key={wf.id}
+                            href={`/workflows/detail?id=${wf.id}`}
+                            className={`flex flex-col px-3 py-1.5 rounded text-xs transition-colors ${
+                              pathname === `/workflows/detail` && pathname.includes(wf.id)
+                                ? "bg-blue-50 text-blue-700"
+                                : "text-gray-500 hover:bg-gray-50"
+                            }`}
+                          >
+                            <div className="flex items-center justify-between w-full">
+                              <span className="truncate max-w-[120px]">{wf.title}</span>
+                              <span className={`shrink-0 ${STATUS_COLORS[wf.status] || "text-gray-400"}`}>
+                                {STATUS_LABELS[wf.status] || wf.status}
+                              </span>
+                            </div>
+                            {wf.selected_skills && wf.selected_skills.length > 0 && (
+                              <div className="flex flex-wrap gap-1 mt-1">
+                                {wf.selected_skills.slice(0, 3).map((s) => (
+                                  <span key={s} className="px-1 py-0.5 bg-blue-50 text-blue-600 rounded text-[10px] border border-blue-100">
+                                    {s}
+                                  </span>
+                                ))}
+                                {wf.selected_skills.length > 3 && (
+                                  <span className="text-[10px] text-gray-400">+{wf.selected_skills.length - 3}</span>
+                                )}
+                              </div>
+                            )}
+                          </Link>
+                        ))}
+                      </div>
+                    ) : null}
+                  </div>
+                </li>
+              )}
+            </ul>
+          )}
+        </li>
+      );
+    }
+
+    return (
+      <li key={item.href}>
+        <Link
+          href={item.href}
+          className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+            isActive(item.href) ? "bg-blue-50 text-blue-700" : "text-gray-600 hover:bg-gray-100"
+          }`}
+        >
+          <span className="text-base">{item.icon}</span>
+          {item.label}
+        </Link>
+      </li>
+    );
   };
 
   return (
@@ -37,26 +258,9 @@ export default function Sidebar() {
         <h1 className="text-lg font-bold text-gray-900">PM Workstation</h1>
         <p className="text-xs text-gray-500 mt-1">多Agent协作工作站</p>
       </div>
-      <nav className="flex-1 p-3">
+      <nav className="flex-1 p-3 overflow-y-auto">
         <ul className="space-y-1">
-          {navItems.map((item) => {
-            const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
-            return (
-              <li key={item.href}>
-                <Link
-                  href={item.href}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    isActive
-                      ? "bg-blue-50 text-blue-700"
-                      : "text-gray-600 hover:bg-gray-100"
-                  }`}
-                >
-                  <span className="text-base">{item.icon}</span>
-                  {item.label}
-                </Link>
-              </li>
-            );
-          })}
+          {navItems.map(renderNavItem)}
         </ul>
       </nav>
       <div className="p-3 border-t border-gray-200 space-y-1">

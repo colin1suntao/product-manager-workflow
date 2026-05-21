@@ -37,6 +37,8 @@ def _convert_run_to_response(run) -> WorkflowResponse:
         verification_report=run.verification_report.model_dump() if run.verification_report else None,
         verification_report_url=run.verification_report_url,
         error_message=run.error_message,
+        selected_skills=run.selected_skills if hasattr(run, 'selected_skills') else [],
+        llm_provider_id=run.llm_provider_id if hasattr(run, 'llm_provider_id') else None,
     )
 
 
@@ -55,6 +57,7 @@ async def start_workflow(
         user_id=user_id,
         requirement_text=workflow_request.requirement_text,
         llm_provider_id=workflow_request.llm_provider_id,
+        skills=workflow_request.skills,
     )
 
     # 在后台线程执行工作流

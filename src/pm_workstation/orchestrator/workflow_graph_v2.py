@@ -107,8 +107,11 @@ class WorkflowNodesV2:
                 # 使用 Coordinator Agent 拆解任务
                 coordinator = _create_coordinator(llm_handler)
 
+                # 获取用户选择的 PM Skills
+                selected_skills = state.selected_skills if hasattr(state, 'selected_skills') else []
+
                 result = WorkflowNodesV2._call_coordinator_sync(
-                    coordinator, state.workflow_run.requirement_text
+                    coordinator, state.workflow_run.requirement_text, selected_skills=selected_skills
                 )
 
                 if result:
@@ -141,7 +144,7 @@ class WorkflowNodesV2:
             return WorkflowNodes.parsing_node(state, llm_handler)
 
     @staticmethod
-    def _call_coordinator_sync(coordinator: CoordinatorAgent, requirement_text: str) -> dict | None:
+    def _call_coordinator_sync(coordinator: CoordinatorAgent, requirement_text: str, selected_skills: list[str] | None = None) -> dict | None:
         """同步调用 Coordinator Agent，带超时控制"""
         import asyncio
         import threading
@@ -152,17 +155,17 @@ class WorkflowNodesV2:
             """在新线程中创建独立事件循环运行异步代码"""
             try:
                 result_holder["value"] = asyncio.run(
-                    coordinator.process_request(requirement_text)
+                    coordinator.process_request(requirement_text, selected_skills=selected_skills)
                 )
             except Exception as e:
                 result_holder["error"] = e
 
         thread = threading.Thread(target=_run_async, daemon=True)
         thread.start()
-        thread.join(timeout=30)  # 30 秒超时
+        thread.join(timeout=120)  # 120 秒超时（包含多个 LLM 调用）
 
         if thread.is_alive():
-            raise TimeoutError("Coordinator call timed out after 30s")
+            raise TimeoutError("Coordinator call timed out after 120s")
 
         if result_holder["error"]:
             raise result_holder["error"]
@@ -195,26 +198,47 @@ class WorkflowNodesV2:
                 if not req_text:
                     raise ValueError("缺少需求文本，无法生成")
 
-                if llm_handler:
-                    if not state.prototype_html:
-                        try:
-                            prototype_html = WorkflowNodes._call_llm_sync(
-                                llm_handler, "prototype", req_text
-                            )
-                            if prototype_html:
-                                state.prototype_html = prototype_html
-                        except Exception as e:
-                            logger.warning(f"[GeneratingNodeV2] Prototype failed: {e}")
+                # 获取用户选择的 PM Skills
+                skills = state.selected_skills if hasattr(state, 'selected_skills') else []
 
-                    if not state.prd_document:
+                if llm_handler:
+                    # 并行生成原型和 PRD
+                    import threading
+                    results = {"prototype": None, "prd": None}
+                    errors = {"prototype": None, "prd": None}
+
+                    def _gen_prototype():
                         try:
-                            prd_document = WorkflowNodes._call_llm_sync(
-                                llm_handler, "prd", req_text
+                            results["prototype"] = WorkflowNodes._call_llm_sync(
+                                llm_handler, "prototype", req_text, skills=skills
                             )
-                            if prd_document:
-                                state.prd_document = prd_document
                         except Exception as e:
-                            logger.warning(f"[GeneratingNodeV2] PRD failed: {e}")
+                            errors["prototype"] = e
+
+                    def _gen_prd():
+                        try:
+                            results["prd"] = WorkflowNodes._call_llm_sync(
+                                llm_handler, "prd", req_text, skills=skills
+                            )
+                        except Exception as e:
+                            errors["prd"] = e
+
+                    t1 = threading.Thread(target=_gen_prototype, daemon=True)
+                    t2 = threading.Thread(target=_gen_prd, daemon=True)
+                    t1.start()
+                    t2.start()
+                    t1.join(timeout=60)
+                    t2.join(timeout=60)
+
+                    if results["prototype"]:
+                        state.prototype_html = results["prototype"]
+                    elif errors["prototype"]:
+                        logger.warning(f"[GeneratingNodeV2] Prototype failed: {errors['prototype']}")
+
+                    if results["prd"]:
+                        state.prd_document = results["prd"]
+                    elif errors["prd"]:
+                        logger.warning(f"[GeneratingNodeV2] PRD failed: {errors['prd']}")
 
                 # 兜底
                 if not state.prototype_html:

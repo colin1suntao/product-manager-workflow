@@ -24,6 +24,7 @@ class LLMProviderConfig(BaseModel):
     api_key: str = Field(min_length=1, description="API Key")
     base_url: str | None = Field(default=None, max_length=500, description="API Base URL")
     default_model: str = Field(min_length=1, max_length=100, description="默认模型名称")
+    available_models: list[str] = Field(default_factory=list, description="可用模型列表")
     is_active: bool = Field(default=True, description="是否启用")
     is_default: bool = Field(default=False, description="是否为默认 Provider")
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
@@ -38,6 +39,7 @@ class LLMProviderConfig(BaseModel):
             "api_key": self.api_key[:8] + "..." + self.api_key[-4:] if len(self.api_key) > 12 else "***",
             "base_url": self.base_url,
             "default_model": self.default_model,
+            "available_models": self.available_models,
             "is_active": self.is_active,
             "is_default": self.is_default,
             "created_at": self.created_at.isoformat(),

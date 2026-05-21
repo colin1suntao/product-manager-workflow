@@ -381,7 +381,7 @@ export default function IntegrationsPage() {
                   required
                 >
                   <option value="">请选择</option>
-                  {configs
+                  {integrationConfigs
                     .filter((c) => c.enabled)
                     .map((c) => (
                       <option key={c.id} value={c.id}>

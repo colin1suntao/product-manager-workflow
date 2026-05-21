@@ -151,6 +151,8 @@ class WorkflowRun(BaseModel):
     verification_report: VerificationReport | None = Field(default=None, description="校验报告")
     verification_report_url: str | None = Field(default=None, description="校验报告URL")
     error_message: str | None = Field(default=None, description="错误信息")
+    selected_skills: list[str] = Field(default_factory=list, description="用户选择的 PM Skills 技能名称列表")
+    llm_provider_id: str | None = Field(default=None, description="使用的 LLM Provider ID")
 
     def update_status(self, status: WorkflowStatus):
         """更新工作流状态"""

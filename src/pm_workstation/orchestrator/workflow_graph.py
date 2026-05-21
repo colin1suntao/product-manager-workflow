@@ -64,7 +64,7 @@ class WorkflowNodes:
             return {"workflow_run": state.workflow_run, "error_message": state.error_message}
 
     @staticmethod
-    def _call_llm_sync(llm_handler, task: str, requirement_text: str):
+    def _call_llm_sync(llm_handler, task: str, requirement_text: str, skills: list[str] | None = None):
         """同步调用 LLM，带超时控制"""
         import threading
         import time
@@ -80,13 +80,13 @@ class WorkflowNodes:
                     parser = RequirementParser(llm_handler=llm_handler)
                     coro = parser.parse(requirement_text)
                 elif task == "prototype":
-                    from pm_workstation.agents.prototype_generator import PrototypeGenerator
-                    gen = PrototypeGenerator(llm_handler=llm_handler)
-                    coro = gen.generate(requirement_text)
+                    from pm_workstation.agents.huashu_prototype_generator import HuashuPrototypeGenerator
+                    gen = HuashuPrototypeGenerator(llm_handler=llm_handler)
+                    coro = gen.generate(requirement_text, skills=skills)
                 elif task == "prd":
                     from pm_workstation.agents.prd_generator import PRDGenerator
                     gen = PRDGenerator(llm_handler=llm_handler)
-                    coro = gen.generate(requirement_text)
+                    coro = gen.generate(requirement_text, skills=skills)
                 else:
                     result_holder["error"] = ValueError(f"Unknown task: {task}")
                     return
@@ -100,7 +100,7 @@ class WorkflowNodes:
 
         thread = threading.Thread(target=_run_async, daemon=True)
         thread.start()
-        thread.join(timeout=90)  # 90秒超时（原型和PRD各90秒，加上parsing 60秒，总计不超过3分钟）
+        thread.join(timeout=60)  # 60秒超时
 
         elapsed = time.time() - start_time
 
@@ -128,6 +128,9 @@ class WorkflowNodes:
             if not req_text:
                 raise ValueError("缺少需求文本，无法生成")
 
+            # 获取用户选择的 PM Skills
+            skills = state.selected_skills if hasattr(state, 'selected_skills') else []
+
             if llm_handler:
                 # 使用 LLM 生成原型和文档，超时则回退到简单模板
 
@@ -135,7 +138,7 @@ class WorkflowNodes:
                 try:
                     print("[GeneratingNode] Calling LLM for prototype...")
                     prototype_html = WorkflowNodes._call_llm_sync(
-                        llm_handler, "prototype", req_text
+                        llm_handler, "prototype", req_text, skills=skills
                     )
                     if prototype_html:
                         state.prototype_html = prototype_html
@@ -146,7 +149,7 @@ class WorkflowNodes:
                 try:
                     print("[GeneratingNode] Calling LLM for PRD...")
                     prd_document = WorkflowNodes._call_llm_sync(
-                        llm_handler, "prd", req_text
+                        llm_handler, "prd", req_text, skills=skills
                     )
                     if prd_document:
                         state.prd_document = prd_document

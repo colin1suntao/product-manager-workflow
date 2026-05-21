@@ -55,6 +55,7 @@ async def create_provider(
         api_key=request.api_key,
         base_url=request.base_url,
         default_model=request.default_model,
+        available_models=request.available_models,
         is_active=request.is_active,
         is_default=is_default,
     )
@@ -241,6 +242,7 @@ async def list_models(
             client = AsyncOpenAI(
                 api_key=config.api_key,
                 base_url=config.base_url,
+                timeout=30.0,
             )
             models_resp = await client.models.list()
             models = [{"id": m.id, "object": m.object} for m in models_resp.data]
@@ -250,8 +252,8 @@ async def list_models(
             client = AsyncAnthropic(
                 api_key=config.api_key,
                 base_url=config.base_url,
+                timeout=30.0,
             )
-            # Anthropic doesn't have a models.list endpoint, return known models
             models = [
                 {"id": "claude-sonnet-4-20250514", "object": "model"},
                 {"id": "claude-3-5-sonnet-20241022", "object": "model"},
@@ -268,4 +270,16 @@ async def list_models(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"获取模型列表失败: {str(e)}")
+        error_msg = str(e)
+        if "ConnectTimeout" in error_msg or "Connection" in error_msg:
+            error_msg = "连接超时：无法连接到 LLM 服务提供商。\n请检查：\n1. 网络连接是否正常\n2. Base URL 是否正确\n3. 是否需要配置代理"
+        elif "404" in error_msg or "Not Found" in error_msg:
+            error_msg = "404 错误：模型列表接口不存在。\n请检查 Base URL 是否正确，确保包含完整路径（如 https://api.openai.com/v1）"
+        elif "401" in error_msg or "Unauthorized" in error_msg:
+            error_msg = "401 错误：API Key 无效或已过期"
+        elif "403" in error_msg or "Forbidden" in error_msg:
+            error_msg = "403 错误：API Key 权限不足"
+        elif "timeout" in error_msg.lower():
+            error_msg = "请求超时：服务响应时间过长，请稍后重试"
+
+        raise HTTPException(status_code=500, detail=f"获取模型列表失败: {error_msg}")

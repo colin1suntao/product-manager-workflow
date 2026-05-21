@@ -26,10 +26,11 @@ class WorkflowManager:
     管理工作流的生命周期，提供启动、暂停、恢复、查询等接口。
     """
 
-    def __init__(self, llm_handler=None, use_v2: bool = True) -> None:
+    def __init__(self, llm_handler=None, use_v2: bool = True, provider_store=None) -> None:
         self._runs: dict[str, WorkflowRun] = {}
         self._llm_handler = llm_handler
         self._use_v2 = use_v2
+        self._provider_store = provider_store
         # 根据配置选择 V1 或 V2 工作流图
         if use_v2:
             self._app = create_workflow_app_v2(llm_handler=llm_handler)
@@ -37,6 +38,15 @@ class WorkflowManager:
             self._app = create_workflow_app(llm_handler=llm_handler)
         self._load_from_file()
         os.makedirs(ARTIFACTS_DIR, exist_ok=True)
+
+    def _get_or_create_app(self, llm_handler=None):
+        """获取或创建工作流应用（支持动态 LLM handler）"""
+        if llm_handler is None:
+            return self._app
+        if self._use_v2:
+            return create_workflow_app_v2(llm_handler=llm_handler)
+        else:
+            return create_workflow_app(llm_handler=llm_handler)
 
     def _persistence_path(self) -> str:
         return PERSISTENCE_FILE
@@ -90,6 +100,7 @@ class WorkflowManager:
         requirement_text: str,
         workflow_id: str | None = None,
         llm_provider_id: str | None = None,
+        skills: list[str] | None = None,
     ) -> WorkflowRun:
         """启动新的工作流
 
@@ -98,6 +109,7 @@ class WorkflowManager:
             requirement_text: 原始需求文本
             workflow_id: 可选的工作流ID，不提供则自动生成
             llm_provider_id: LLM Provider ID
+            skills: 可选的 PM Skills 技能名称列表
 
         Returns:
             工作流运行记录
@@ -109,6 +121,8 @@ class WorkflowManager:
             user_id=user_id,
             requirement_text=requirement_text,
             status=WorkflowStatus.INIT,
+            selected_skills=skills or [],
+            llm_provider_id=llm_provider_id,
         )
         self._runs[run_id] = run
         self._save_to_file()
@@ -123,22 +137,49 @@ class WorkflowManager:
             print(f"[WorkflowManager] Run {run_id} not found")
             return
 
-        state = WorkflowState(workflow_run=run)
+        # 动态构建 LLM handler（如果指定了特定 provider）
+        llm_handler = self._llm_handler
+        if run.llm_provider_id and self._provider_store:
+            try:
+                import asyncio
+                provider_config = asyncio.run(
+                    self._provider_store.get_config(run.llm_provider_id)
+                )
+                if provider_config:
+                    from pm_workstation.api.app import _build_llm_handler
+                    llm_handler = _build_llm_handler(provider_config)
+                    print(f"[WorkflowManager] Using specified provider: {provider_config.name}")
+            except Exception as e:
+                print(f"[WorkflowManager] Failed to load provider {run.llm_provider_id}: {e}")
+
+        # 获取工作流应用（如果需要动态 LLM handler，重新构建图）
+        app = self._get_or_create_app(llm_handler)
+
+        state = WorkflowState(
+            workflow_run=run,
+            selected_skills=run.selected_skills if hasattr(run, 'selected_skills') else [],
+        )
         print("[WorkflowManager] Created initial state")
 
         try:
             # 使用 LangGraph 执行完整工作流
             print("[WorkflowManager] Invoking LangGraph app...")
-            result = self._app.invoke(state)
+            print(f"[WorkflowManager] Initial state skills: {state.selected_skills}")
+            result = app.invoke(state)
             print(f"[WorkflowManager] LangGraph completed, result type: {type(result)}")
 
             # LangGraph 返回的可能是 dict 或 WorkflowState
             if isinstance(result, dict):
+                print(f"[WorkflowManager] Result keys: {result.keys()}")
+                print(f"[WorkflowManager] Result prototype_html length: {len(result.get('prototype_html', ''))}")
+                print(f"[WorkflowManager] Result prd_document length: {len(result.get('prd_document', ''))}")
                 final_state = WorkflowState.model_validate(result)
             else:
                 final_state = result
 
             print(f"[WorkflowManager] Final status: {final_state.workflow_run.status}")
+            print(f"[WorkflowManager] Final prototype_html length: {len(final_state.prototype_html)}")
+            print(f"[WorkflowManager] Final prd_document length: {len(final_state.prd_document)}")
 
             # 更新运行记录
             self._update_run_from_state(final_state)
