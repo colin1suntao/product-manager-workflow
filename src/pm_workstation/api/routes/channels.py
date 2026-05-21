@@ -2,7 +2,6 @@
 
 import logging
 import uuid
-from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 
@@ -33,11 +32,11 @@ def _build_adapter(config: ChannelConfig):
 
 async def _process_incoming_message(incoming: IncomingMessage) -> str:
     from pm_workstation.agents.coordinator_chat import CoordinatorChatAgent
-    from pm_workstation.chat.chat_manager import ChatManager
-    from pm_workstation.chat.chat_models import ChatMessage, TaskMode
-    from pm_workstation.chat.task_router import TaskRouter
     from pm_workstation.api.app import app_state_provider_store
     from pm_workstation.api.routes.chat import _build_coordinator_from_store
+    from pm_workstation.chat.chat_manager import ChatManager
+    from pm_workstation.chat.chat_models import ChatMessage
+    from pm_workstation.chat.task_router import TaskRouter
     from pm_workstation.llm.token_usage import TokenUsageStore
 
     chat_manager = ChatManager()
@@ -89,7 +88,7 @@ async def _process_incoming_message(incoming: IncomingMessage) -> str:
         )
     except Exception as e:
         logger.error(f"[ChannelMessage] AI processing failed: {e}")
-        response_text = f"抱歉，处理消息时出现错误，请稍后重试。"
+        response_text = "抱歉，处理消息时出现错误，请稍后重试。"
         token_usage_store.record(model_id="", total_tokens=0, source=f"channel_{incoming.channel_type.value}")
         return response_text
 

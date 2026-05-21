@@ -2,7 +2,7 @@
 
 from datetime import datetime
 from enum import Enum
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -26,8 +26,8 @@ class ChannelConfig(BaseModel):
     config: dict[str, Any] = {}
     created_at: datetime = Field(default_factory=datetime.now)
     updated_at: datetime = Field(default_factory=datetime.now)
-    last_error: Optional[str] = None
-    webhook_url: Optional[str] = None
+    last_error: str | None = None
+    webhook_url: str | None = None
     message_count: int = 0
 
 

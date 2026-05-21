@@ -1,9 +1,7 @@
 """Token 用量追踪模型与存储"""
 
 import threading
-from collections import defaultdict
-from datetime import datetime, date
-from typing import Optional
+from datetime import datetime
 
 from pydantic import BaseModel, Field
 
@@ -33,7 +31,7 @@ class ModelUsage(BaseModel):
     prompt_tokens: int = 0
     completion_tokens: int = 0
     call_count: int = 0
-    last_used_at: Optional[str] = None
+    last_used_at: str | None = None
 
 
 class UsageOverview(BaseModel):

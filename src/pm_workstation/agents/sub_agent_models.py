@@ -5,7 +5,6 @@
 
 from datetime import datetime
 from enum import Enum
-from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -50,7 +49,7 @@ class IsolatedContext(BaseModel):
     uploads: str = Field(default="", description="上传文件目录")
     outputs: str = Field(default="", description="输出文件目录")
     shared_data: dict = Field(default_factory=dict, description="共享数据")
-    parent_context: Optional[str] = Field(default=None, description="父上下文 ID (用于继承)")
+    parent_context: str | None = Field(default=None, description="父上下文 ID (用于继承)")
     created_at: datetime = Field(default_factory=datetime.now, description="创建时间")
 
 
@@ -60,9 +59,9 @@ class SubAgentTask(BaseModel):
     agent_id: str = Field(..., description="执行者 Agent ID")
     input: dict = Field(default_factory=dict, description="输入参数")
     skills: list[str] = Field(default_factory=list, description="使用的技能")
-    depends_on: Optional[str] = Field(default=None, description="依赖的任务 ID")
-    parallel_with: Optional[str] = Field(default=None, description="并行执行的任务 ID")
-    timeout_override: Optional[int] = Field(default=None, description="超时覆盖")
+    depends_on: str | None = Field(default=None, description="依赖的任务 ID")
+    parallel_with: str | None = Field(default=None, description="并行执行的任务 ID")
+    timeout_override: int | None = Field(default=None, description="超时覆盖")
     priority: int = Field(default=5, description="优先级")
 
 
@@ -72,12 +71,12 @@ class SubAgentResult(BaseModel):
     agent_id: str = Field(..., description="执行者 Agent ID")
     agent_name: str = Field(..., description="执行者名称")
     status: SubAgentStatus = Field(..., description="执行状态")
-    output: Optional[str] = Field(default=None, description="输出内容")
+    output: str | None = Field(default=None, description="输出内容")
     artifacts: list[dict] = Field(default_factory=list, description="产物")
-    error_message: Optional[str] = Field(default=None, description="错误信息")
+    error_message: str | None = Field(default=None, description="错误信息")
     thinking_process: list[dict] = Field(default_factory=list, description="思考过程")
     started_at: datetime = Field(default_factory=datetime.now, description="开始时间")
-    completed_at: Optional[datetime] = Field(default=None, description="完成时间")
+    completed_at: datetime | None = Field(default=None, description="完成时间")
     duration_ms: int = Field(default=0, description="耗时毫秒")
     token_usage: dict = Field(default_factory=dict, description="Token 用量")
     retries: int = Field(default=0, description="重试次数")

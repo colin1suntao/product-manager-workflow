@@ -7,9 +7,7 @@ import json
 import logging
 import time
 from datetime import datetime
-from typing import Any, Optional
 
-from pm_workstation.model_router.base import LLMBackend, LLMMessage
 from pm_workstation.chat.chat_models import (
     ChatMessage,
     CoordinatorResponse,
@@ -23,6 +21,7 @@ from pm_workstation.chat.chat_models import (
 from pm_workstation.chat.task_router import TaskRouter
 from pm_workstation.memory.memory_retriever import MemoryRetriever
 from pm_workstation.memory.soul_manager import SoulManager
+from pm_workstation.model_router.base import LLMBackend, LLMMessage
 
 logger = logging.getLogger(__name__)
 
@@ -52,10 +51,10 @@ class CoordinatorChatAgent:
 
     def __init__(
         self,
-        llm_handler: Optional[LLMBackend] = None,
-        task_router: Optional[TaskRouter] = None,
-        memory_retriever: Optional[MemoryRetriever] = None,
-        soul_manager: Optional[SoulManager] = None,
+        llm_handler: LLMBackend | None = None,
+        task_router: TaskRouter | None = None,
+        memory_retriever: MemoryRetriever | None = None,
+        soul_manager: SoulManager | None = None,
     ):
         """初始化主 Agent
 
@@ -110,8 +109,8 @@ class CoordinatorChatAgent:
         self,
         message: str,
         context: list[ChatMessage],
-        selected_skills: Optional[list[str]] = None,
-        task_mode: Optional[TaskMode] = None,
+        selected_skills: list[str] | None = None,
+        task_mode: TaskMode | None = None,
         user_id: str = "default",
     ) -> CoordinatorResponse:
         logger.info(f"Processing message: {message[:50]}...")
@@ -251,7 +250,7 @@ class CoordinatorChatAgent:
         self,
         message: str,
         context: list[ChatMessage],
-        system_prompt: Optional[str] = None,
+        system_prompt: str | None = None,
     ) -> IntentAnalysis:
         """分析用户意图
 
@@ -358,8 +357,8 @@ class CoordinatorChatAgent:
     async def _simple_process(
         self,
         message: str,
-        selected_skills: Optional[list[str]] = None,
-        task_mode: Optional[TaskMode] = None,
+        selected_skills: list[str] | None = None,
+        task_mode: TaskMode | None = None,
     ) -> CoordinatorResponse:
         thinking_process: list[ThinkingStep] = []
 

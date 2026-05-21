@@ -5,7 +5,6 @@
 
 import logging
 import time
-from typing import Optional
 
 from pm_workstation.sandbox.models import (
     ToolCategory,
@@ -13,13 +12,13 @@ from pm_workstation.sandbox.models import (
     ToolResult,
     Workspace,
 )
-from pm_workstation.sandbox.security_controller import (
-    SecurityController,
-    get_security_controller,
-)
 from pm_workstation.sandbox.process_executor import (
     ProcessExecutor,
     get_process_executor,
+)
+from pm_workstation.sandbox.security_controller import (
+    SecurityController,
+    get_security_controller,
 )
 
 logger = logging.getLogger(__name__)
@@ -27,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 class ShellTools:
     """Shell 执行工具集合"""
-    
+
     TOOLS = [
         ToolDefinition(
             name="shell_execute",
@@ -75,15 +74,15 @@ class ShellTools:
             category=ToolCategory.SHELL,
         ),
     ]
-    
+
     def __init__(
         self,
-        process_executor: Optional[ProcessExecutor] = None,
-        security_controller: Optional[SecurityController] = None,
+        process_executor: ProcessExecutor | None = None,
+        security_controller: SecurityController | None = None,
     ):
         self.process_executor = process_executor or get_process_executor()
         self.security_controller = security_controller or get_security_controller()
-    
+
     async def execute(
         self,
         workspace: Workspace,
@@ -91,10 +90,10 @@ class ShellTools:
     ) -> ToolResult:
         """执行 Shell 命令"""
         start_time = time.time()
-        
+
         command = params.get("command", "")
         timeout = params.get("timeout", 30)
-        
+
         validation = self.security_controller.validate_command(command)
         if not validation.valid:
             return ToolResult(
@@ -103,22 +102,22 @@ class ShellTools:
                 error=f"Command blocked: {validation.reason}",
                 execution_time_ms=int((time.time() - start_time) * 1000),
             )
-        
+
         try:
             result = await self.process_executor.execute_shell(
                 command=command,
                 workspace=workspace,
                 timeout=timeout,
             )
-            
+
             success = result.exit_code == 0
-            
+
             output = f"Exit code: {result.exit_code}\n"
             if result.stdout:
                 output += f"Output:\n{result.stdout}\n"
             if result.stderr:
                 output += f"Error:\n{result.stderr}\n"
-            
+
             return ToolResult(
                 tool_name="shell_execute",
                 success=success,
@@ -140,7 +139,7 @@ class ShellTools:
                 error=str(e),
                 execution_time_ms=int((time.time() - start_time) * 1000),
             )
-    
+
     async def execute_script(
         self,
         workspace: Workspace,
@@ -148,11 +147,11 @@ class ShellTools:
     ) -> ToolResult:
         """执行脚本文件"""
         start_time = time.time()
-        
+
         script_path = params.get("script_path", "")
         args = params.get("args", [])
         interpreter = params.get("interpreter")
-        
+
         try:
             result = await self.process_executor.execute_script(
                 script_path=script_path,
@@ -160,9 +159,9 @@ class ShellTools:
                 args=args,
                 interpreter=interpreter,
             )
-            
+
             success = result.exit_code == 0
-            
+
             return ToolResult(
                 tool_name="shell_script",
                 success=success,
@@ -185,7 +184,7 @@ class ShellTools:
             )
 
 
-_global_shell_tools: Optional[ShellTools] = None
+_global_shell_tools: ShellTools | None = None
 
 
 def get_shell_tools() -> ShellTools:

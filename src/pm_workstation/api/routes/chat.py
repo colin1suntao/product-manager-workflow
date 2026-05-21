@@ -6,7 +6,6 @@
 import asyncio
 import time
 import uuid
-from datetime import datetime
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
 
@@ -15,10 +14,8 @@ from pm_workstation.auth.dependencies import get_current_user
 from pm_workstation.chat.chat_manager import ChatManager
 from pm_workstation.chat.chat_models import (
     ChatMessage,
-    ChatSession,
     CoordinatorResponse,
     TaskMode,
-    TaskResult,
     TaskStatus,
     ThinkingStep,
     ToolCall,
@@ -223,8 +220,8 @@ async def send_message(
     template_info = None
     if template_id:
         try:
-            from pm_workstation.knowledge_base.store import TemplateStore
             from pm_workstation.component_library.store import ComponentTemplateStore
+            from pm_workstation.knowledge_base.store import TemplateStore
             ts = TemplateStore()
             tmpl = await ts.get(template_id)
             if tmpl:
@@ -270,7 +267,7 @@ async def send_message(
             ),
             timeout=60.0,
         )
-    except asyncio.TimeoutError:
+    except TimeoutError:
         response = CoordinatorResponse(
             message="处理超时，请简化您的需求后重试。",
             thinking_process=[
@@ -531,7 +528,7 @@ async def compress_context(
         await manager.add_message(session_id, compressed_msg)
 
         return {
-            "message": f"上下文已压缩",
+            "message": "上下文已压缩",
             "removed_count": len(ids_to_remove),
             "remaining_count": keep_count + 1,
         }

@@ -5,7 +5,6 @@
 
 from datetime import datetime
 from enum import Enum
-from typing import Any, Optional
 
 from pydantic import BaseModel, Field
 
@@ -38,11 +37,11 @@ class WorkflowStep(BaseModel):
     description: str = Field(default="", description="步骤描述")
     mode: str = Field(..., description="任务模式: requirement/prototype/prd/market_research")
     skills: list[str] = Field(default_factory=list, description="使用的技能")
-    agent_id: Optional[str] = Field(default=None, description="指定的 Sub-Agent ID")
-    depends_on: Optional[str] = Field(default=None, description="依赖的步骤 ID")
-    parallel_with: Optional[str] = Field(default=None, description="并行执行的步骤 ID")
+    agent_id: str | None = Field(default=None, description="指定的 Sub-Agent ID")
+    depends_on: str | None = Field(default=None, description="依赖的步骤 ID")
+    parallel_with: str | None = Field(default=None, description="并行执行的步骤 ID")
     input: dict = Field(default_factory=dict, description="输入参数")
-    input_from_dependency: Optional[str] = Field(default=None, description="从依赖步骤获取输入的字段")
+    input_from_dependency: str | None = Field(default=None, description="从依赖步骤获取输入的字段")
     timeout: int = Field(default=90, description="超时秒数")
     retry_on_failure: int = Field(default=0, description="失败重试次数")
     optional: bool = Field(default=False, description="是否可选（失败不影响整体）")
@@ -70,14 +69,14 @@ class StepResult(BaseModel):
     step_id: str = Field(..., description="步骤 ID")
     step_name: str = Field(..., description="步骤名称")
     status: StepStatus = Field(..., description="状态")
-    output: Optional[str] = Field(default=None, description="输出内容")
+    output: str | None = Field(default=None, description="输出内容")
     artifacts: list[dict] = Field(default_factory=list, description="产物")
-    error_message: Optional[str] = Field(default=None, description="错误信息")
+    error_message: str | None = Field(default=None, description="错误信息")
     started_at: datetime = Field(default_factory=datetime.now, description="开始时间")
-    completed_at: Optional[datetime] = Field(default=None, description="完成时间")
+    completed_at: datetime | None = Field(default=None, description="完成时间")
     duration_ms: int = Field(default=0, description="耗时毫秒")
-    agent_id: Optional[str] = Field(default=None, description="执行的 Agent ID")
-    agent_name: Optional[str] = Field(default=None, description="执行的 Agent 名称")
+    agent_id: str | None = Field(default=None, description="执行的 Agent ID")
+    agent_name: str | None = Field(default=None, description="执行的 Agent 名称")
     token_usage: dict = Field(default_factory=dict, description="Token 用量")
     retry_count: int = Field(default=0, description="重试次数")
 
@@ -88,7 +87,7 @@ class WorkflowExecution(BaseModel):
     workflow_id: str = Field(..., description="工作流 ID")
     workflow_name: str = Field(..., description="工作流名称")
     user_id: str = Field(..., description="用户 ID")
-    session_id: Optional[str] = Field(default=None, description="会话 ID")
+    session_id: str | None = Field(default=None, description="会话 ID")
     status: WorkflowStatus = Field(default=WorkflowStatus.PENDING, description="状态")
     steps_results: list[StepResult] = Field(default_factory=list, description="步骤结果")
     current_step_index: int = Field(default=0, description="当前步骤索引")
@@ -97,11 +96,11 @@ class WorkflowExecution(BaseModel):
     completed_steps: int = Field(default=0, description="已完成步骤数")
     failed_steps: int = Field(default=0, description="失败步骤数")
     started_at: datetime = Field(default_factory=datetime.now, description="开始时间")
-    completed_at: Optional[datetime] = Field(default=None, description="完成时间")
+    completed_at: datetime | None = Field(default=None, description="完成时间")
     total_duration_ms: int = Field(default=0, description="总耗时毫秒")
     total_token_usage: dict = Field(default_factory=dict, description="总 Token 用量")
     final_artifacts: list[dict] = Field(default_factory=list, description="最终产物")
-    error_message: Optional[str] = Field(default=None, description="错误信息")
+    error_message: str | None = Field(default=None, description="错误信息")
     metadata: dict = Field(default_factory=dict, description="元数据")
 
 
@@ -112,14 +111,14 @@ class WorkflowProgress(BaseModel):
     workflow_name: str
     status: WorkflowStatus
     progress_percent: float = Field(..., description="进度百分比 0-100")
-    current_step: Optional[str] = Field(default=None, description="当前步骤名称")
-    current_step_status: Optional[StepStatus] = Field(default=None)
+    current_step: str | None = Field(default=None, description="当前步骤名称")
+    current_step_status: StepStatus | None = Field(default=None)
     completed_steps: list[str] = Field(default_factory=list, description="已完成的步骤")
     running_steps: list[str] = Field(default_factory=list, description="正在运行的步骤")
     pending_steps: list[str] = Field(default_factory=list, description="等待的步骤")
     failed_steps: list[str] = Field(default_factory=list, description="失败的步骤")
     artifacts_generated: list[dict] = Field(default_factory=list, description="已生成的产物")
-    estimated_remaining_time: Optional[str] = Field(default=None, description="预估剩余时间")
+    estimated_remaining_time: str | None = Field(default=None, description="预估剩余时间")
 
 
 class WorkflowTemplate(BaseModel):

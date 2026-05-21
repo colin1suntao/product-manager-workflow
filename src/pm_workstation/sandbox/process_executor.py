@@ -4,35 +4,27 @@
 """
 
 import asyncio
-import datetime
 import json
 import logging
 import os
-import subprocess
 import sys
-import tempfile
 import time
 import uuid
-from typing import Any, Optional
 
 from pm_workstation.sandbox.models import (
     CommandResult,
-    ExecutionContext,
     PythonResult,
-    ResourceLimits,
-)
-from pm_workstation.sandbox.security_controller import (
-    SecurityController,
-    SecurityLevel,
-    get_security_controller,
 )
 from pm_workstation.sandbox.resource_monitor import (
     ResourceMonitor,
     get_resource_monitor,
 )
+from pm_workstation.sandbox.security_controller import (
+    SecurityController,
+    get_security_controller,
+)
 from pm_workstation.sandbox.workspace_manager import (
     Workspace,
-    WorkspaceManager,
 )
 
 logger = logging.getLogger(__name__)
@@ -46,25 +38,25 @@ class ProcessExecutor:
     - Python 代码
     - 脚本文件
     """
-    
+
     DEFAULT_TIMEOUT = 30
     PYTHON_EXECUTABLE = sys.executable
-    
+
     def __init__(
         self,
-        security_controller: Optional[SecurityController] = None,
-        resource_monitor: Optional[ResourceMonitor] = None,
+        security_controller: SecurityController | None = None,
+        resource_monitor: ResourceMonitor | None = None,
     ):
         self.security_controller = security_controller or get_security_controller()
         self.resource_monitor = resource_monitor or get_resource_monitor()
-    
+
     async def execute_shell(
         self,
         command: str,
         workspace: Workspace,
         timeout: int = None,
-        env: Optional[dict] = None,
-        cwd: Optional[str] = None,
+        env: dict | None = None,
+        cwd: str | None = None,
     ) -> CommandResult:
         """执行 Shell 命令
         
@@ -79,7 +71,7 @@ class ProcessExecutor:
             CommandResult: 命令执行结果
         """
         timeout = timeout or self.DEFAULT_TIMEOUT
-        
+
         validation = self.security_controller.validate_command(command)
         if not validation.valid:
             logger.warning(f"Command blocked: {validation.reason}")
@@ -90,19 +82,19 @@ class ProcessExecutor:
                 stderr=f"Command blocked: {validation.reason}",
                 timed_out=False,
             )
-        
+
         start_time = time.time()
-        
+
         execution_env = os.environ.copy()
         execution_env["PATH"] = "/usr/local/bin:/usr/bin:/bin"
         execution_env["HOME"] = workspace.path
         execution_env["PWD"] = cwd or workspace.path
-        
+
         if env:
             execution_env.update(env)
-        
+
         cwd = cwd or workspace.path
-        
+
         try:
             process = await asyncio.create_subprocess_shell(
                 command,
@@ -111,27 +103,27 @@ class ProcessExecutor:
                 cwd=cwd,
                 env=execution_env,
             )
-            
+
             try:
                 stdout, stderr = await asyncio.wait_for(
                     process.communicate(),
                     timeout=timeout,
                 )
-                
+
                 exit_code = process.returncode
                 timed_out = False
-                
-            except asyncio.TimeoutError:
+
+            except TimeoutError:
                 process.kill()
                 await process.wait()
-                
+
                 stdout = b""
                 stderr = f"Command timed out after {timeout}s".encode()
                 exit_code = -1
                 timed_out = True
-                
+
                 logger.warning(f"Command timed out: {command}")
-        
+
         except Exception as e:
             logger.error(f"Command execution failed: {e}")
             return CommandResult(
@@ -141,16 +133,16 @@ class ProcessExecutor:
                 stderr=str(e),
                 timed_out=False,
             )
-        
+
         execution_time_ms = int((time.time() - start_time) * 1000)
-        
+
         stdout_str = self.security_controller.sanitize_command_output(
             stdout.decode("utf-8", errors="replace")
         )
         stderr_str = self.security_controller.sanitize_command_output(
             stderr.decode("utf-8", errors="replace")
         )
-        
+
         return CommandResult(
             command=command,
             exit_code=exit_code,
@@ -159,14 +151,14 @@ class ProcessExecutor:
             execution_time_ms=execution_time_ms,
             timed_out=timed_out,
         )
-    
+
     async def execute_python(
         self,
         code: str,
         workspace: Workspace,
         timeout: int = None,
-        input_data: Optional[dict] = None,
-        imports: Optional[list[str]] = None,
+        input_data: dict | None = None,
+        imports: list[str] | None = None,
     ) -> PythonResult:
         """执行 Python 代码
         
@@ -181,7 +173,7 @@ class ProcessExecutor:
             PythonResult: Python 执行结果
         """
         timeout = timeout or self.DEFAULT_TIMEOUT
-        
+
         validation = self.security_controller.validate_python_code(code)
         if not validation.valid:
             logger.warning(f"Python code blocked: {validation.reason}")
@@ -192,15 +184,15 @@ class ProcessExecutor:
                 exception=None,
                 files_created=[],
             )
-        
+
         start_time = time.time()
-        
+
         wrapper_code = self._wrap_python_code(code, workspace, input_data, imports)
-        
+
         script_path = os.path.join(workspace.path, "temp", f"script_{uuid.uuid4().hex[:8]}.py")
         with open(script_path, "w", encoding="utf-8") as f:
             f.write(wrapper_code)
-        
+
         try:
             process = await asyncio.create_subprocess_exec(
                 self.PYTHON_EXECUTABLE,
@@ -213,56 +205,56 @@ class ProcessExecutor:
                     "HOME": workspace.path,
                 },
             )
-            
+
             try:
                 stdout, stderr = await asyncio.wait_for(
                     process.communicate(),
                     timeout=timeout,
                 )
-                
+
                 stdout_str = stdout.decode("utf-8", errors="replace")
                 stderr_str = stderr.decode("utf-8", errors="replace")
-                
-            except asyncio.TimeoutError:
+
+            except TimeoutError:
                 process.kill()
                 await process.wait()
-                
+
                 stdout_str = ""
                 stderr_str = f"Python execution timed out after {timeout}s"
-                
-                logger.warning(f"Python execution timed out")
-        
+
+                logger.warning("Python execution timed out")
+
         except Exception as e:
             stdout_str = ""
             stderr_str = str(e)
-        
+
         try:
             os.remove(script_path)
         except OSError:
             pass
-        
+
         result_path = os.path.join(workspace.path, "temp", f"result_{uuid.uuid4().hex[:8]}.json")
         return_value = None
         exception = None
         files_created = []
-        
+
         if os.path.exists(result_path):
             try:
-                with open(result_path, "r", encoding="utf-8") as f:
+                with open(result_path, encoding="utf-8") as f:
                     result_data = json.load(f)
                     return_value = result_data.get("return_value")
                     exception = result_data.get("exception")
                     files_created = result_data.get("files_created", [])
             except json.JSONDecodeError:
                 pass
-            
+
             try:
                 os.remove(result_path)
             except OSError:
                 pass
-        
+
         execution_time_ms = int((time.time() - start_time) * 1000)
-        
+
         return PythonResult(
             code=code,
             stdout=stdout_str,
@@ -272,14 +264,14 @@ class ProcessExecutor:
             execution_time_ms=execution_time_ms,
             files_created=files_created,
         )
-    
+
     async def execute_script(
         self,
         script_path: str,
         workspace: Workspace,
         args: list[str] = None,
         timeout: int = None,
-        interpreter: Optional[str] = None,
+        interpreter: str | None = None,
     ) -> CommandResult:
         """执行脚本文件
         
@@ -294,7 +286,7 @@ class ProcessExecutor:
             CommandResult: 执行结果
         """
         timeout = timeout or self.DEFAULT_TIMEOUT
-        
+
         if not os.path.exists(script_path):
             return CommandResult(
                 command=script_path,
@@ -302,7 +294,7 @@ class ProcessExecutor:
                 stdout="",
                 stderr=f"Script not found: {script_path}",
             )
-        
+
         if script_path.endswith(".py"):
             interpreter = interpreter or self.PYTHON_EXECUTABLE
         elif script_path.endswith(".sh"):
@@ -311,13 +303,13 @@ class ProcessExecutor:
             interpreter = interpreter or "node"
         else:
             interpreter = interpreter or "/bin/bash"
-        
+
         args = args or []
-        
+
         command_args = [interpreter, script_path] + args
-        
+
         start_time = time.time()
-        
+
         try:
             process = await asyncio.create_subprocess_exec(
                 *command_args,
@@ -325,21 +317,21 @@ class ProcessExecutor:
                 stderr=asyncio.subprocess.PIPE,
                 cwd=workspace.path,
             )
-            
+
             try:
                 stdout, stderr = await asyncio.wait_for(
                     process.communicate(),
                     timeout=timeout,
                 )
-                
+
                 exit_code = process.returncode
-                
-            except asyncio.TimeoutError:
+
+            except TimeoutError:
                 process.kill()
                 await process.wait()
-                
+
                 exit_code = -1
-        
+
         except Exception as e:
             return CommandResult(
                 command=f"{interpreter} {script_path}",
@@ -347,9 +339,9 @@ class ProcessExecutor:
                 stdout="",
                 stderr=str(e),
             )
-        
+
         execution_time_ms = int((time.time() - start_time) * 1000)
-        
+
         return CommandResult(
             command=f"{interpreter} {script_path} {args}",
             exit_code=exit_code,
@@ -357,13 +349,13 @@ class ProcessExecutor:
             stderr=stderr.decode("utf-8", errors="replace"),
             execution_time_ms=execution_time_ms,
         )
-    
+
     def _wrap_python_code(
         self,
         code: str,
         workspace: Workspace,
-        input_data: Optional[dict] = None,
-        imports: Optional[list[str]] = None,
+        input_data: dict | None = None,
+        imports: list[str] | None = None,
     ) -> str:
         """包装 Python 代码以捕获输出和返回值
         
@@ -380,7 +372,7 @@ class ProcessExecutor:
         if imports:
             for module in imports:
                 import_lines += f"import {module}\n"
-        
+
         input_setup = ""
         if input_data:
             for key, value in input_data.items():
@@ -394,9 +386,9 @@ class ProcessExecutor:
                     input_setup += f"{key} = {json.dumps(value)}\n"
                 else:
                     input_setup += f"{key} = None\n"
-        
+
         result_file = os.path.join(workspace.path, "temp", f"result_{uuid.uuid4().hex[:8]}.json")
-        
+
         wrapper = f"""
 import sys
 import os
@@ -454,9 +446,9 @@ if os.path.exists(stdout_file):
         print(f.read())
     os.remove(stdout_file)
 """
-        
+
         return wrapper
-    
+
     def _indent_code(
         self,
         code: str,
@@ -474,17 +466,17 @@ if os.path.exists(stdout_file):
         indent_str = " " * indent
         lines = code.split("\n")
         indented_lines = []
-        
+
         for line in lines:
             if line.strip():
                 indented_lines.append(indent_str + line)
             else:
                 indented_lines.append("")
-        
+
         return "\n".join(indented_lines)
 
 
-_global_process_executor: Optional[ProcessExecutor] = None
+_global_process_executor: ProcessExecutor | None = None
 
 
 def get_process_executor() -> ProcessExecutor:

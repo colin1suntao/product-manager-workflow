@@ -6,7 +6,6 @@
 import json
 import logging
 import time
-from typing import Any, Optional
 
 from pm_workstation.sandbox.models import (
     ToolCategory,
@@ -14,13 +13,13 @@ from pm_workstation.sandbox.models import (
     ToolResult,
     Workspace,
 )
-from pm_workstation.sandbox.security_controller import (
-    SecurityController,
-    get_security_controller,
-)
 from pm_workstation.sandbox.process_executor import (
     ProcessExecutor,
     get_process_executor,
+)
+from pm_workstation.sandbox.security_controller import (
+    SecurityController,
+    get_security_controller,
 )
 
 logger = logging.getLogger(__name__)
@@ -28,7 +27,7 @@ logger = logging.getLogger(__name__)
 
 class PythonTools:
     """Python 执行工具集合"""
-    
+
     TOOLS = [
         ToolDefinition(
             name="python_execute",
@@ -77,15 +76,15 @@ class PythonTools:
             category=ToolCategory.PYTHON,
         ),
     ]
-    
+
     def __init__(
         self,
-        process_executor: Optional[ProcessExecutor] = None,
-        security_controller: Optional[SecurityController] = None,
+        process_executor: ProcessExecutor | None = None,
+        security_controller: SecurityController | None = None,
     ):
         self.process_executor = process_executor or get_process_executor()
         self.security_controller = security_controller or get_security_controller()
-    
+
     async def execute(
         self,
         workspace: Workspace,
@@ -93,12 +92,12 @@ class PythonTools:
     ) -> ToolResult:
         """执行 Python 代码"""
         start_time = time.time()
-        
+
         code = params.get("code", "")
         input_data = params.get("input_data")
         imports = params.get("imports", [])
         timeout = params.get("timeout", 60)
-        
+
         validation = self.security_controller.validate_python_code(code)
         if not validation.valid:
             return ToolResult(
@@ -107,7 +106,7 @@ class PythonTools:
                 error=f"Code blocked: {validation.reason}",
                 execution_time_ms=int((time.time() - start_time) * 1000),
             )
-        
+
         try:
             result = await self.process_executor.execute_python(
                 code=code,
@@ -116,15 +115,15 @@ class PythonTools:
                 input_data=input_data,
                 imports=imports,
             )
-            
+
             success = not result.exception and not result.stderr
-            
+
             output = f"Output:\n{result.stdout}\n"
             if result.return_value:
                 output += f"Return value: {json.dumps(result.return_value)}\n"
             if result.files_created:
                 output += f"Files created: {result.files_created}\n"
-            
+
             return ToolResult(
                 tool_name="python_execute",
                 success=success,
@@ -146,7 +145,7 @@ class PythonTools:
                 error=str(e),
                 execution_time_ms=int((time.time() - start_time) * 1000),
             )
-    
+
     async def execute_script(
         self,
         workspace: Workspace,
@@ -154,10 +153,10 @@ class PythonTools:
     ) -> ToolResult:
         """执行 Python 脚本"""
         start_time = time.time()
-        
+
         script_path = params.get("script_path", "")
         args = params.get("args", [])
-        
+
         try:
             result = await self.process_executor.execute_script(
                 script_path=script_path,
@@ -165,9 +164,9 @@ class PythonTools:
                 args=args,
                 interpreter=None,
             )
-            
+
             success = result.exit_code == 0
-            
+
             return ToolResult(
                 tool_name="python_script",
                 success=success,
@@ -190,7 +189,7 @@ class PythonTools:
             )
 
 
-_global_python_tools: Optional[PythonTools] = None
+_global_python_tools: PythonTools | None = None
 
 
 def get_python_tools() -> PythonTools:

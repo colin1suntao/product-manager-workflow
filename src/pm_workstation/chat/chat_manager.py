@@ -5,7 +5,6 @@
 
 import logging
 from datetime import datetime
-from typing import Optional
 
 from .chat_models import ChatMessage, ChatSession
 
@@ -22,7 +21,7 @@ class ChatManager:
         self._sessions: dict[str, ChatSession] = {}
         self._messages: dict[str, list[ChatMessage]] = {}
 
-    async def create_session(self, user_id: str, title: Optional[str] = None) -> ChatSession:
+    async def create_session(self, user_id: str, title: str | None = None) -> ChatSession:
         """创建新会话
 
         Args:
@@ -41,7 +40,7 @@ class ChatManager:
         logger.info(f"Created chat session {session.id} for user {user_id}")
         return session
 
-    async def get_session(self, session_id: str) -> Optional[ChatSession]:
+    async def get_session(self, session_id: str) -> ChatSession | None:
         """获取会话详情
 
         Args:
@@ -68,7 +67,7 @@ class ChatManager:
         sessions.sort(key=lambda s: s.updated_at, reverse=True)
         return sessions
 
-    async def update_session(self, session_id: str, **kwargs) -> Optional[ChatSession]:
+    async def update_session(self, session_id: str, **kwargs) -> ChatSession | None:
         """更新会话信息
 
         Args:
@@ -106,7 +105,7 @@ class ChatManager:
         logger.info(f"Deleted chat session {session_id}")
         return True
 
-    async def add_message(self, session_id: str, message: ChatMessage) -> Optional[ChatMessage]:
+    async def add_message(self, session_id: str, message: ChatMessage) -> ChatMessage | None:
         """添加消息到会话
 
         Args:
@@ -143,7 +142,7 @@ class ChatManager:
         """
         return self._messages.get(session_id, [])
 
-    async def get_message(self, session_id: str, message_id: str) -> Optional[ChatMessage]:
+    async def get_message(self, session_id: str, message_id: str) -> ChatMessage | None:
         """获取单条消息
 
         Args:

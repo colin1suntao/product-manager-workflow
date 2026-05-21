@@ -5,11 +5,8 @@
 
 import logging
 import time
-from typing import Optional
 
 from pm_workstation.sandbox.models import (
-    FileInfo,
-    FileContent,
     ToolCategory,
     ToolDefinition,
     ToolResult,
@@ -29,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 class FileTools:
     """文件操作工具集合"""
-    
+
     TOOLS = [
         ToolDefinition(
             name="file_read",
@@ -153,15 +150,15 @@ class FileTools:
             category=ToolCategory.FILE,
         ),
     ]
-    
+
     def __init__(
         self,
-        workspace_manager: Optional[WorkspaceManager] = None,
-        security_controller: Optional[SecurityController] = None,
+        workspace_manager: WorkspaceManager | None = None,
+        security_controller: SecurityController | None = None,
     ):
         self.workspace_manager = workspace_manager or get_workspace_manager()
         self.security_controller = security_controller or get_security_controller()
-    
+
     async def read_file(
         self,
         workspace: Workspace,
@@ -169,9 +166,9 @@ class FileTools:
     ) -> ToolResult:
         """读取文件"""
         start_time = time.time()
-        
+
         path = params.get("path", "")
-        
+
         validation = self.security_controller.validate_file_path(path, workspace)
         if not validation.valid:
             return ToolResult(
@@ -180,10 +177,10 @@ class FileTools:
                 error=f"Path validation failed: {validation.reason}",
                 execution_time_ms=int((time.time() - start_time) * 1000),
             )
-        
+
         try:
             content = self.workspace_manager.read_file(workspace, path)
-            
+
             return ToolResult(
                 tool_name="file_read",
                 success=True,
@@ -209,7 +206,7 @@ class FileTools:
                 error=str(e),
                 execution_time_ms=int((time.time() - start_time) * 1000),
             )
-    
+
     async def write_file(
         self,
         workspace: Workspace,
@@ -217,11 +214,11 @@ class FileTools:
     ) -> ToolResult:
         """写入文件"""
         start_time = time.time()
-        
+
         path = params.get("path", "")
         content = params.get("content", "")
         content_type = params.get("content_type")
-        
+
         validation = self.security_controller.validate_file_path(path, workspace)
         if not validation.valid:
             return ToolResult(
@@ -230,7 +227,7 @@ class FileTools:
                 error=f"Path validation failed: {validation.reason}",
                 execution_time_ms=int((time.time() - start_time) * 1000),
             )
-        
+
         try:
             file_info = self.workspace_manager.write_file(
                 workspace,
@@ -238,7 +235,7 @@ class FileTools:
                 content,
                 content_type,
             )
-            
+
             return ToolResult(
                 tool_name="file_write",
                 success=True,
@@ -259,7 +256,7 @@ class FileTools:
                 error=str(e),
                 execution_time_ms=int((time.time() - start_time) * 1000),
             )
-    
+
     async def list_files(
         self,
         workspace: Workspace,
@@ -267,10 +264,10 @@ class FileTools:
     ) -> ToolResult:
         """列出文件"""
         start_time = time.time()
-        
+
         directory = params.get("directory", "")
         recursive = params.get("recursive", False)
-        
+
         validation = self.security_controller.validate_file_path(directory or ".", workspace)
         if not validation.valid:
             return ToolResult(
@@ -279,15 +276,15 @@ class FileTools:
                 error=f"Path validation failed: {validation.reason}",
                 execution_time_ms=int((time.time() - start_time) * 1000),
             )
-        
+
         try:
             files = self.workspace_manager.list_files(workspace, directory, recursive)
-            
+
             file_list_str = "\n".join([
                 f"{f.file_name} ({f.size_bytes} bytes, {f.content_type})"
                 for f in files
             ])
-            
+
             return ToolResult(
                 tool_name="file_list",
                 success=True,
@@ -314,7 +311,7 @@ class FileTools:
                 error=str(e),
                 execution_time_ms=int((time.time() - start_time) * 1000),
             )
-    
+
     async def delete_file(
         self,
         workspace: Workspace,
@@ -322,9 +319,9 @@ class FileTools:
     ) -> ToolResult:
         """删除文件"""
         start_time = time.time()
-        
+
         path = params.get("path", "")
-        
+
         validation = self.security_controller.validate_file_path(path, workspace)
         if not validation.valid:
             return ToolResult(
@@ -333,10 +330,10 @@ class FileTools:
                 error=f"Path validation failed: {validation.reason}",
                 execution_time_ms=int((time.time() - start_time) * 1000),
             )
-        
+
         try:
             success = self.workspace_manager.delete_file(workspace, path)
-            
+
             return ToolResult(
                 tool_name="file_delete",
                 success=success,
@@ -351,7 +348,7 @@ class FileTools:
                 error=str(e),
                 execution_time_ms=int((time.time() - start_time) * 1000),
             )
-    
+
     async def copy_file(
         self,
         workspace: Workspace,
@@ -359,13 +356,13 @@ class FileTools:
     ) -> ToolResult:
         """复制文件"""
         start_time = time.time()
-        
+
         source = params.get("source", "")
         target = params.get("target", "")
-        
+
         validation_source = self.security_controller.validate_file_path(source, workspace)
         validation_target = self.security_controller.validate_file_path(target, workspace)
-        
+
         if not validation_source.valid or not validation_target.valid:
             return ToolResult(
                 tool_name="file_copy",
@@ -373,10 +370,10 @@ class FileTools:
                 error="Path validation failed",
                 execution_time_ms=int((time.time() - start_time) * 1000),
             )
-        
+
         try:
             file_info = self.workspace_manager.copy_file(workspace, source, target)
-            
+
             return ToolResult(
                 tool_name="file_copy",
                 success=True,
@@ -403,7 +400,7 @@ class FileTools:
                 error=str(e),
                 execution_time_ms=int((time.time() - start_time) * 1000),
             )
-    
+
     async def move_file(
         self,
         workspace: Workspace,
@@ -411,13 +408,13 @@ class FileTools:
     ) -> ToolResult:
         """移动文件"""
         start_time = time.time()
-        
+
         source = params.get("source", "")
         target = params.get("target", "")
-        
+
         validation_source = self.security_controller.validate_file_path(source, workspace)
         validation_target = self.security_controller.validate_file_path(target, workspace)
-        
+
         if not validation_source.valid or not validation_target.valid:
             return ToolResult(
                 tool_name="file_move",
@@ -425,10 +422,10 @@ class FileTools:
                 error="Path validation failed",
                 execution_time_ms=int((time.time() - start_time) * 1000),
             )
-        
+
         try:
             file_info = self.workspace_manager.move_file(workspace, source, target)
-            
+
             return ToolResult(
                 tool_name="file_move",
                 success=True,
@@ -457,7 +454,7 @@ class FileTools:
             )
 
 
-_global_file_tools: Optional[FileTools] = None
+_global_file_tools: FileTools | None = None
 
 
 def get_file_tools() -> FileTools:

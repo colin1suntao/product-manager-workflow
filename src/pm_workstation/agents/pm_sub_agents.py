@@ -4,10 +4,9 @@
 """
 
 import logging
-from typing import Optional
 
-from .sub_agent_registry import get_sub_agent_registry
 from .sub_agent_models import SubAgentConfig
+from .sub_agent_registry import get_sub_agent_registry
 
 logger = logging.getLogger(__name__)
 
@@ -15,7 +14,7 @@ logger = logging.getLogger(__name__)
 def register_pm_sub_agents() -> None:
     """注册 PM 专业 Sub-Agent"""
     registry = get_sub_agent_registry()
-    
+
     # 需求分析师
     registry.register(SubAgentConfig(
         agent_id="requirement-analyst",
@@ -42,7 +41,7 @@ def register_pm_sub_agents() -> None:
         priority=8,
         max_retries=2,
     ))
-    
+
     # 原型设计师
     registry.register(SubAgentConfig(
         agent_id="prototype-designer",
@@ -73,7 +72,7 @@ def register_pm_sub_agents() -> None:
         priority=9,
         max_retries=2,
     ))
-    
+
     # PRD 撰写专家
     registry.register(SubAgentConfig(
         agent_id="prd-writer",
@@ -104,7 +103,7 @@ PRD 核心结构：
         priority=7,
         max_retries=2,
     ))
-    
+
     # 市场研究员
     registry.register(SubAgentConfig(
         agent_id="market-researcher",
@@ -131,7 +130,7 @@ PRD 核心结构：
         priority=6,
         max_retries=2,
     ))
-    
+
     # 用户研究员
     registry.register(SubAgentConfig(
         agent_id="user-researcher",
@@ -157,7 +156,7 @@ PRD 核心结构：
         priority=7,
         max_retries=2,
     ))
-    
+
     # 战略顾问
     registry.register(SubAgentConfig(
         agent_id="strategy-advisor",
@@ -183,7 +182,7 @@ PRD 核心结构：
         priority=8,
         max_retries=2,
     ))
-    
+
     # 数据分析师
     registry.register(SubAgentConfig(
         agent_id="data-analyst",
@@ -209,7 +208,7 @@ PRD 核心结构：
         priority=6,
         max_retries=2,
     ))
-    
+
     # 质量检验员
     registry.register(SubAgentConfig(
         agent_id="quality-checker",
@@ -237,7 +236,7 @@ PRD 核心结构：
         priority=5,
         max_retries=1,
     ))
-    
+
     logger.info(f"Registered {len(registry.list_all())} PM Sub-Agents")
 
 
@@ -254,7 +253,7 @@ def get_agent_by_capability(capability: str) -> list[SubAgentConfig]:
     return registry.match_by_capability(capability)
 
 
-def get_best_agent_for_task(task_type: str) -> Optional[SubAgentConfig]:
+def get_best_agent_for_task(task_type: str) -> SubAgentConfig | None:
     """获取最适合任务的 Agent
     
     Args:

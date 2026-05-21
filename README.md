@@ -49,9 +49,27 @@
 - **组件库**: 可复用的产品组件管理系统
 
 ### 工作流管理
-- **工作流编排**: 支持创建、暂停、恢复、取消工作流
+- **工作流编排**: 支持创建、暂停、恢复、取消工作流，8个预定义PM工作流
+- **并行执行**: 支持步骤依赖管理和并行执行，自动分析依赖关系
 - **文档查看**: Markdown预览、导出（MD/HTML/PDF）
 - **校验报告**: 自动生成一致性检查和修复报告
+
+### Sandbox 执行环境
+- **安全隔离**: 本地子进程沙箱，支持 Shell/Python/HTTP 工具执行
+- **资源控制**: CPU 60s 超时、512MB 内存、10MB 文件大小限制
+- **安全管控**: 拦截 rm/sudo/shutdown 等危险命令，拦截 localhost/内网 IP/路径穿越
+- **工作空间**: 自动创建 `/tmp/sandbox/{execution_id}/` 工作区，包含 inputs/outputs/temp 子目录
+- **12个内置工具**: 文件工具（读写列删拷移）、Shell 工具（命令执行/脚本）、Python 工具（执行/脚本）、HTTP 工具（GET/POST）
+- **流式事件**: SSE 实时推送执行进度、工具调用结果、文件创建事件
+- **产物收集**: 自动收集执行产物并持久化
+
+### 持久化记忆系统
+- **多层级记忆**: 项目级（决策/模式/约束）、会话级（上下文/实体/任务状态）、用户级（偏好/风格）
+- **自动提取**: 从工作流结果、Sandbox 执行、对话消息、用户反馈中自动提取关键信息
+- **智能检索**: 按层级、关键词、相关性排序检索记忆，支持 Token 限制注入
+- **偏好学习**: 自动学习用户语言偏好、输出格式、沟通风格
+- **原子存储**: JSON 文件持久化 + gzip 归档，支持记忆去重
+- **API 支持**: REST API 管理记忆的创建、检索、搜索、归档
 
 ## 快速开始
 
@@ -122,11 +140,25 @@ src/pm_workstation/
 ├── channels/            # 渠道接入（飞书/企业微信）
 ├── component_library/   # 组件库（原型组件模板）
 ├── knowledge_base/      # 知识库（产品文档模板）
-├── memory/              # 记忆系统
-│   ├── memory_manager.py    # 记忆管理
-│   ├── soul_manager.py      # Soul人格管理
-│   ├── memory_retriever.py  # 记忆检索
-│   └── reflection_engine.py # 反思引擎
+├── memory/              # 记忆系统（传统 + 持久化）
+│   ├── memory_manager.py      # 传统记忆管理
+│   ├── soul_manager.py        # Soul人格管理
+│   ├── reflection_engine.py   # 反思引擎
+│   ├── persistent_models.py   # 持久化记忆数据模型
+│   ├── persistent_store.py    # 原子写入/索引/归档存储
+│   ├── memory_extractor.py    # 自动提取记忆
+│   ├── memory_retriever.py    # 记忆检索（关键词/层级/重要性）
+│   ├── memory_applicator.py   # 记忆注入到 Agent 上下文
+│   └── persistent_manager.py  # 持久化记忆管理器
+├── sandbox/             # Sandbox 执行环境
+│   ├── engine.py              # 执行引擎
+│   ├── tool_manager.py        # 工具注册与调度
+│   ├── workspace_manager.py   # 工作区管理
+│   ├── process_executor.py    # 进程执行（超时控制）
+│   ├── security_controller.py # 安全管控
+│   ├── resource_monitor.py    # 资源监控
+│   ├── models.py              # 数据模型
+│   └── api/routes.py          # Sandbox REST + SSE API
 ├── skills/              # PM Skills技能系统
 ├── orchestrator/        # 流程编排器
 ├── llm/                 # LLM供应商管理

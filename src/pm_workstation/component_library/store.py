@@ -1,6 +1,5 @@
 import logging
 from datetime import datetime
-from typing import Optional
 
 from pm_workstation.component_library.models import ComponentTemplate
 

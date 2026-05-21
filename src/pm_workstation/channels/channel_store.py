@@ -1,9 +1,8 @@
 """渠道配置存储"""
 
 import logging
-from typing import Optional
 
-from pm_workstation.channels.models import ChannelConfig, ChannelStatus, ChannelType
+from pm_workstation.channels.models import ChannelConfig
 
 logger = logging.getLogger(__name__)
 
@@ -22,13 +21,13 @@ class ChannelStore:
         logger.info(f"[ChannelStore] Created channel: {config.id} ({config.channel_type.value})")
         return config
 
-    async def get(self, channel_id: str) -> Optional[ChannelConfig]:
+    async def get(self, channel_id: str) -> ChannelConfig | None:
         return self._configs.get(channel_id)
 
     async def list_all(self) -> list[ChannelConfig]:
         return list(self._configs.values())
 
-    async def update(self, channel_id: str, updates: dict) -> Optional[ChannelConfig]:
+    async def update(self, channel_id: str, updates: dict) -> ChannelConfig | None:
         config = self._configs.get(channel_id)
         if not config:
             return None

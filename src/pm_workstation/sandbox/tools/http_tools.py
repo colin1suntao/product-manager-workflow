@@ -3,10 +3,8 @@
 提供 HTTP GET/POST 请求能力，支持公网访问。
 """
 
-import asyncio
 import logging
 import time
-from typing import Optional
 
 import aiohttp
 
@@ -26,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 class HTTPTools:
     """HTTP 请求工具集合"""
-    
+
     TOOLS = [
         ToolDefinition(
             name="http_get",
@@ -74,16 +72,16 @@ class HTTPTools:
             category=ToolCategory.HTTP,
         ),
     ]
-    
+
     DEFAULT_TIMEOUT = 30
     MAX_RESPONSE_SIZE = 5 * 1024 * 1024
-    
+
     def __init__(
         self,
-        security_controller: Optional[SecurityController] = None,
+        security_controller: SecurityController | None = None,
     ):
         self.security_controller = security_controller or get_security_controller()
-    
+
     async def get(
         self,
         workspace: Workspace,
@@ -91,11 +89,11 @@ class HTTPTools:
     ) -> ToolResult:
         """发送 GET 请求"""
         start_time = time.time()
-        
+
         url = params.get("url", "")
         headers = params.get("headers", {})
         timeout = params.get("timeout", self.DEFAULT_TIMEOUT)
-        
+
         validation = self.security_controller.validate_url(url, allow_public_network=True)
         if not validation.valid:
             return ToolResult(
@@ -104,7 +102,7 @@ class HTTPTools:
                 error=f"URL blocked: {validation.reason}",
                 execution_time_ms=int((time.time() - start_time) * 1000),
             )
-        
+
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.get(
@@ -113,9 +111,9 @@ class HTTPTools:
                     timeout=aiohttp.ClientTimeout(total=timeout),
                 ) as response:
                     status = response.status
-                    
+
                     content = await response.content.read()
-                    
+
                     if len(content) > self.MAX_RESPONSE_SIZE:
                         content = content[:self.MAX_RESPONSE_SIZE]
                         body = content.decode("utf-8", errors="replace") + "... [truncated]"
@@ -124,7 +122,7 @@ class HTTPTools:
                             body = content.decode("utf-8")
                         except UnicodeDecodeError:
                             body = f"Binary content ({len(content)} bytes)"
-                    
+
                     return ToolResult(
                         tool_name="http_get",
                         success=status < 400,
@@ -137,8 +135,8 @@ class HTTPTools:
                         },
                         execution_time_ms=int((time.time() - start_time) * 1000),
                     )
-        
-        except asyncio.TimeoutError:
+
+        except TimeoutError:
             return ToolResult(
                 tool_name="http_get",
                 success=False,
@@ -161,7 +159,7 @@ class HTTPTools:
                 error=str(e),
                 execution_time_ms=int((time.time() - start_time) * 1000),
             )
-    
+
     async def post(
         self,
         workspace: Workspace,
@@ -169,12 +167,12 @@ class HTTPTools:
     ) -> ToolResult:
         """发送 POST 请求"""
         start_time = time.time()
-        
+
         url = params.get("url", "")
         body = params.get("body", {})
         headers = params.get("headers", {})
         timeout = params.get("timeout", self.DEFAULT_TIMEOUT)
-        
+
         validation = self.security_controller.validate_url(url, allow_public_network=True)
         if not validation.valid:
             return ToolResult(
@@ -183,10 +181,10 @@ class HTTPTools:
                 error=f"URL blocked: {validation.reason}",
                 execution_time_ms=int((time.time() - start_time) * 1000),
             )
-        
+
         if "Content-Type" not in headers:
             headers["Content-Type"] = "application/json"
-        
+
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.post(
@@ -196,9 +194,9 @@ class HTTPTools:
                     timeout=aiohttp.ClientTimeout(total=timeout),
                 ) as response:
                     status = response.status
-                    
+
                     content = await response.content.read()
-                    
+
                     if len(content) > self.MAX_RESPONSE_SIZE:
                         content = content[:self.MAX_RESPONSE_SIZE]
                         response_body = content.decode("utf-8", errors="replace") + "... [truncated]"
@@ -207,7 +205,7 @@ class HTTPTools:
                             response_body = content.decode("utf-8")
                         except UnicodeDecodeError:
                             response_body = f"Binary content ({len(content)} bytes)"
-                    
+
                     return ToolResult(
                         tool_name="http_post",
                         success=status < 400,
@@ -221,8 +219,8 @@ class HTTPTools:
                         },
                         execution_time_ms=int((time.time() - start_time) * 1000),
                     )
-        
-        except asyncio.TimeoutError:
+
+        except TimeoutError:
             return ToolResult(
                 tool_name="http_post",
                 success=False,
@@ -247,7 +245,7 @@ class HTTPTools:
             )
 
 
-_global_http_tools: Optional[HTTPTools] = None
+_global_http_tools: HTTPTools | None = None
 
 
 def get_http_tools() -> HTTPTools:

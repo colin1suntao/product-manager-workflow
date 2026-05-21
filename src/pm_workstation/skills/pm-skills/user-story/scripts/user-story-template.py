@@ -5,7 +5,6 @@ No network access. Prints to stdout.
 """
 
 import argparse
-import sys
 
 
 def parse_args() -> argparse.Namespace:

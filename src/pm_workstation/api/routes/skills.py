@@ -3,9 +3,8 @@
 提供 Product-Manager-Skills 的管理和查询接口。
 """
 
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 
-from pm_workstation.api.dependencies import get_provider_store
 from pm_workstation.auth.dependencies import get_current_user
 from pm_workstation.skills.loader import SkillLoader
 

@@ -281,5 +281,5 @@ async def list_models(
             error_msg = "403 错误：API Key 权限不足"
         elif "timeout" in error_msg.lower():
             error_msg = "请求超时：服务响应时间过长，请稍后重试"
-        
+
         raise HTTPException(status_code=500, detail=f"获取模型列表失败: {error_msg}")

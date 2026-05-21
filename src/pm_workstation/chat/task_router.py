@@ -5,7 +5,7 @@
 
 import logging
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 
 from ..agents.huashu_prototype_generator import HuashuPrototypeGenerator
 from ..agents.market_research_agent import MarketResearchAgent
@@ -24,7 +24,7 @@ class TaskRouter:
     根据任务模式将任务分发给对应的子 Agent 执行。
     """
 
-    def __init__(self, llm_handler: Optional[LLMBackend] = None):
+    def __init__(self, llm_handler: LLMBackend | None = None):
         """初始化任务路由器
 
         Args:
@@ -43,7 +43,7 @@ class TaskRouter:
         self,
         mode: TaskMode,
         params: dict[str, Any],
-        selected_skills: Optional[list[str]] = None,
+        selected_skills: list[str] | None = None,
     ) -> TaskResult:
         """执行任务
 
@@ -96,7 +96,7 @@ class TaskRouter:
     async def _execute_requirement_task(
         self,
         params: dict[str, Any],
-        selected_skills: Optional[list[str]] = None,
+        selected_skills: list[str] | None = None,
     ) -> dict[str, Any]:
         """执行需求分析任务
 
@@ -153,7 +153,7 @@ class TaskRouter:
     async def _execute_prototype_task(
         self,
         params: dict[str, Any],
-        selected_skills: Optional[list[str]] = None,
+        selected_skills: list[str] | None = None,
     ) -> dict[str, Any]:
         """执行原型设计任务
 
@@ -215,7 +215,7 @@ class TaskRouter:
     async def _execute_prd_task(
         self,
         params: dict[str, Any],
-        selected_skills: Optional[list[str]] = None,
+        selected_skills: list[str] | None = None,
     ) -> dict[str, Any]:
         """执行文档撰写任务
 
@@ -277,7 +277,7 @@ class TaskRouter:
     async def _execute_market_research_task(
         self,
         params: dict[str, Any],
-        selected_skills: Optional[list[str]] = None,
+        selected_skills: list[str] | None = None,
     ) -> dict[str, Any]:
         """执行市场调研任务
 

@@ -4,13 +4,13 @@
 """
 
 from datetime import datetime
-from enum import Enum
-from typing import Any, Optional
+from enum import StrEnum
+from typing import Any
 
 from pydantic import BaseModel, Field
 
 
-class MemoryType(str, Enum):
+class MemoryType(StrEnum):
     """记忆类型枚举"""
     SOUL = "soul"  # Agent Soul 相关
     PREFERENCE = "preference"  # 用户偏好
@@ -46,7 +46,7 @@ class UserPreference(BaseModel):
     category: str  # 偏好分类：language, format, style, workflow 等
     key: str  # 偏好键
     value: str  # 偏好值
-    description: Optional[str] = None
+    description: str | None = None
     created_at: datetime = Field(default_factory=datetime.now)
     updated_at: datetime = Field(default_factory=datetime.now)
 
@@ -93,5 +93,5 @@ class MemoryStats(BaseModel):
     """记忆统计"""
     total_memories: int
     by_type: dict[str, int]
-    recent_reflection: Optional[datetime] = None
+    recent_reflection: datetime | None = None
     top_tags: list[tuple[str, int]]  # (tag, count)

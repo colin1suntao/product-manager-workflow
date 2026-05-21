@@ -5,7 +5,7 @@
 
 from datetime import datetime
 from enum import Enum
-from typing import Any, Literal, Optional
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -31,7 +31,7 @@ class Artifact(BaseModel):
     type: Literal["document", "prototype", "report"]
     name: str
     url: str
-    preview_url: Optional[str] = None
+    preview_url: str | None = None
 
 
 class TaskResult(BaseModel):
@@ -39,18 +39,18 @@ class TaskResult(BaseModel):
     task_id: str
     task_mode: TaskMode
     status: TaskStatus
-    output: Optional[str] = None
+    output: str | None = None
     artifacts: list[Artifact] = []
-    error_message: Optional[str] = None
-    started_at: Optional[datetime] = None
-    completed_at: Optional[datetime] = None
+    error_message: str | None = None
+    started_at: datetime | None = None
+    completed_at: datetime | None = None
 
 
 class IntentAnalysis(BaseModel):
     """用户意图分析结果"""
     intent: str
     confidence: float
-    task_mode: Optional[TaskMode] = None
+    task_mode: TaskMode | None = None
     entities: dict[str, Any] = {}
     requires_clarification: bool = False
     clarification_questions: list[str] = []
@@ -81,7 +81,7 @@ class CoordinatorResponse(BaseModel):
     suggested_actions: list[str] = []
     thinking_process: list[ThinkingStep] = []
     model_id: str = ""
-    intent_analysis: Optional[IntentAnalysis] = None
+    intent_analysis: IntentAnalysis | None = None
 
 
 class ChatSession(BaseModel):
@@ -108,10 +108,10 @@ class ChatMessage(BaseModel):
     session_id: str
     role: Literal["user", "assistant", "system"]
     content: str
-    task_mode: Optional[TaskMode] = None
-    task_id: Optional[str] = None
-    task_status: Optional[TaskStatus] = None
-    task_result: Optional[TaskResult] = None
+    task_mode: TaskMode | None = None
+    task_id: str | None = None
+    task_status: TaskStatus | None = None
+    task_result: TaskResult | None = None
     artifacts: list[Artifact] = []
     thinking_time_ms: int = 0
     thinking_process: list[ThinkingStep] = []

@@ -3,28 +3,23 @@
 提供 Sandbox 执行环境的 REST API 和 SSE 流式 API。
 """
 
-import asyncio
-import json
 import logging
-from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 
 from pm_workstation.auth.dependencies import get_current_user
+from pm_workstation.sandbox.engine import get_sandbox_engine
 from pm_workstation.sandbox.models import (
     CreateExecutionRequest,
-    ExecutionContext,
     ExecutionStatus,
     ExecutionSummary,
+    StreamExecutionRequest,
+    ToolDefinition,
     ToolInvocationRequest,
     ToolResult,
-    StreamExecutionRequest,
-    ToolCall,
-    ToolDefinition,
 )
-from pm_workstation.sandbox.engine import SandboxEngine, get_sandbox_engine
-from pm_workstation.sandbox.tool_manager import ToolManager, get_tool_manager
+from pm_workstation.sandbox.tool_manager import get_tool_manager
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +40,7 @@ async def create_execution(
         dict: 执行上下文信息
     """
     engine = get_sandbox_engine()
-    
+
     context = engine.create_execution(
         task_params=body.task_params,
         timeout=body.timeout,
@@ -53,7 +48,7 @@ async def create_execution(
         session_id=body.session_id,
         workflow_id=body.workflow_id,
     )
-    
+
     return {
         "execution_id": context.execution_id,
         "workspace_path": context.workspace_path,
@@ -81,24 +76,24 @@ async def invoke_tool(
         ToolResult: 工具执行结果
     """
     engine = get_sandbox_engine()
-    
+
     context = engine.get_execution_status(execution_id)
-    
+
     if not context:
         raise HTTPException(status_code=404, detail=f"Execution not found: {execution_id}")
-    
+
     if context.status not in [ExecutionStatus.CREATED, ExecutionStatus.RUNNING]:
         raise HTTPException(
             status_code=400,
             detail=f"Execution is not active: {context.status.value}"
         )
-    
+
     result = await engine.invoke_tool(
         context=context,
         tool_name=tool_name,
         params=body.params,
     )
-    
+
     return result
 
 
@@ -118,22 +113,22 @@ async def stream_execution(
         StreamingResponse: SSE 流式响应
     """
     engine = get_sandbox_engine()
-    
+
     context = engine.get_execution_status(execution_id)
-    
+
     if not context:
         raise HTTPException(status_code=404, detail=f"Execution not found: {execution_id}")
-    
+
     if context.status not in [ExecutionStatus.CREATED, ExecutionStatus.RUNNING]:
         raise HTTPException(
             status_code=400,
             detail=f"Execution is not active: {context.status.value}"
         )
-    
+
     async def event_generator():
         for event in await engine.execute_streaming(context, body.tool_calls):
             yield f"event: {event['event']}\ndata: {event['data']}\n\n"
-    
+
     return StreamingResponse(
         event_generator(),
         media_type="text/event-stream",
@@ -158,14 +153,14 @@ async def finalize_execution(
         ExecutionSummary: 执行摘要
     """
     engine = get_sandbox_engine()
-    
+
     context = engine.get_execution_status(execution_id)
-    
+
     if not context:
         raise HTTPException(status_code=404, detail=f"Execution not found: {execution_id}")
-    
+
     summary = engine.finalize_execution(context)
-    
+
     return summary
 
 
@@ -183,12 +178,12 @@ async def get_execution_status(
         dict: 执行状态
     """
     engine = get_sandbox_engine()
-    
+
     context = engine.get_execution_status(execution_id)
-    
+
     if not context:
         raise HTTPException(status_code=404, detail=f"Execution not found: {execution_id}")
-    
+
     return {
         "execution_id": context.execution_id,
         "status": context.status.value,
@@ -214,12 +209,12 @@ async def get_execution_artifacts(
         dict: 产物列表
     """
     engine = get_sandbox_engine()
-    
+
     context = engine.get_execution_status(execution_id)
-    
+
     if not context:
         raise HTTPException(status_code=404, detail=f"Execution not found: {execution_id}")
-    
+
     return {
         "execution_id": execution_id,
         "artifacts": [
@@ -250,12 +245,12 @@ async def cancel_execution(
         dict: 取消结果
     """
     engine = get_sandbox_engine()
-    
+
     success = engine.cancel_execution(execution_id)
-    
+
     if not success:
         raise HTTPException(status_code=404, detail=f"Execution not found: {execution_id}")
-    
+
     return {
         "execution_id": execution_id,
         "status": "cancelled",
@@ -276,12 +271,12 @@ async def cleanup_execution(
         preserve_artifacts: 是否保留产物
     """
     engine = get_sandbox_engine()
-    
+
     success = engine.cleanup_workspace(execution_id, preserve_artifacts)
-    
+
     if not success:
         raise HTTPException(status_code=404, detail=f"Execution not found: {execution_id}")
-    
+
     return {
         "execution_id": execution_id,
         "message": "Workspace cleaned up",
@@ -293,9 +288,9 @@ async def cleanup_execution(
 async def list_tools() -> dict:
     """获取所有可用工具定义"""
     tool_manager = get_tool_manager()
-    
+
     tools = tool_manager.list_tools()
-    
+
     return {
         "tools": [
             {
@@ -319,12 +314,12 @@ async def get_tool_detail(
 ) -> ToolDefinition:
     """获取工具详细定义"""
     tool_manager = get_tool_manager()
-    
+
     tool = tool_manager.get_tool(tool_name)
-    
+
     if not tool:
         raise HTTPException(status_code=404, detail=f"Tool not found: {tool_name}")
-    
+
     return tool
 
 
@@ -340,14 +335,14 @@ async def validate_tool_params(
         body: 参数
     """
     tool_manager = get_tool_manager()
-    
+
     tool = tool_manager.get_tool(tool_name)
-    
+
     if not tool:
         raise HTTPException(status_code=404, detail=f"Tool not found: {tool_name}")
-    
+
     valid, error = tool_manager.validate_params(tool, body)
-    
+
     return {
         "valid": valid,
         "error": error,

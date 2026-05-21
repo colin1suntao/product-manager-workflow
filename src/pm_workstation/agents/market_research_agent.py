@@ -4,11 +4,11 @@
 """
 
 import logging
-from typing import Callable
+from collections.abc import Callable
 
 from pm_workstation.model_router.base import LLMBackend, LLMMessage
 from pm_workstation.model_router.fallback_handler import FallbackHandler
-from pm_workstation.skills.loader import SkillLoader, Skill
+from pm_workstation.skills.loader import Skill, SkillLoader
 
 logger = logging.getLogger(__name__)
 

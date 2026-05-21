@@ -13,7 +13,7 @@ import logging
 import time
 import uuid
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 
 from pm_workstation.agents.sub_agent_executor import SubAgentExecutor
 from pm_workstation.agents.sub_agent_models import SubAgentStatus
@@ -43,11 +43,11 @@ class WorkflowOrchestrator:
     - 重试机制（失败后自动重试）
     - 进度追踪（实时报告进度）
     """
-    
+
     def __init__(
         self,
-        llm_handler: Optional[LLMBackend] = None,
-        task_router: Optional[TaskRouter] = None,
+        llm_handler: LLMBackend | None = None,
+        task_router: TaskRouter | None = None,
     ):
         """初始化编排器
         
@@ -61,12 +61,12 @@ class WorkflowOrchestrator:
         self.executor = SubAgentExecutor(llm_handler)
         self._execution_counter = 0
         self._active_executions: dict[str, WorkflowExecution] = {}
-    
+
     def _generate_execution_id(self) -> str:
         """生成执行 ID"""
         self._execution_counter += 1
         return f"wf-exec-{self._execution_counter:06d}-{uuid.uuid4().hex[:8]}"
-    
+
     def _analyze_dependencies(self, workflow: WorkflowDefinition) -> dict[str, list[str]]:
         """分析步骤依赖关系
         
@@ -77,15 +77,15 @@ class WorkflowOrchestrator:
             步骤 ID 到其依赖步骤 ID 列表的映射
         """
         dependencies: dict[str, list[str]] = {}
-        
+
         for step in workflow.steps:
             deps = []
             if step.depends_on:
                 deps.append(step.depends_on)
             dependencies[step.id] = deps
-        
+
         return dependencies
-    
+
     def _analyze_parallel_groups(self, workflow: WorkflowDefinition) -> list[list[str]]:
         """分析并行组
         
@@ -99,35 +99,35 @@ class WorkflowOrchestrator:
         """
         groups: list[list[str]] = []
         processed: set[str] = set()
-        
+
         # 找出所有 parallel_with 关系
         parallel_map: dict[str, str] = {}
         for step in workflow.steps:
             if step.parallel_with:
                 parallel_map[step.id] = step.parallel_with
-        
+
         # 构建并行组
         for step in workflow.steps:
             if step.id in processed:
                 continue
-            
+
             group = [step.id]
-            
+
             # 找出与当前步骤并行执行的其他步骤
             for other_step in workflow.steps:
                 if other_step.id != step.id and other_step.parallel_with == step.id:
                     group.append(other_step.id)
                 elif other_step.id == step.parallel_with:
                     group.append(other_step.id)
-            
+
             for sid in group:
                 processed.add(sid)
-            
+
             if len(group) > 1:
                 groups.append(group)
-        
+
         return groups
-    
+
     def _get_ready_steps(
         self,
         workflow: WorkflowDefinition,
@@ -147,22 +147,22 @@ class WorkflowOrchestrator:
             就绪的步骤 ID 列表
         """
         ready = []
-        
+
         for step in workflow.steps:
             # 已处理过的跳过
             if step.id in completed_steps or step.id in running_steps or step.id in failed_steps:
                 continue
-            
+
             # 检查依赖
             if step.depends_on:
                 # 依赖未完成
                 if step.depends_on not in completed_steps:
                     continue
-                
+
                 # 依赖失败且当前步骤非可选
                 if step.depends_on in failed_steps and not step.optional:
                     continue
-            
+
             # 如果有并行关系，检查并行步骤状态
             if step.parallel_with:
                 # 并行步骤正在运行，可以一起运行
@@ -176,9 +176,9 @@ class WorkflowOrchestrator:
                     ready.append(step.id)
             else:
                 ready.append(step.id)
-        
+
         return ready
-    
+
     def _build_step_input(
         self,
         step: Any,
@@ -196,7 +196,7 @@ class WorkflowOrchestrator:
             输入参数字典
         """
         input_params = dict(step.input)
-        
+
         # 从依赖步骤获取输入
         if step.depends_on and step.input_from_dependency:
             for result in execution.steps_results:
@@ -206,16 +206,16 @@ class WorkflowOrchestrator:
                     if result.artifacts:
                         input_params["artifacts"] = result.artifacts
                     break
-        
+
         return input_params
-    
+
     async def execute_workflow(
         self,
         workflow: WorkflowDefinition,
         user_id: str,
-        session_id: Optional[str] = None,
-        initial_input: Optional[dict] = None,
-        llm_handler: Optional[LLMBackend] = None,
+        session_id: str | None = None,
+        initial_input: dict | None = None,
+        llm_handler: LLMBackend | None = None,
     ) -> WorkflowExecution:
         """执行工作流
         
@@ -231,7 +231,7 @@ class WorkflowOrchestrator:
         """
         execution_id = self._generate_execution_id()
         handler = llm_handler or self.llm_handler
-        
+
         execution = WorkflowExecution(
             execution_id=execution_id,
             workflow_id=workflow.id,
@@ -242,45 +242,45 @@ class WorkflowOrchestrator:
             total_steps=len(workflow.steps),
             started_at=datetime.now(),
         )
-        
+
         # 保存初始输入到第一个步骤
         if initial_input and workflow.steps:
             workflow.steps[0].input.update(initial_input)
-        
+
         self._active_executions[execution_id] = execution
-        
+
         logger.info(f"Starting workflow execution: {execution_id} ({workflow.name})")
-        
+
         completed_steps: set[str] = set()
         running_steps: set[str] = set()
         failed_steps: set[str] = set()
         skipped_steps: set[str] = set()
-        
+
         start_time = time.monotonic()
-        
+
         try:
             while len(completed_steps) + len(failed_steps) + len(skipped_steps) < len(workflow.steps):
                 # 获取就绪步骤
                 ready_step_ids = self._get_ready_steps(
                     workflow, completed_steps, running_steps, failed_steps
                 )
-                
+
                 if not ready_step_ids:
                     # 检查是否所有步骤都已完成或失败
                     if not running_steps:
                         break
-                    
+
                     # 等待正在运行的步骤完成
                     await asyncio.sleep(0.5)
                     continue
-                
+
                 # 执行就绪的步骤（支持并行）
                 step_tasks = []
                 for step_id in ready_step_ids:
                     step = next(s for s in workflow.steps if s.id == step_id)
                     running_steps.add(step_id)
                     execution.current_step_index = workflow.steps.index(step)
-                    
+
                     step_tasks.append(
                         self._execute_step(
                             step=step,
@@ -289,12 +289,12 @@ class WorkflowOrchestrator:
                             handler=handler,
                         )
                     )
-                
+
                 # 并行执行
                 if len(step_tasks) > 1:
                     logger.info(f"Executing {len(step_tasks)} steps in parallel")
                     results = await asyncio.gather(*step_tasks, return_exceptions=True)
-                    
+
                     for i, result in enumerate(results):
                         step_id = ready_step_ids[i]
                         if isinstance(result, Exception):
@@ -328,15 +328,15 @@ class WorkflowOrchestrator:
                         failed_steps.add(ready_step_ids[0])
                     elif result.status == StepStatus.SKIPPED:
                         skipped_steps.add(ready_step_ids[0])
-                
+
                 # 更新统计
                 execution.completed_steps = len(completed_steps)
                 execution.failed_steps = len(failed_steps)
-            
+
             # 汇总结果
             execution.completed_at = datetime.now()
             execution.total_duration_ms = int((time.monotonic() - start_time) * 1000)
-            
+
             # 收集所有产物
             for result in execution.steps_results:
                 if result.artifacts:
@@ -346,13 +346,13 @@ class WorkflowOrchestrator:
                         execution.total_token_usage[key] = (
                             execution.total_token_usage.get(key, 0) + value
                         )
-            
+
             # 确定最终状态
             failed_mandatory = [
                 s for s in workflow.steps
                 if s.id in failed_steps and not s.optional
             ]
-            
+
             if failed_mandatory:
                 execution.status = WorkflowStatus.FAILED
                 execution.error_message = f"关键步骤失败: {', '.join(s.name for s in failed_mandatory)}"
@@ -361,30 +361,30 @@ class WorkflowOrchestrator:
                 execution.error_message = f"可选步骤失败: {', '.join(s.name for s.id in failed_steps for s in workflow.steps if s.id == s_id)}"
             else:
                 execution.status = WorkflowStatus.COMPLETED
-            
+
             logger.info(
                 f"Workflow execution completed: {execution_id} "
                 f"(status: {execution.status}, duration: {execution.total_duration_ms}ms)"
             )
-            
+
         except Exception as e:
             logger.error(f"Workflow execution failed: {execution_id} - {e}")
             execution.status = WorkflowStatus.FAILED
             execution.error_message = str(e)
             execution.completed_at = datetime.now()
             execution.total_duration_ms = int((time.monotonic() - start_time) * 1000)
-        
+
         finally:
             self._active_executions.pop(execution_id, None)
-        
+
         return execution
-    
+
     async def _execute_step(
         self,
         step: Any,
         workflow: WorkflowDefinition,
         execution: WorkflowExecution,
-        handler: Optional[LLMBackend] = None,
+        handler: LLMBackend | None = None,
     ) -> StepResult:
         """执行单个步骤
         
@@ -399,12 +399,12 @@ class WorkflowOrchestrator:
         """
         start_time = time.monotonic()
         started_at = datetime.now()
-        
+
         logger.info(f"Executing step: {step.id} ({step.name})")
-        
+
         # 构建输入
         input_params = self._build_step_input(step, workflow, execution)
-        
+
         # 确定执行的 Agent
         agent_config = None
         if step.agent_id:
@@ -414,7 +414,7 @@ class WorkflowOrchestrator:
             matched = self.registry.match_by_capability(step.mode)
             if matched:
                 agent_config = matched[0]
-        
+
         result = StepResult(
             step_id=step.id,
             step_name=step.name,
@@ -423,12 +423,12 @@ class WorkflowOrchestrator:
             agent_id=agent_config.agent_id if agent_config else None,
             agent_name=agent_config.name if agent_config else None,
         )
-        
+
         try:
             if agent_config:
                 # 使用 Sub-Agent 执行
                 executor = SubAgentExecutor(handler)
-                
+
                 for retry in range(step.retry_on_failure + 1):
                     sub_result = await asyncio.wait_for(
                         executor.execute(
@@ -438,7 +438,7 @@ class WorkflowOrchestrator:
                         ),
                         timeout=step.timeout,
                     )
-                    
+
                     if sub_result.status == SubAgentStatus.COMPLETED:
                         result.status = StepStatus.COMPLETED
                         result.output = sub_result.output
@@ -446,28 +446,28 @@ class WorkflowOrchestrator:
                         result.token_usage = sub_result.token_usage
                         result.retry_count = retry
                         break
-                    
+
                     elif sub_result.status == SubAgentStatus.TIMEOUT:
                         logger.warning(f"Step {step.id} timeout (retry {retry}/{step.retry_on_failure})")
                         if retry == step.retry_on_failure:
                             result.status = StepStatus.TIMEOUT
                             result.error_message = f"Timeout after {step.timeout}s"
-                    
+
                     else:
                         logger.warning(f"Step {step.id} failed (retry {retry}/{step.retry_on_failure})")
                         if retry == step.retry_on_failure:
                             result.status = StepStatus.FAILED
                             result.error_message = sub_result.error_message
-            
+
             else:
                 # 使用 TaskRouter 执行（传统方式）
                 from pm_workstation.chat.chat_models import TaskMode, TaskStatus
-                
+
                 try:
                     task_mode = TaskMode(step.mode.upper())
                 except ValueError:
                     task_mode = None
-                
+
                 task_result = await asyncio.wait_for(
                     self.task_router.execute_task(
                         mode=task_mode,
@@ -476,7 +476,7 @@ class WorkflowOrchestrator:
                     ),
                     timeout=step.timeout,
                 )
-                
+
                 if task_result.status == TaskStatus.COMPLETED:
                     result.status = StepStatus.COMPLETED
                     result.output = task_result.output
@@ -487,22 +487,22 @@ class WorkflowOrchestrator:
                 else:
                     result.status = StepStatus.FAILED
                     result.error_message = task_result.error_message
-        
-        except asyncio.TimeoutError:
+
+        except TimeoutError:
             result.status = StepStatus.TIMEOUT
             result.error_message = f"Timeout after {step.timeout}s"
-        
+
         except Exception as e:
             logger.error(f"Step {step.id} exception: {e}")
             result.status = StepStatus.FAILED
             result.error_message = str(e)
-        
+
         result.completed_at = datetime.now()
         result.duration_ms = int((time.monotonic() - start_time) * 1000)
-        
+
         return result
-    
-    def get_progress(self, execution_id: str) -> Optional[WorkflowProgress]:
+
+    def get_progress(self, execution_id: str) -> WorkflowProgress | None:
         """获取执行进度
         
         Args:
@@ -514,7 +514,7 @@ class WorkflowOrchestrator:
         execution = self._active_executions.get(execution_id)
         if not execution:
             return None
-        
+
         completed_names = [
             r.step_name for r in execution.steps_results
             if r.status == StepStatus.COMPLETED
@@ -528,12 +528,12 @@ class WorkflowOrchestrator:
             r.step_name for r in execution.steps_results
             if r.status == StepStatus.FAILED
         ]
-        
+
         progress_percent = (
             execution.completed_steps / execution.total_steps * 100
             if execution.total_steps > 0 else 0
         )
-        
+
         current_step = None
         current_status = None
         if execution.steps_results:
@@ -541,12 +541,12 @@ class WorkflowOrchestrator:
             if current_result.status == StepStatus.RUNNING:
                 current_step = current_result.step_name
                 current_status = current_result.status
-        
+
         artifacts = []
         for r in execution.steps_results:
             if r.artifacts:
                 artifacts.extend(r.artifacts)
-        
+
         return WorkflowProgress(
             execution_id=execution_id,
             workflow_id=execution.workflow_id,
@@ -563,7 +563,7 @@ class WorkflowOrchestrator:
         )
 
 
-_global_orchestrator: Optional[WorkflowOrchestrator] = None
+_global_orchestrator: WorkflowOrchestrator | None = None
 
 
 def get_workflow_orchestrator() -> WorkflowOrchestrator:

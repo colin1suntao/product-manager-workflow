@@ -6,7 +6,7 @@
 
 import logging
 import time
-from typing import Any, Optional
+from typing import Any
 
 import httpx
 

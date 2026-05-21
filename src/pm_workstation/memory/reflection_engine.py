@@ -5,7 +5,6 @@
 
 import logging
 from datetime import datetime, timedelta
-from typing import Optional
 
 from .memory_manager import MemoryManager
 from .memory_models import MemoryEntry, MemoryType, Reflection
@@ -273,7 +272,7 @@ class ReflectionEngine:
 
         return actions
 
-    async def get_latest_reflection(self, user_id: str) -> Optional[Reflection]:
+    async def get_latest_reflection(self, user_id: str) -> Reflection | None:
         """获取用户的最新反思记录
 
         Args:

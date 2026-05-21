@@ -11,8 +11,6 @@ from pm_workstation.memory.memory_models import (
     AgentSoul,
     MemoryEntry,
     MemoryType,
-    Reflection,
-    UserPreference,
 )
 from pm_workstation.memory.reflection_engine import ReflectionEngine
 from pm_workstation.memory.soul_manager import SoulManager

@@ -4,8 +4,6 @@
 """
 
 import logging
-from datetime import datetime
-from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 
@@ -19,13 +17,10 @@ from pm_workstation.workflow.pm_workflows import (
 )
 from pm_workstation.workflow.workflow_models import (
     WorkflowDefinition,
-    WorkflowExecution,
-    WorkflowProgress,
     WorkflowTemplate,
 )
 from pm_workstation.workflow.workflow_orchestrator import (
     get_workflow_orchestrator,
-    reset_orchestrator,
 )
 
 logger = logging.getLogger(__name__)
@@ -52,7 +47,7 @@ def _workflow_to_template(workflow: WorkflowDefinition) -> WorkflowTemplate:
 async def list_workflows() -> dict:
     """获取所有预定义工作流模板（无需认证）"""
     workflows = get_all_workflows()
-    
+
     return {
         "workflows": [_workflow_to_template(w).model_dump() for w in workflows],
         "total": len(workflows),
@@ -68,7 +63,7 @@ async def search_workflows_api(query: str) -> dict:
         query: 搜索关键词
     """
     workflows = search_workflows(query)
-    
+
     return {
         "workflows": [_workflow_to_template(w).model_dump() for w in workflows],
         "total": len(workflows),
@@ -80,9 +75,9 @@ async def search_workflows_api(query: str) -> dict:
 async def list_workflows_by_category(category: str) -> dict:
     """获取指定分类的工作流（无需认证）"""
     from pm_workstation.workflow.pm_workflows import get_workflows_by_category
-    
+
     workflows = get_workflows_by_category(category)
-    
+
     return {
         "workflows": [_workflow_to_template(w).model_dump() for w in workflows],
         "total": len(workflows),
@@ -94,7 +89,7 @@ async def list_workflows_by_category(category: str) -> dict:
 async def list_categories() -> dict:
     """获取所有工作流分类（无需认证）"""
     workflows = get_all_workflows()
-    
+
     categories = {}
     for w in workflows:
         if w.category not in categories:
@@ -104,7 +99,7 @@ async def list_categories() -> dict:
                 "description": _get_category_description(w.category),
             }
         categories[w.category]["workflows_count"] += 1
-    
+
     return {
         "categories": list(categories.values()),
         "total": len(categories),
@@ -115,10 +110,10 @@ async def list_categories() -> dict:
 async def get_workflow_detail(workflow_id: str) -> dict:
     """获取工作流的详细信息（无需认证）"""
     workflow = get_workflow_by_id(workflow_id)
-    
+
     if not workflow:
         raise HTTPException(status_code=404, detail="工作流不存在")
-    
+
     return workflow.model_dump()
 
 
@@ -135,19 +130,19 @@ async def execute_workflow(
         body: 包含 initial_input（可选）、session_id（可选）
     """
     workflow = get_workflow_by_id(workflow_id)
-    
+
     if not workflow:
         raise HTTPException(status_code=404, detail="工作流不存在")
-    
+
     # 确保 Sub-Agents 已注册
     if len(get_sub_agent_registry().list_all()) == 0:
         register_pm_sub_agents()
-    
+
     orchestrator = get_workflow_orchestrator()
-    
+
     initial_input = body.get("initial_input", {})
     session_id = body.get("session_id")
-    
+
     # 执行工作流
     execution = await orchestrator.execute_workflow(
         workflow=workflow,
@@ -155,7 +150,7 @@ async def execute_workflow(
         session_id=session_id,
         initial_input=initial_input,
     )
-    
+
     return {
         "execution_id": execution.execution_id,
         "workflow_id": execution.workflow_id,
@@ -191,10 +186,10 @@ async def get_execution(execution_id: str) -> dict:
     """
     orchestrator = get_workflow_orchestrator()
     progress = orchestrator.get_progress(execution_id)
-    
+
     if not progress:
         raise HTTPException(status_code=404, detail="执行记录不存在")
-    
+
     return {
         "execution_id": progress.execution_id,
         "workflow_id": progress.workflow_id,
@@ -221,10 +216,10 @@ async def get_execution_progress(execution_id: str) -> dict:
     """
     orchestrator = get_workflow_orchestrator()
     progress = orchestrator.get_progress(execution_id)
-    
+
     if not progress:
         raise HTTPException(status_code=404, detail="执行记录不存在")
-    
+
     return {
         "execution_id": progress.execution_id,
         "status": progress.status.value,
@@ -243,10 +238,10 @@ async def get_execution_artifacts(execution_id: str) -> dict:
         execution_id: 执行 ID
     """
     from pm_workstation.artifact.artifact_manager import get_artifact_manager
-    
+
     manager = get_artifact_manager()
     artifacts = await manager.list_by_workflow_execution(execution_id)
-    
+
     return {
         "execution_id": execution_id,
         "artifacts": [

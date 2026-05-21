@@ -10,6 +10,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
+from pm_workstation.api.routes.artifact_routes import router as artifact_routes_router
+
 # 路由导入
 from pm_workstation.api.routes.auth import router as auth_router
 from pm_workstation.api.routes.channels import router as channels_router
@@ -21,20 +23,19 @@ from pm_workstation.api.routes.knowledge_base import router as knowledge_base_ro
 from pm_workstation.api.routes.llm import router as llm_router
 from pm_workstation.api.routes.market_research import router as market_research_router
 from pm_workstation.api.routes.memory import router as memory_router
+from pm_workstation.api.routes.persistent_memory import router as persistent_memory_router
 from pm_workstation.api.routes.skills import router as skills_router
-from pm_workstation.api.routes.token_usage import router as token_usage_router
-from pm_workstation.api.routes.workflows import router as workflows_router
 from pm_workstation.api.routes.streaming_chat import router as streaming_chat_router
+from pm_workstation.api.routes.token_usage import router as token_usage_router
 from pm_workstation.api.routes.workflow_routes import router as workflow_routes_router
-from pm_workstation.api.routes.artifact_routes import router as artifact_routes_router
-from pm_workstation.sandbox.api.routes import router as sandbox_router
-
+from pm_workstation.api.routes.workflows import router as workflows_router
 from pm_workstation.llm.provider_store import LLMProviderStore
 from pm_workstation.model_router.anthropic_adapter import AnthropicAdapter
 from pm_workstation.model_router.base import LLMConfig
 from pm_workstation.model_router.fallback_handler import FallbackHandler
 from pm_workstation.model_router.openai_adapter import OpenAIAdapter
 from pm_workstation.orchestrator.workflow_manager import WorkflowManager
+from pm_workstation.sandbox.api.routes import router as sandbox_router
 
 ARTIFACTS_DIR = os.path.join(os.path.dirname(__file__), "..", "artifacts")
 
@@ -84,7 +85,7 @@ def _build_llm_handler(provider_config, model_override: str | None = None) -> Fa
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """应用生命周期管理"""
     from pm_workstation.agents.pm_sub_agents import register_pm_sub_agents
-    
+
     # 启动时初始化
     app.state.provider_store = LLMProviderStore()
 
@@ -104,14 +105,14 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     app.state.llm_handler = llm_handler
     app.state.workflow_manager = WorkflowManager(llm_handler=llm_handler)
-    
+
     # 暴露 provider_store 给其他模块使用
     global app_state_provider_store
     app_state_provider_store = app.state.provider_store
-    
+
     # 注册 PM Sub-Agents
     register_pm_sub_agents()
-    
+
     yield
     # 关闭时清理
     pass
@@ -139,7 +140,7 @@ def create_app() -> FastAPI:
         app_state_provider_store = provider_store
         # 设置到 app.state 供依赖注入使用
         app.state.provider_store = provider_store
-        
+
         # 尝试构建默认 LLM handler
         llm_handler = None
         try:
@@ -148,12 +149,12 @@ def create_app() -> FastAPI:
                 llm_handler = _build_llm_handler(default_config)
         except Exception:
             pass
-        
+
         # 初始化 Workflow Manager（带 LLM handler 和 provider_store）
         workflow_manager = WorkflowManager(llm_handler=llm_handler, provider_store=provider_store)
         app.state.llm_handler = llm_handler
         app.state.workflow_manager = workflow_manager
-        
+
         yield
 
     app = FastAPI(
@@ -188,6 +189,7 @@ def create_app() -> FastAPI:
     app.include_router(artifact_routes_router, prefix="/api/v1", tags=["产物管理"])
     app.include_router(channels_router, prefix="/api/v1", tags=["渠道管理"])
     app.include_router(memory_router, prefix="/api/v1", tags=["记忆管理"])
+    app.include_router(persistent_memory_router, prefix="/api/v1", tags=["持久化记忆"])
     app.include_router(token_usage_router, prefix="/api/v1", tags=["模型用量"])
     app.include_router(sandbox_router, prefix="/api/v1", tags=["Sandbox 执行环境"])
 
@@ -220,7 +222,7 @@ def create_app() -> FastAPI:
         next_static_dir = FRONTEND_DIR / "_next"
         if next_static_dir.exists():
             app.mount("/_next", StaticFiles(directory=str(next_static_dir)), name="next_static")
-        
+
         # Catch-all 路由处理前端页面
         @app.get("/{path:path}", response_class=HTMLResponse)
         async def serve_frontend(request: Request, path: str):
@@ -228,18 +230,18 @@ def create_app() -> FastAPI:
             file_path = FRONTEND_DIR / path
             if file_path.is_file():
                 return FileResponse(str(file_path))
-            
+
             # 尝试查找 index.html
             if path and not path.endswith((".js", ".css", ".ico", ".png", ".jpg", ".svg")):
                 page_path = FRONTEND_DIR / path / "index.html"
                 if page_path.is_file():
                     return FileResponse(str(page_path))
-            
+
             # 默认返回 index.html (SPA 路由)
             index_path = FRONTEND_DIR / "index.html"
             if index_path.is_file():
                 return FileResponse(str(index_path))
-            
+
             return HTMLResponse(content="<h1>Frontend not built</h1>", status_code=404)
 
     return app

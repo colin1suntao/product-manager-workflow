@@ -4,7 +4,7 @@
 """
 
 import logging
-from typing import Callable, Optional
+from collections.abc import Callable
 
 from pm_workstation.sandbox.models import (
     ExecutionContext,
@@ -14,9 +14,9 @@ from pm_workstation.sandbox.models import (
     Workspace,
 )
 from pm_workstation.sandbox.tools.file_tools import FileTools, get_file_tools
-from pm_workstation.sandbox.tools.shell_tools import ShellTools, get_shell_tools
-from pm_workstation.sandbox.tools.python_tools import PythonTools, get_python_tools
 from pm_workstation.sandbox.tools.http_tools import HTTPTools, get_http_tools
+from pm_workstation.sandbox.tools.python_tools import PythonTools, get_python_tools
+from pm_workstation.sandbox.tools.shell_tools import ShellTools, get_shell_tools
 
 FILE_TOOLS = FileTools.TOOLS
 SHELL_TOOLS = ShellTools.TOOLS
@@ -34,33 +34,33 @@ class ToolManager:
     - 验证参数
     - 执行
     """
-    
+
     def __init__(self):
         self._tools: dict[str, ToolDefinition] = {}
         self._executors: dict[str, Callable] = {}
-        
+
         self._register_builtin_tools()
-    
+
     def _register_builtin_tools(self) -> None:
         """注册内置工具"""
         file_tools = get_file_tools()
         for tool in FILE_TOOLS:
             self.register_tool(tool, self._get_file_executor(tool.name, file_tools))
-        
+
         shell_tools = get_shell_tools()
         for tool in SHELL_TOOLS:
             self.register_tool(tool, self._get_shell_executor(tool.name, shell_tools))
-        
+
         python_tools = get_python_tools()
         for tool in PYTHON_TOOLS:
             self.register_tool(tool, self._get_python_executor(tool.name, python_tools))
-        
+
         http_tools = get_http_tools()
         for tool in HTTP_TOOLS:
             self.register_tool(tool, self._get_http_executor(tool.name, http_tools))
-        
+
         logger.info(f"Registered {len(self._tools)} builtin tools")
-    
+
     def register_tool(
         self,
         tool: ToolDefinition,
@@ -74,9 +74,9 @@ class ToolManager:
         """
         self._tools[tool.name] = tool
         self._executors[tool.name] = executor
-        
+
         logger.debug(f"Registered tool: {tool.name}")
-    
+
     def unregister_tool(
         self,
         name: str,
@@ -95,11 +95,11 @@ class ToolManager:
             logger.debug(f"Unregistered tool: {name}")
             return True
         return False
-    
+
     def get_tool(
         self,
         name: str,
-    ) -> Optional[ToolDefinition]:
+    ) -> ToolDefinition | None:
         """获取工具定义
         
         Args:
@@ -109,10 +109,10 @@ class ToolManager:
             Optional[ToolDefinition]: 工具定义
         """
         return self._tools.get(name)
-    
+
     def list_tools(
         self,
-        category: Optional[ToolCategory] = None,
+        category: ToolCategory | None = None,
     ) -> list[ToolDefinition]:
         """列出工具
         
@@ -125,12 +125,12 @@ class ToolManager:
         if category:
             return [t for t in self._tools.values() if t.category == category]
         return list(self._tools.values())
-    
+
     def validate_params(
         self,
         tool: ToolDefinition,
         params: dict,
-    ) -> tuple[bool, Optional[str]]:
+    ) -> tuple[bool, str | None]:
         """验证工具参数
         
         Args:
@@ -141,24 +141,24 @@ class ToolManager:
             tuple: (是否有效, 错误信息)
         """
         schema = tool.parameters
-        
+
         if not schema:
             return True, None
-        
+
         required = schema.get("required", [])
         properties = schema.get("properties", {})
-        
+
         for req in required:
             if req not in params:
                 return False, f"Missing required parameter: {req}"
-        
+
         for key, value in params.items():
             if key not in properties:
                 continue
-            
+
             prop_schema = properties[key]
             expected_type = prop_schema.get("type")
-            
+
             if expected_type == "string" and not isinstance(value, str):
                 return False, f"Parameter {key} should be string"
             elif expected_type == "integer" and not isinstance(value, int):
@@ -169,15 +169,15 @@ class ToolManager:
                 return False, f"Parameter {key} should be array"
             elif expected_type == "object" and not isinstance(value, dict):
                 return False, f"Parameter {key} should be object"
-        
+
         return True, None
-    
+
     async def execute_tool(
         self,
         tool_name: str,
         workspace: Workspace,
         params: dict,
-        context: Optional[ExecutionContext] = None,
+        context: ExecutionContext | None = None,
     ) -> ToolResult:
         """执行工具
         
@@ -191,14 +191,14 @@ class ToolManager:
             ToolResult: 执行结果
         """
         tool = self.get_tool(tool_name)
-        
+
         if not tool:
             return ToolResult(
                 tool_name=tool_name,
                 success=False,
                 error=f"Tool not found: {tool_name}",
             )
-        
+
         valid, error = self.validate_params(tool, params)
         if not valid:
             return ToolResult(
@@ -206,7 +206,7 @@ class ToolManager:
                 success=False,
                 error=error,
             )
-        
+
         executor = self._executors.get(tool_name)
         if not executor:
             return ToolResult(
@@ -214,15 +214,15 @@ class ToolManager:
                 success=False,
                 error=f"No executor for tool: {tool_name}",
             )
-        
+
         try:
             result = await executor(workspace, params)
-            
+
             if context:
                 context.tool_results.append(result)
-            
+
             return result
-        
+
         except Exception as e:
             logger.error(f"Tool execution failed: {tool_name} - {e}")
             return ToolResult(
@@ -230,7 +230,7 @@ class ToolManager:
                 success=False,
                 error=str(e),
             )
-    
+
     def _get_file_executor(
         self,
         name: str,
@@ -246,7 +246,7 @@ class ToolManager:
             "file_move": file_tools.move_file,
         }
         return executors.get(name)
-    
+
     def _get_shell_executor(
         self,
         name: str,
@@ -258,7 +258,7 @@ class ToolManager:
             "shell_script": shell_tools.execute_script,
         }
         return executors.get(name)
-    
+
     def _get_python_executor(
         self,
         name: str,
@@ -270,7 +270,7 @@ class ToolManager:
             "python_script": python_tools.execute_script,
         }
         return executors.get(name)
-    
+
     def _get_http_executor(
         self,
         name: str,
@@ -284,7 +284,7 @@ class ToolManager:
         return executors.get(name)
 
 
-_global_tool_manager: Optional[ToolManager] = None
+_global_tool_manager: ToolManager | None = None
 
 
 def get_tool_manager() -> ToolManager:

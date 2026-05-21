@@ -3,13 +3,12 @@
 负责验证命令、文件路径、URL 的安全性，防止危险操作。
 """
 
-import re
 import logging
-from typing import Optional
+import re
 
 from pm_workstation.sandbox.models import (
-    SecurityValidation,
     SecurityLevel,
+    SecurityValidation,
     Workspace,
 )
 
@@ -24,7 +23,7 @@ class SecurityController:
     - 路径穿越攻击（如 ../../../etc/passwd）
     - 内网访问（如 localhost、127.0.0.1、10.x.x.x）
     """
-    
+
     BLOCKED_COMMANDS = [
         "rm", "rmdir", "sudo", "su", "chmod", "chown",
         "iptables", "ip6tables", "nftables", "ufw",
@@ -38,7 +37,7 @@ class SecurityController:
         "ssh", "scp", "rsync", "ftp",
         "docker", "kubectl", "podman",
     ]
-    
+
     BLOCKED_COMMAND_PREFIXES = [
         "rm ", "sudo ", "chmod ", "chown ",
         "shutdown", "reboot", "poweroff",
@@ -46,14 +45,14 @@ class SecurityController:
         "wget ", "curl ", "nc ", "ssh ",
         "docker ", "kubectl ",
     ]
-    
+
     BLOCKED_HOSTS = [
         "localhost",
         "127.0.0.1",
         "0.0.0.0",
         "::1",
     ]
-    
+
     BLOCKED_IP_PATTERNS = [
         r"^10\.",
         r"^172\.16\.",
@@ -74,7 +73,7 @@ class SecurityController:
         r"^172\.31\.",
         r"^192\.168\.",
     ]
-    
+
     DANGEROUS_FILE_PATHS = [
         "/etc/passwd",
         "/etc/shadow",
@@ -86,7 +85,7 @@ class SecurityController:
         "/sys/",
         "/dev/",
     ]
-    
+
     def validate_command(
         self,
         command: str,
@@ -102,7 +101,7 @@ class SecurityController:
             SecurityValidation: 验证结果
         """
         command_lower = command.lower().strip()
-        
+
         for blocked in self.BLOCKED_COMMANDS:
             if blocked in command_lower.split():
                 return SecurityValidation(
@@ -110,7 +109,7 @@ class SecurityController:
                     reason=f"Blocked command detected: {blocked}",
                     severity="high",
                 )
-        
+
         for prefix in self.BLOCKED_COMMAND_PREFIXES:
             if command_lower.startswith(prefix):
                 blocked_cmd = prefix.strip()
@@ -119,7 +118,7 @@ class SecurityController:
                     reason=f"Blocked command prefix detected: {blocked_cmd}",
                     severity="high",
                 )
-        
+
         dangerous_patterns = [
             r">\s*/etc/",
             r">\s*/root/",
@@ -133,7 +132,7 @@ class SecurityController:
             r"\$\('.*rm.*'\)",
             r"\$\(\{.*rm.*\}\)",
         ]
-        
+
         for pattern in dangerous_patterns:
             if re.search(pattern, command_lower):
                 return SecurityValidation(
@@ -141,7 +140,7 @@ class SecurityController:
                     reason=f"Dangerous pattern detected: {pattern}",
                     severity="critical",
                 )
-        
+
         if security_level == SecurityLevel.RESTRICTED:
             restricted_commands = [
                 "apt", "yum", "dnf", "pacman", "brew",
@@ -155,9 +154,9 @@ class SecurityController:
                         reason=f"Restricted command in restricted mode: {cmd}",
                         severity="medium",
                     )
-        
+
         return SecurityValidation(valid=True)
-    
+
     def validate_file_path(
         self,
         path: str,
@@ -173,14 +172,14 @@ class SecurityController:
             SecurityValidation: 验证结果
         """
         path_normalized = path.strip()
-        
+
         if ".." in path_normalized:
             return SecurityValidation(
                 valid=False,
                 reason="Path traversal detected: '..' in path",
                 severity="critical",
             )
-        
+
         if path_normalized.startswith("/"):
             if not path_normalized.startswith(workspace.path):
                 for dangerous_path in self.DANGEROUS_FILE_PATHS:
@@ -190,17 +189,17 @@ class SecurityController:
                             reason=f"Access to system path denied: {dangerous_path}",
                             severity="critical",
                         )
-                
+
                 return SecurityValidation(
                     valid=False,
                     reason=f"Path outside workspace: {path}",
                     severity="high",
                 )
-        
+
         resolved_path = path_normalized
         if not path_normalized.startswith(workspace.path):
             resolved_path = f"{workspace.path}/{path_normalized}"
-        
+
         for dangerous_path in self.DANGEROUS_FILE_PATHS:
             if resolved_path.startswith(dangerous_path):
                 return SecurityValidation(
@@ -208,9 +207,9 @@ class SecurityController:
                     reason=f"Resolved path access denied: {dangerous_path}",
                     severity="critical",
                 )
-        
+
         return SecurityValidation(valid=True)
-    
+
     def validate_url(
         self,
         url: str,
@@ -226,7 +225,7 @@ class SecurityController:
             SecurityValidation: 验证结果
         """
         import urllib.parse
-        
+
         try:
             parsed = urllib.parse.urlparse(url)
         except Exception as e:
@@ -235,9 +234,9 @@ class SecurityController:
                 reason=f"Invalid URL format: {e}",
                 severity="low",
             )
-        
+
         host = parsed.hostname or ""
-        
+
         for blocked_host in self.BLOCKED_HOSTS:
             if host == blocked_host:
                 return SecurityValidation(
@@ -245,7 +244,7 @@ class SecurityController:
                     reason=f"Blocked host: {host}",
                     severity="high",
                 )
-        
+
         for pattern in self.BLOCKED_IP_PATTERNS:
             if re.match(pattern, host):
                 return SecurityValidation(
@@ -253,7 +252,7 @@ class SecurityController:
                     reason=f"Internal IP range blocked: {host}",
                     severity="high",
                 )
-        
+
         if re.match(r"^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$", host):
             if host.startswith("127.") or host == "0.0.0.0":
                 return SecurityValidation(
@@ -261,23 +260,23 @@ class SecurityController:
                     reason=f"Local IP blocked: {host}",
                     severity="high",
                 )
-        
+
         if not allow_public_network:
             return SecurityValidation(
                 valid=False,
                 reason="Network access disabled",
                 severity="medium",
             )
-        
+
         if parsed.scheme not in ["http", "https"]:
             return SecurityValidation(
                 valid=False,
                 reason=f"Unsupported protocol: {parsed.scheme}",
                 severity="medium",
             )
-        
+
         return SecurityValidation(valid=True)
-    
+
     def validate_python_code(
         self,
         code: str,
@@ -307,7 +306,7 @@ class SecurityController:
             "multiprocessing",
             "threading.Thread",
         ]
-        
+
         for pattern in dangerous_imports:
             if pattern in code:
                 if security_level == SecurityLevel.RESTRICTED:
@@ -316,7 +315,7 @@ class SecurityController:
                         reason=f"Dangerous pattern in Python code: {pattern}",
                         severity="high",
                     )
-        
+
         dangerous_builtins = [
             "__builtins__",
             "__import__",
@@ -328,7 +327,7 @@ class SecurityController:
             "open('/proc/",
             "open('/sys/",
         ]
-        
+
         for pattern in dangerous_builtins:
             if pattern in code:
                 return SecurityValidation(
@@ -336,9 +335,9 @@ class SecurityController:
                     reason=f"Dangerous builtin usage: {pattern}",
                     severity="high",
                 )
-        
+
         return SecurityValidation(valid=True)
-    
+
     def sanitize_command_output(
         self,
         output: str,
@@ -355,7 +354,7 @@ class SecurityController:
         """
         if len(output) > max_length:
             output = output[:max_length] + "... [truncated]"
-        
+
         sensitive_patterns = [
             (r"password\s*[=:]\s*\S+", "password=***"),
             (r"token\s*[=:]\s*\S+", "token=***"),
@@ -363,14 +362,14 @@ class SecurityController:
             (r"secret\s*[=:]\s*\S+", "secret=***"),
             (r"Bearer\s+\S+", "Bearer ***"),
         ]
-        
+
         for pattern, replacement in sensitive_patterns:
             output = re.sub(pattern, replacement, output, flags=re.IGNORECASE)
-        
+
         return output
 
 
-_global_security_controller: Optional[SecurityController] = None
+_global_security_controller: SecurityController | None = None
 
 
 def get_security_controller() -> SecurityController:

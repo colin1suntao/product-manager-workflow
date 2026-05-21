@@ -204,11 +204,11 @@ class SkillLoader:
         if skill.skill_type:
             lines.append(f"type: {skill.skill_type}")
         if skill.best_for:
-            lines.append(f"best_for:")
+            lines.append("best_for:")
             for item in skill.best_for:
                 lines.append(f"  - {item}")
         if skill.scenarios:
-            lines.append(f"scenarios:")
+            lines.append("scenarios:")
             for item in skill.scenarios:
                 lines.append(f"  - {item}")
         if skill.estimated_time:

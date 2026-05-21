@@ -1,12 +1,11 @@
 """知识库 API - 产品文档模板和原型组件模板管理"""
 
 import logging
-from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException
 
 from pm_workstation.auth.dependencies import get_current_user
-from pm_workstation.knowledge_base.models import Template, TemplateType, TEMPLATE_TYPE_LABELS
+from pm_workstation.knowledge_base.models import TEMPLATE_TYPE_LABELS, Template, TemplateType
 from pm_workstation.knowledge_base.store import TemplateStore
 
 logger = logging.getLogger(__name__)

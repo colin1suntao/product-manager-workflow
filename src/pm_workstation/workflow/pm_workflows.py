@@ -4,7 +4,6 @@
 """
 
 import logging
-from datetime import datetime
 
 from .workflow_models import WorkflowDefinition, WorkflowStep
 
@@ -72,7 +71,7 @@ PM_WORKFLOWS: list[WorkflowDefinition] = [
         tags=["产品设计", "需求分析", "原型", "PRD", "完整流程"],
         author="system",
     ),
-    
+
     WorkflowDefinition(
         id="quick-prototype",
         name="快速原型设计",
@@ -108,7 +107,7 @@ PM_WORKFLOWS: list[WorkflowDefinition] = [
         tags=["快速", "原型", "验证"],
         author="system",
     ),
-    
+
     WorkflowDefinition(
         id="market-research-full",
         name="完整市场调研流程",
@@ -166,7 +165,7 @@ PM_WORKFLOWS: list[WorkflowDefinition] = [
         tags=["市场调研", "竞品", "战略", "用户研究"],
         author="system",
     ),
-    
+
     WorkflowDefinition(
         id="user-research-flow",
         name="用户研究流程",
@@ -213,7 +212,7 @@ PM_WORKFLOWS: list[WorkflowDefinition] = [
         tags=["用户研究", "访谈", "用户旅程", "用户画像"],
         author="system",
     ),
-    
+
     WorkflowDefinition(
         id="feature-spec",
         name="功能规格设计",
@@ -261,7 +260,7 @@ PM_WORKFLOWS: list[WorkflowDefinition] = [
         tags=["功能", "用户故事", "原型", "规格"],
         author="system",
     ),
-    
+
     WorkflowDefinition(
         id="business-model-design",
         name="商业模式设计",
@@ -309,7 +308,7 @@ PM_WORKFLOWS: list[WorkflowDefinition] = [
         tags=["商业模式", "定位", "战略", "GTM"],
         author="system",
     ),
-    
+
     WorkflowDefinition(
         id="data-analysis-flow",
         name="数据分析流程",
@@ -408,7 +407,7 @@ def search_workflows(query: str) -> list[WorkflowDefinition]:
     """
     query_lower = query.lower()
     matched = []
-    
+
     for workflow in PM_WORKFLOWS:
         # 匹配名称、描述、标签
         if (
@@ -418,5 +417,5 @@ def search_workflows(query: str) -> list[WorkflowDefinition]:
             or any(query_lower in bf.lower() for bf in workflow.best_for)
         ):
             matched.append(workflow)
-    
+
     return matched

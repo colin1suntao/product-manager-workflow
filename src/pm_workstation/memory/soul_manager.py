@@ -5,7 +5,6 @@
 
 import logging
 from datetime import datetime
-from typing import Optional
 
 from .memory_models import AgentSoul
 
@@ -76,7 +75,7 @@ class SoulManager:
         logger.info(f"Created soul {soul.id} for user {soul.user_id}")
         return soul
 
-    async def update_soul(self, soul_id: str, updates: dict) -> Optional[AgentSoul]:
+    async def update_soul(self, soul_id: str, updates: dict) -> AgentSoul | None:
         """更新 Soul
 
         Args:

@@ -2,7 +2,7 @@
 
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, Optional
+from typing import Any
 
 from pm_workstation.channels.models import ChannelConfig, IncomingMessage, OutgoingMessage
 

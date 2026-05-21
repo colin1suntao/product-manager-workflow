@@ -5,7 +5,6 @@
 
 from datetime import datetime
 from enum import Enum
-from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -38,8 +37,8 @@ class ArtifactVersion(BaseModel):
     created_at: datetime = Field(default_factory=datetime.now, description="创建时间")
     created_by: str = Field(..., description="创建者 (user_id 或 agent_id)")
     created_by_name: str = Field(default="", description="创建者名称")
-    diff_summary: Optional[str] = Field(default=None, description="与上一版本的差异摘要")
-    diff_detail: Optional[dict] = Field(default=None, description="详细差异")
+    diff_summary: str | None = Field(default=None, description="与上一版本的差异摘要")
+    diff_detail: dict | None = Field(default=None, description="详细差异")
     size_bytes: int = Field(default=0, description="大小（字节）")
     metadata: dict = Field(default_factory=dict, description="元数据")
 
@@ -51,18 +50,18 @@ class Artifact(BaseModel):
     type: ArtifactType = Field(..., description="类型")
     status: ArtifactStatus = Field(default=ArtifactStatus.DRAFT, description="状态")
     description: str = Field(default="", description="描述")
-    session_id: Optional[str] = Field(default=None, description="会话 ID")
-    workflow_id: Optional[str] = Field(default=None, description="工作流 ID")
-    workflow_execution_id: Optional[str] = Field(default=None, description="工作流执行 ID")
-    step_id: Optional[str] = Field(default=None, description="步骤 ID")
-    agent_id: Optional[str] = Field(default=None, description="生成 Agent ID")
+    session_id: str | None = Field(default=None, description="会话 ID")
+    workflow_id: str | None = Field(default=None, description="工作流 ID")
+    workflow_execution_id: str | None = Field(default=None, description="工作流执行 ID")
+    step_id: str | None = Field(default=None, description="步骤 ID")
+    agent_id: str | None = Field(default=None, description="生成 Agent ID")
     user_id: str = Field(..., description="用户 ID")
     versions: list[ArtifactVersion] = Field(default_factory=list, description="版本历史")
     current_version: int = Field(default=1, description="当前版本号")
     tags: list[str] = Field(default_factory=list, description="标签")
-    preview_url: Optional[str] = Field(default=None, description="预览 URL")
-    download_url: Optional[str] = Field(default=None, description="下载 URL")
-    file_path: Optional[str] = Field(default=None, description="文件路径")
+    preview_url: str | None = Field(default=None, description="预览 URL")
+    download_url: str | None = Field(default=None, description="下载 URL")
+    file_path: str | None = Field(default=None, description="文件路径")
     is_editable: bool = Field(default=True, description="是否可编辑")
     is_public: bool = Field(default=False, description="是否公开")
     created_at: datetime = Field(default_factory=datetime.now, description="创建时间")
@@ -78,7 +77,7 @@ class ArtifactDiff(BaseModel):
     deletions: int = Field(default=0, description="删除行数")
     modifications: int = Field(default=0, description="修改行数")
     similarity: float = Field(default=1.0, description="相似度 0-1")
-    diff_content: Optional[str] = Field(default=None, description="差异内容 (diff 格式)")
+    diff_content: str | None = Field(default=None, description="差异内容 (diff 格式)")
 
 
 class ArtifactComparison(BaseModel):
@@ -102,9 +101,9 @@ class ArtifactListItem(BaseModel):
     created_at: datetime
     updated_at: datetime
     created_by: str
-    workflow_name: Optional[str] = None
-    session_title: Optional[str] = None
-    preview_url: Optional[str] = None
+    workflow_name: str | None = None
+    session_title: str | None = None
+    preview_url: str | None = None
     tags: list[str]
 
 

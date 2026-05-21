@@ -2,7 +2,7 @@
 
 from datetime import datetime
 from enum import Enum
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -99,8 +99,8 @@ class ToolResult(BaseModel):
     """工具执行结果"""
     tool_name: str
     success: bool
-    output: Optional[str] = None
-    error: Optional[str] = None
+    output: str | None = None
+    error: str | None = None
     files_created: list[str] = Field(default_factory=list)
     files_modified: list[str] = Field(default_factory=list)
     execution_time_ms: int = Field(default=0)
@@ -122,8 +122,8 @@ class PythonResult(BaseModel):
     code: str
     stdout: str
     stderr: str
-    return_value: Optional[Any] = None
-    exception: Optional[str] = None
+    return_value: Any | None = None
+    exception: str | None = None
     execution_time_ms: int = Field(default=0)
     files_created: list[str] = Field(default_factory=list)
 
@@ -157,7 +157,7 @@ class ExecutionEvent(str, Enum):
 class SecurityValidation(BaseModel):
     """安全验证结果"""
     valid: bool
-    reason: Optional[str] = None
+    reason: str | None = None
     severity: str = Field(default="low", description="low, medium, high, critical")
 
 
@@ -172,7 +172,7 @@ class ExecutionContext(BaseModel):
     status: ExecutionStatus = Field(default=ExecutionStatus.CREATED)
     tool_results: list[ToolResult] = Field(default_factory=list)
     artifacts: list[FileInfo] = Field(default_factory=list)
-    error_message: Optional[str] = None
+    error_message: str | None = None
     cpu_time_used: float = Field(default=0.0)
     memory_used_mb: float = Field(default=0.0)
 
@@ -187,7 +187,7 @@ class ExecutionSummary(BaseModel):
     artifacts_count: int
     total_execution_time_ms: int
     resource_usage: ResourceUsage
-    error_message: Optional[str] = None
+    error_message: str | None = None
 
 
 class ExecutionError(BaseModel):
@@ -196,22 +196,22 @@ class ExecutionError(BaseModel):
     error_message: str
     error_details: dict = Field(default_factory=dict)
     recoverable: bool = Field(default=False)
-    partial_results: Optional[list[ToolResult]] = None
+    partial_results: list[ToolResult] | None = None
 
 
 class CreateExecutionRequest(BaseModel):
     """创建执行请求"""
     task_params: dict = Field(default_factory=dict)
     timeout: int = Field(default=60)
-    resource_limits: Optional[ResourceLimits] = None
-    session_id: Optional[str] = None
-    workflow_id: Optional[str] = None
+    resource_limits: ResourceLimits | None = None
+    session_id: str | None = None
+    workflow_id: str | None = None
 
 
 class ToolInvocationRequest(BaseModel):
     """工具调用请求"""
     params: dict = Field(default_factory=dict)
-    timeout_override: Optional[int] = None
+    timeout_override: int | None = None
 
 
 class StreamExecutionRequest(BaseModel):

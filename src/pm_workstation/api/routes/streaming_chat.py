@@ -8,27 +8,20 @@ import json
 import logging
 import time
 import uuid
-from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
 
-from pm_workstation.agents.coordinator_chat import CoordinatorChatAgent
 from pm_workstation.agents.pm_sub_agents import register_pm_sub_agents
 from pm_workstation.agents.sub_agent_executor import SubAgentExecutor
 from pm_workstation.agents.sub_agent_models import SubAgentConfig
 from pm_workstation.agents.sub_agent_registry import get_sub_agent_registry
 from pm_workstation.auth.dependencies import get_current_user
-from pm_workstation.chat.chat_manager import ChatManager
 from pm_workstation.chat.chat_models import (
     ChatMessage,
     TaskMode,
     TaskStatus,
 )
-from pm_workstation.llm.token_usage import TokenUsageStore
-from pm_workstation.memory.memory_manager import MemoryManager
-from pm_workstation.memory.memory_retriever import MemoryRetriever
-from pm_workstation.memory.soul_manager import SoulManager
 
 logger = logging.getLogger(__name__)
 
@@ -36,12 +29,10 @@ router = APIRouter(prefix="/chat", tags=["会话交互-流式"])
 
 # 使用 chat.py 中的共享实例
 from pm_workstation.api.routes.chat import (
-    _chat_manager,
-    _memory_manager,
-    _soul_manager,
-    _memory_retriever,
-    _token_usage_store,
     _get_chat_manager,
+    _memory_retriever,
+    _soul_manager,
+    _token_usage_store,
 )
 
 
@@ -139,7 +130,6 @@ async def stream_message(
 
             if llm_handler:
                 try:
-                    from pm_workstation.chat.task_router import TaskRouter
                     from pm_workstation.agents.coordinator_chat import CoordinatorChatAgent
 
                     coordinator = CoordinatorChatAgent(
@@ -160,7 +150,7 @@ async def stream_message(
                             "suggested_skills": selected_skills or [],
                             "clarification_needed": analysis.clarification_questions if analysis.clarification_questions else [],
                         }
-                except asyncio.TimeoutError:
+                except TimeoutError:
                     logger.warning("Intent analysis timeout, using default")
                 except Exception as e:
                     logger.error(f"Intent analysis error: {e}")
@@ -217,8 +207,8 @@ async def stream_message(
             # 如果有模板，注入模板内容
             if template_id:
                 try:
-                    from pm_workstation.knowledge_base.store import TemplateStore
                     from pm_workstation.component_library.store import ComponentTemplateStore
+                    from pm_workstation.knowledge_base.store import TemplateStore
 
                     ts = TemplateStore()
                     tmpl = await ts.get(template_id)
@@ -373,7 +363,7 @@ async def stream_message(
             # Event 7: Done
             yield f"event: done\ndata: {json.dumps({'message_id': assistant_message.id, 'duration_ms': duration_ms, 'total_tokens': total_tokens})}\n\n"
 
-        except asyncio.TimeoutError:
+        except TimeoutError:
             yield f"event: error\ndata: {json.dumps({'error': '处理超时，请简化需求后重试'})}\n\n"
         except Exception as e:
             logger.error(f"Stream error: {e}")
