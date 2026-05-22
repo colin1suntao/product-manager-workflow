@@ -292,18 +292,30 @@ async def test_channel(
 
     adapter = _build_adapter(config)
     valid, err = adapter.validate_config()
+
+    connection_valid = False
+    connection_msg = ""
+
+    if valid and hasattr(adapter, "test_connection"):
+        connection_valid, connection_msg = await adapter.test_connection()
+
     webhook_url = adapter.get_webhook_url_hint()
 
-    if valid:
+    if valid and connection_valid:
         await store.update(channel_id, {"status": ChannelStatus.ACTIVE, "last_error": None})
+        final_msg = connection_msg or "配置验证通过"
     else:
-        await store.update(channel_id, {"status": ChannelStatus.ERROR, "last_error": err})
+        error_detail = err or connection_msg or "配置验证失败"
+        await store.update(channel_id, {"status": ChannelStatus.ERROR, "last_error": error_detail})
+        final_msg = error_detail
 
     return {
-        "valid": valid,
-        "error": err if not valid else None,
+        "valid": valid and connection_valid,
+        "config_valid": valid,
+        "connection_valid": connection_valid,
+        "error": final_msg if not (valid and connection_valid) else None,
         "webhook_url": webhook_url,
-        "message": "配置验证通过" if valid else f"配置验证失败: {err}",
+        "message": final_msg,
     }
 
 

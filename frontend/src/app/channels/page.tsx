@@ -398,12 +398,14 @@ export default function ChannelsPage() {
             <h4 className="text-xs font-semibold text-blue-800 mb-2">飞书接入步骤</h4>
             <ol className="text-xs text-blue-700 space-y-1 list-decimal list-inside">
               <li>在飞书开放平台创建自建应用</li>
-              <li>启用机器人能力，获取 App ID 和 App Secret</li>
-              <li>配置事件订阅，填写上方 Webhook URL</li>
-              <li>记录 Verification Token 并填入配置</li>
-              <li>订阅 "接收消息 im.message.receive_v1" 事件</li>
-              <li>发布应用版本并审批</li>
+              <li>获取 App ID、App Secret、Verification Token</li>
+              <li>配置事件回调地址（Webhook URL）</li>
+              <li>订阅 im.message.receive_v1 事件</li>
+              <li>发布应用并审批通过</li>
             </ol>
+            <div className="mt-2 p-2 bg-white rounded text-xs text-blue-600">
+              注意：应用需发布后且用户已添加机器人到群聊才能接收消息
+            </div>
           </div>
           <div>
             <h4 className="text-xs font-semibold text-blue-800 mb-2">企业微信接入步骤</h4>

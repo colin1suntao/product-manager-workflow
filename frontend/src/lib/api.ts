@@ -847,6 +847,8 @@ export const channelsApi = {
   test: (id: string) =>
     fetchApi<{
       valid: boolean;
+      config_valid: boolean;
+      connection_valid: boolean;
       error: string | null;
       webhook_url: string;
       message: string;
