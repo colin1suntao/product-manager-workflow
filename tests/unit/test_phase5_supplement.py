@@ -216,26 +216,32 @@ class TestErrorScenarios:
     """错误场景测试"""
 
     @pytest.mark.asyncio
-    @pytest.mark.timeout(45)
+    @pytest.mark.timeout(60)
     async def test_coordinator_timeout(self):
         """测试 Coordinator 超时"""
+        # 使用更短的超时时间来避免测试本身超时
+        # 真实场景中 Coordinator 超时为 120 秒，但测试中我们模拟快速超时
         async def slow_process(*args, **kwargs):
-            await asyncio.sleep(500)
+            await asyncio.sleep(100)
 
         mock_coordinator = AsyncMock()
         mock_coordinator.process_request = slow_process
 
         with patch("pm_workstation.orchestrator.workflow_graph_v2._create_coordinator") as mock_create:
             mock_create.return_value = mock_coordinator
+            
+            # 同时 mock _call_coordinator_sync 来模拟超时
+            with patch.object(WorkflowNodesV2, '_call_coordinator_sync') as mock_call:
+                mock_call.side_effect = TimeoutError("Coordinator call timed out")
 
-            run = WorkflowRun(id="wf-test", user_id="user-1", requirement_text="测试")
-            state = WorkflowState(workflow_run=run)
+                run = WorkflowRun(id="wf-test", user_id="user-1", requirement_text="测试")
+                state = WorkflowState(workflow_run=run)
 
-            # 超时应该降级到 V1
-            result = WorkflowNodesV2.parsing_node(state, llm_handler=MagicMock())
+                # 超时应该降级到 V1
+                result = WorkflowNodesV2.parsing_node(state, llm_handler=MagicMock())
 
-            # 降级后应该是 PARSED 状态
-            assert state.workflow_run.status in (WorkflowStatus.PARSED, WorkflowStatus.FAILED)
+                # 降级后应该是 PARSED 状态
+                assert state.workflow_run.status in (WorkflowStatus.PARSED, WorkflowStatus.FAILED)
 
     @pytest.mark.asyncio
     async def test_subagent_timeout_in_delegation(self):

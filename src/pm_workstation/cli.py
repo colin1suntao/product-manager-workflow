@@ -19,7 +19,7 @@ def serve(host: str, port: int, reload: bool):
     import uvicorn
 
     uvicorn.run(
-        "pm_workstation.api:app",
+        "pm_workstation.api.app:app",
         host=host,
         port=port,
         reload=reload,
