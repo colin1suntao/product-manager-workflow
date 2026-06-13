@@ -14,9 +14,36 @@
 └── 进化管理器 (Evolution Manager) - 统筹整个进化流程
 ```
 
+## 快速开始
+
+### Python 使用示例
+
+```python
+from pm_workstation.agents.evolution import AgentEvolutionManager
+
+# 1. 初始化管理器
+manager = AgentEvolutionManager(storage_dir="./data/evolution")
+
+# 2. 收集经验（通常在工作流完成后自动调用）
+experience = manager.collect_experience(state)
+
+# 3. 查看进化指标
+metrics = manager.get_evolution_metrics()
+print(f"总经验数：{metrics.total_experiences}")
+print(f"成功率：{metrics.overall_success_rate * 100:.1f}%")
+
+# 4. 触发进化分析
+result = manager.trigger_evolution()
+if result["status"] == "completed":
+    print(f"应用了 {len(result['optimizations'])} 个优化")
+
+# 5. 获取优化建议
+suggestions = manager.get_optimization_suggestions(task_type="prototype_generation")
+```
+
 ## API 接口
 
-所有接口都需要认证，通过 `/api/v1/` 前缀访问。
+所有接口都通过 `/api/v1/` 前缀访问。
 
 ### 1. 获取进化状态
 

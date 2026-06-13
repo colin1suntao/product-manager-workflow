@@ -4,9 +4,6 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from pm_workstation.agents.evolution.evolution_manager import AgentEvolutionManager
-from pm_workstation.artifact.artifact_manager import ArtifactManager
-from pm_workstation.auth.dependencies import get_current_user
-from pm_workstation.memory.persistent_store import get_experience_store
 
 router = APIRouter(prefix="/v1/evolution", tags=["自我进化"])
 
@@ -62,7 +59,6 @@ async def get_evolution_status(manager: AgentEvolutionManager = Depends(get_evol
 async def trigger_evolution(
     request: EvolutionTriggerRequest,
     manager: AgentEvolutionManager = Depends(get_evolution_manager),
-    user_id: str = Depends(get_current_user),
 ):
     """手动触发 Agent 进化流程
     
@@ -113,7 +109,6 @@ async def get_optimization_suggestions(
 @router.get("/export", summary="导出进化数据")
 async def export_evolution_data(
     manager: AgentEvolutionManager = Depends(get_evolution_manager),
-    user_id: str = Depends(get_current_user),
 ):
     """导出完整的进化数据（用于分析或备份）"""
     return manager.export_evolution_data()
@@ -123,7 +118,6 @@ async def export_evolution_data(
 async def rollback_optimization(
     rule_id: str,
     manager: AgentEvolutionManager = Depends(get_evolution_manager),
-    user_id: str = Depends(get_current_user),
 ):
     """回滚指定的优化规则"""
     success = manager.optimizer.rollback_optimization(rule_id)
@@ -141,7 +135,6 @@ async def list_experiences(
     quality: str = "",
     success: bool | None = None,
     manager: AgentEvolutionManager = Depends(get_evolution_manager),
-    user_id: str = Depends(get_current_user),
 ):
     """查询历史经验记录"""
     from pm_workstation.agents.evolution.evolution_models import ExperienceQuality
@@ -181,7 +174,6 @@ async def list_experiences(
 async def get_experience(
     experience_id: str,
     manager: AgentEvolutionManager = Depends(get_evolution_manager),
-    user_id: str = Depends(get_current_user),
 ):
     """获取单个经验记录的详细信息"""
     experience = manager.collector.get_experience(experience_id)
@@ -197,7 +189,6 @@ async def submit_feedback(
     experience_id: str,
     feedback: dict,
     manager: AgentEvolutionManager = Depends(get_evolution_manager),
-    user_id: str = Depends(get_current_user),
 ):
     """为经验记录提交用户反馈"""
     experience = manager.collector.get_experience(experience_id)
