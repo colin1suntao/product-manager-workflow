@@ -29,6 +29,7 @@ from pm_workstation.api.routes.streaming_chat import router as streaming_chat_ro
 from pm_workstation.api.routes.token_usage import router as token_usage_router
 from pm_workstation.api.routes.workflow_routes import router as workflow_routes_router
 from pm_workstation.api.routes.workflows import router as workflows_router
+from pm_workstation.api.routes.evolution import router as evolution_router
 from pm_workstation.llm.provider_store import LLMProviderStore
 from pm_workstation.model_router.anthropic_adapter import AnthropicAdapter
 from pm_workstation.model_router.base import LLMConfig
@@ -192,6 +193,7 @@ def create_app() -> FastAPI:
     app.include_router(persistent_memory_router, prefix="/api/v1", tags=["持久化记忆"])
     app.include_router(token_usage_router, prefix="/api/v1", tags=["模型用量"])
     app.include_router(sandbox_router, prefix="/api/v1", tags=["Sandbox 执行环境"])
+    app.include_router(evolution_router, prefix="/api/v1", tags=["自我进化"])
 
     # 健康检查
     @app.get("/health", tags=["健康检查"])

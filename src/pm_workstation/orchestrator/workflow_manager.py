@@ -19,6 +19,11 @@ from pm_workstation.orchestrator.workflow_state import WorkflowState
 PERSISTENCE_FILE = os.path.join(os.path.dirname(__file__), ".workflow_cache.json")
 ARTIFACTS_DIR = os.path.join(os.path.dirname(__file__), "..", "artifacts")
 
+# 惰性导入 evolution manager（避免循环依赖）
+def _get_evolution_manager():
+    from pm_workstation.agents.evolution.evolution_manager import AgentEvolutionManager
+    return AgentEvolutionManager(storage_dir="./data/evolution")
+
 
 class WorkflowManager:
     """工作流管理器
@@ -202,6 +207,14 @@ class WorkflowManager:
                 run.verification_report_url = self._save_artifact(
                     workflow_id, "report.json", report_content,
                 )
+            
+            # 收集经验用于自我进化
+            try:
+                evolution_manager = _get_evolution_manager()
+                if evolution_manager.config.enabled:
+                    evolution_manager.collect_experience(final_state)
+            except Exception as e:
+                print(f"[WorkflowManager] Failed to collect experience: {e}")
 
             self._save_to_file()
             print(f"[WorkflowManager] Workflow {run_id} completed successfully")
