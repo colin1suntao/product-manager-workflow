@@ -22,6 +22,7 @@ from pm_workstation.api.routes.integrations import router as integrations_router
 from pm_workstation.api.routes.knowledge_base import router as knowledge_base_router
 from pm_workstation.api.routes.llm import router as llm_router
 from pm_workstation.api.routes.market_research import router as market_research_router
+from pm_workstation.api.routes.layered_memory import router as layered_memory_router
 from pm_workstation.api.routes.memory import router as memory_router
 from pm_workstation.api.routes.persistent_memory import router as persistent_memory_router
 from pm_workstation.api.routes.skills import router as skills_router
@@ -190,6 +191,7 @@ def create_app() -> FastAPI:
     app.include_router(artifact_routes_router, prefix="/api/v1", tags=["产物管理"])
     app.include_router(channels_router, prefix="/api/v1", tags=["渠道管理"])
     app.include_router(memory_router, prefix="/api/v1", tags=["记忆管理"])
+    app.include_router(layered_memory_router, prefix="/api/v1", tags=["三层记忆"])
     app.include_router(persistent_memory_router, prefix="/api/v1", tags=["持久化记忆"])
     app.include_router(token_usage_router, prefix="/api/v1", tags=["模型用量"])
     app.include_router(sandbox_router, prefix="/api/v1", tags=["Sandbox 执行环境"])
