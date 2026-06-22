@@ -7,7 +7,9 @@
 """
 
 import asyncio
+import hashlib
 import json
+import logging
 import os
 from datetime import datetime, timezone
 from pathlib import Path
@@ -23,6 +25,8 @@ from .layered_models import (
     ShortTermMemory,
     WorkingMemory,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class LayeredMemoryManager:
@@ -61,7 +65,11 @@ class LayeredMemoryManager:
     # ==================== Session 管理 ====================
 
     def init_session(self, session_id: str, user_id: str) -> None:
-        """初始化会话的三层记忆"""
+        """初始化会话的三层记忆，切换会话时自动清理旧会话"""
+        # 清理旧会话防止内存泄漏
+        if self._current_session_id and self._current_session_id != session_id:
+            self._cleanup_session(self._current_session_id)
+
         self._current_session_id = session_id
         self._current_user_id = user_id
 
@@ -76,15 +84,37 @@ class LayeredMemoryManager:
                 user_id=user_id,
             )
 
-    def end_session(self) -> None:
-        """结束会话，清理短期和工作记忆"""
-        sid = self._current_session_id
-        if sid and sid in self._stm:
+    def _cleanup_session(self, session_id: str) -> None:
+        """内部清理指定会话的 STM/WM"""
+        self._stm.pop(session_id, None)
+        self._wm.pop(session_id, None)
+
+    def end_session(self, session_id: str | None = None) -> bool:
+        """结束会话，清理短期和工作记忆
+
+        Args:
+            session_id: 要结束的会话 ID，None 则使用当前会话
+
+        Returns:
+            True 表示成功清理，False 表示会话不存在
+        """
+        sid = session_id or self._current_session_id
+        if not sid:
+            return False
+
+        cleaned = False
+        if sid in self._stm:
             del self._stm[sid]
-        if sid and sid in self._wm:
+            cleaned = True
+        if sid in self._wm:
             del self._wm[sid]
-        self._current_session_id = None
-        self._current_user_id = None
+            cleaned = True
+
+        if sid == self._current_session_id:
+            self._current_session_id = None
+            self._current_user_id = None
+
+        return cleaned
 
     # ==================== Short-term Memory ====================
 
@@ -174,9 +204,9 @@ class LayeredMemoryManager:
     # ==================== Long-term Memory CRUD ====================
 
     def _get_ltm_file(self, user_id: str) -> Path:
-        """获取长期记忆存储文件"""
-        safe_uid = user_id.replace("/", "_").replace("..", "_")
-        return self._storage_dir / f"ltm_{safe_uid}.json"
+        """获取长期记忆存储文件（使用哈希防路径遍历）"""
+        safe_hash = hashlib.sha256(user_id.encode()).hexdigest()[:16]
+        return self._storage_dir / f"ltm_{safe_hash}.json"
 
     def _load_ltm(self, user_id: str) -> list[dict[str, Any]]:
         """加载长期记忆"""
@@ -185,13 +215,25 @@ class LayeredMemoryManager:
             return []
         try:
             return json.loads(filepath.read_text())
-        except (json.JSONDecodeError, IOError):
+        except json.JSONDecodeError:
+            logger.error("LTM file corrupted for user %s: %s", user_id[:8], filepath)
+            return []
+        except IOError as e:
+            logger.error("LTM file read error for user %s: %s", user_id[:8], e)
             return []
 
     def _save_ltm(self, user_id: str, data: list[dict[str, Any]]):
-        """保存长期记忆"""
+        """保存长期记忆（原子写入：先写临时文件再 rename）"""
         filepath = self._get_ltm_file(user_id)
-        filepath.write_text(json.dumps(data, ensure_ascii=False, indent=2, default=str))
+        tmp_path = filepath.with_suffix(filepath.suffix + ".tmp")
+        try:
+            tmp_path.write_text(
+                json.dumps(data, ensure_ascii=False, indent=2, default=str)
+            )
+            os.replace(tmp_path, filepath)
+        except IOError as e:
+            logger.error("LTM file write error for user %s: %s", user_id[:8], e)
+            raise
 
     def store_long_term(self, entry: LongTermMemoryEntry) -> LongTermMemoryEntry:
         """存储长期记忆条目（创建或更新）"""
@@ -219,12 +261,12 @@ class LayeredMemoryManager:
     def get_long_term(self, user_id: str, memory_id: str) -> LongTermMemoryEntry | None:
         """获取单个长期记忆条目"""
         data = self._load_ltm(user_id)
-        for item in data:
+        for i, item in enumerate(data):
             if item.get("id") == memory_id:
                 entry = LongTermMemoryEntry(**item)
                 entry.update_access()
-                # 更新访问计数
-                self.store_long_term(entry)
+                data[i] = entry.model_dump(mode="json")
+                self._save_ltm(user_id, data)
                 return entry
         return None
 
@@ -305,8 +347,15 @@ class LayeredMemoryManager:
         end = start + page_size
         return entries[start:end], total
 
-    def search_long_term(self, query: MemoryRetrievalQuery) -> list[LongTermMemoryEntry]:
-        """搜索长期记忆"""
+    def search_long_term(
+        self, query: MemoryRetrievalQuery, track_access: bool = True
+    ) -> list[LongTermMemoryEntry]:
+        """搜索长期记忆
+
+        Args:
+            query: 检索查询参数
+            track_access: 是否更新访问计数（纯读场景设为 False）
+        """
         uid = query.user_id or self._current_user_id
         if not uid:
             return []
@@ -356,9 +405,8 @@ class LayeredMemoryManager:
             if query.sort_by == "importance":
                 score = entry.importance
             elif query.sort_by == "recency":
-                dt = entry.created_at
-                if hasattr(dt, "timestamp"):
-                    score = dt.timestamp()
+                dt = entry.last_accessed
+                score = dt.timestamp()
             # relevance - 默认使用关键词匹配得分加权重要性
             else:
                 score = score * 0.6 + entry.importance * 0.4
@@ -368,10 +416,17 @@ class LayeredMemoryManager:
         scored_entries.sort(key=lambda x: x[0], reverse=True)
         results = [e for _, e in scored_entries[: query.max_results]]
 
-        # 批量更新访问记录
-        for entry in results:
-            entry.update_access()
-            self.store_long_term(entry)
+        # 批量更新访问记录（一次读写，避免 N 次 IO）
+        if track_access and results:
+            data_index: dict[str, int] = {
+                item.get("id", ""): i for i, item in enumerate(data)
+            }
+            for entry in results:
+                entry.update_access()
+                idx = data_index.get(entry.id)
+                if idx is not None:
+                    data[idx] = entry.model_dump(mode="json")
+            self._save_ltm(uid, data)
 
         return results
 
@@ -398,7 +453,8 @@ class LayeredMemoryManager:
                     user_id=self._current_user_id,
                     priority=MemoryPriority.CRITICAL,
                     max_results=5,
-                )
+                ),
+                track_access=False,
             )
             if ltm:
                 ltm_text = "\n".join(

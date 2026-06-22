@@ -23,13 +23,45 @@ def _get_manager() -> LayeredMemoryManager:
     return get_layered_memory_manager()
 
 
+def _safe_enum(value: str, enum_cls, default):
+    """安全解析枚举值，无效时抛出 HTTPException(422)"""
+    try:
+        return enum_cls(value)
+    except ValueError:
+        valid = [e.value for e in enum_cls]
+        raise HTTPException(
+            status_code=422,
+            detail=f"Invalid value '{value}' for {enum_cls.__name__}. Valid: {valid}",
+        )
+
+
+def _require_field(body: dict, field: str):
+    """校验必填字段"""
+    value = body.get(field, "")
+    if not value or not str(value).strip():
+        raise HTTPException(
+            status_code=422,
+            detail=f"Required field '{field}' is missing or empty",
+        )
+    return value
+
+
+def _require_session(manager: LayeredMemoryManager):
+    """校验会话已初始化，未初始化返回 409"""
+    if not manager.stm or not manager.wm:
+        raise HTTPException(
+            status_code=409,
+            detail="Session not initialized. Call POST /memory/v2/session/{session_id} first.",
+        )
+
+
 # ======================== 会话管理 ========================
 
 
 @router.post("/session/{session_id}", summary="初始化会话记忆")
 async def init_memory_session(
     session_id: str,
-    user_id: str = Query(default="default"),
+    user_id: str = Query(...),
     manager: LayeredMemoryManager = Depends(_get_manager),
 ) -> dict:
     """为指定会话初始化三层记忆系统"""
@@ -47,7 +79,9 @@ async def end_memory_session(
     manager: LayeredMemoryManager = Depends(_get_manager),
 ) -> dict:
     """结束会话并清理短期/工作记忆"""
-    manager.end_session()
+    cleaned = manager.end_session(session_id=session_id)
+    if not cleaned:
+        raise HTTPException(status_code=404, detail="会话不存在或已过期")
     return {"message": "会话记忆已清理", "session_id": session_id}
 
 
@@ -56,18 +90,15 @@ async def end_memory_session(
 
 @router.get("/stm/context", summary="获取短期记忆上下文")
 async def get_stm_context(
-    session_id: str = Query(default="default"),
-    user_id: str = Query(default="default"),
     manager: LayeredMemoryManager = Depends(_get_manager),
 ) -> dict:
     """获取当前会话的短期记忆上下文"""
-    if not manager.stm:
-        manager.init_session(session_id, user_id)
+    _require_session(manager)
     return {
         "context": manager.get_stm_context(),
-        "message_count": len(manager.stm.messages) if manager.stm else 0,
-        "token_usage": manager.stm.current_tokens if manager.stm else 0,
-        "token_budget": manager.stm.token_budget if manager.stm else 0,
+        "message_count": len(manager.stm.messages),
+        "token_usage": manager.stm.current_tokens,
+        "token_budget": manager.stm.token_budget,
     }
 
 
@@ -77,13 +108,10 @@ async def get_stm_context(
 @router.post("/wm/load", summary="从长期记忆加载到工作记忆")
 async def load_working_memory(
     body: dict,
-    session_id: str = Query(default="default"),
-    user_id: str = Query(default="default"),
     manager: LayeredMemoryManager = Depends(_get_manager),
 ) -> dict:
     """根据当前任务从长期记忆加载关联条目到工作记忆"""
-    if not manager.wm:
-        manager.init_session(session_id, user_id)
+    _require_session(manager)
 
     results = manager.load_wm_from_ltm(
         task_description=body.get("task_description", ""),
@@ -109,8 +137,6 @@ async def load_working_memory(
 @router.post("/wm/entries", summary="用户手动添加工作记忆")
 async def add_working_memory(
     body: dict,
-    session_id: str = Query(default="default"),
-    user_id: str = Query(default="default"),
     manager: LayeredMemoryManager = Depends(_get_manager),
 ) -> dict:
     """用户手动添加一条工作记忆
@@ -124,24 +150,25 @@ async def add_working_memory(
         - importance (可选): 重要性 0-1
         - promote (可选): 是否同时保存为长期记忆
     """
-    if not manager.wm:
-        manager.init_session(session_id, user_id)
+    _require_session(manager)
 
-    category = LongTermCategory(body.get("category", "custom"))
-    priority = MemoryPriority(body.get("priority", "medium"))
+    title = _require_field(body, "title")
+    content = _require_field(body, "content")
+
+    category = _safe_enum(body.get("category", "custom"), LongTermCategory, LongTermCategory.CUSTOM)
+    priority = _safe_enum(body.get("priority", "medium"), MemoryPriority, MemoryPriority.MEDIUM)
     importance = body.get("importance", 0.7)
     tags = body.get("tags", [])
 
     entry = manager.add_wm_entry(
-        title=body.get("title", ""),
-        content=body.get("content", ""),
+        title=title,
+        content=content,
         category=category,
         tags=tags,
         priority=priority,
         importance=importance,
     )
 
-    # 如果用户选择同时保存为长期记忆
     if body.get("promote", False):
         manager.promote_to_long_term(entry)
 
@@ -156,30 +183,24 @@ async def add_working_memory(
 
 @router.get("/wm/context", summary="获取工作记忆上下文")
 async def get_wm_context(
-    session_id: str = Query(default="default"),
-    user_id: str = Query(default="default"),
     manager: LayeredMemoryManager = Depends(_get_manager),
 ) -> dict:
     """获取当前任务的工作记忆上下文"""
-    if not manager.wm:
-        manager.init_session(session_id, user_id)
+    _require_session(manager)
     return {
         "context": manager.get_wm_context(),
-        "task_description": manager.wm.task_description if manager.wm else "",
-        "loaded_count": len(manager.wm.loaded_from_ltm) if manager.wm else 0,
-        "manual_count": len(manager.wm.manual_entries) if manager.wm else 0,
+        "task_description": manager.wm.task_description,
+        "loaded_count": len(manager.wm.loaded_from_ltm),
+        "manual_count": len(manager.wm.manual_entries),
     }
 
 
 @router.delete("/wm/clear", summary="清除工作记忆")
 async def clear_working_memory(
-    session_id: str = Query(default="default"),
-    user_id: str = Query(default="default"),
     manager: LayeredMemoryManager = Depends(_get_manager),
 ) -> dict:
     """清除当前任务的工作记忆"""
-    if not manager.wm:
-        manager.init_session(session_id, user_id)
+    _require_session(manager)
     manager.clear_wm_task()
     return {"message": "工作记忆已清除"}
 
@@ -190,7 +211,7 @@ async def clear_working_memory(
 @router.post("/ltm/entries", summary="创建长期记忆")
 async def create_long_term_memory(
     body: dict,
-    user_id: str = Query(default="default"),
+    user_id: str = Query(...),
     manager: LayeredMemoryManager = Depends(_get_manager),
 ) -> dict:
     """用户手动创建长期记忆条目
@@ -204,14 +225,17 @@ async def create_long_term_memory(
         - importance (可选): 重要性 0-1
         - summary (可选): 自定义摘要
     """
+    title = _require_field(body, "title")
+    content = _require_field(body, "content")
+
     entry = LongTermMemoryEntry(
         user_id=user_id,
-        title=body.get("title", ""),
-        content=body.get("content", ""),
-        summary=body.get("summary", body.get("content", "")[:200]),
-        category=LongTermCategory(body.get("category", "custom")),
+        title=title,
+        content=content,
+        summary=body.get("summary", content[:200]),
+        category=_safe_enum(body.get("category", "custom"), LongTermCategory, LongTermCategory.CUSTOM),
         tags=body.get("tags", []),
-        priority=MemoryPriority(body.get("priority", "medium")),
+        priority=_safe_enum(body.get("priority", "medium"), MemoryPriority, MemoryPriority.MEDIUM),
         importance=body.get("importance", 0.5),
         source="user_manual",
     )
@@ -227,7 +251,7 @@ async def create_long_term_memory(
 
 @router.get("/ltm/entries", summary="列出长期记忆")
 async def list_long_term_memories(
-    user_id: str = Query(default="default"),
+    user_id: str = Query(...),
     category: str | None = Query(default=None),
     tags: str | None = Query(default=None),
     priority: str | None = Query(default=None),
@@ -236,8 +260,8 @@ async def list_long_term_memories(
     manager: LayeredMemoryManager = Depends(_get_manager),
 ) -> dict:
     """列出长期记忆条目（支持分页和筛选）"""
-    cat = LongTermCategory(category) if category else None
-    pri = MemoryPriority(priority) if priority else None
+    cat = _safe_enum(category, LongTermCategory, None) if category else None
+    pri = _safe_enum(priority, MemoryPriority, None) if priority else None
     tag_list = tags.split(",") if tags else None
 
     entries, total = manager.list_long_term(
@@ -272,7 +296,7 @@ async def list_long_term_memories(
 @router.get("/ltm/entries/{memory_id}", summary="获取长期记忆详情")
 async def get_long_term_memory(
     memory_id: str,
-    user_id: str = Query(default="default"),
+    user_id: str = Query(...),
     manager: LayeredMemoryManager = Depends(_get_manager),
 ) -> dict:
     """获取单条长期记忆详情"""
@@ -302,18 +326,17 @@ async def get_long_term_memory(
 async def update_long_term_memory(
     memory_id: str,
     body: dict,
-    user_id: str = Query(default="default"),
+    user_id: str = Query(...),
     manager: LayeredMemoryManager = Depends(_get_manager),
 ) -> dict:
     """用户手动更新长期记忆条目
 
     可更新字段: title, content, summary, tags, category, priority, importance, confidence
     """
-    # 处理枚举转换
     if "category" in body:
-        body["category"] = LongTermCategory(body["category"])
+        body["category"] = _safe_enum(body["category"], LongTermCategory, LongTermCategory.CUSTOM)
     if "priority" in body:
-        body["priority"] = MemoryPriority(body["priority"])
+        body["priority"] = _safe_enum(body["priority"], MemoryPriority, MemoryPriority.MEDIUM)
 
     entry = manager.update_long_term(memory_id, user_id=user_id, **body)
     if not entry:
@@ -328,7 +351,7 @@ async def update_long_term_memory(
 @router.delete("/ltm/entries/{memory_id}", summary="删除长期记忆")
 async def delete_long_term_memory(
     memory_id: str,
-    user_id: str = Query(default="default"),
+    user_id: str = Query(...),
     manager: LayeredMemoryManager = Depends(_get_manager),
 ) -> dict:
     """用户手动删除长期记忆条目"""
@@ -341,7 +364,7 @@ async def delete_long_term_memory(
 @router.post("/ltm/search", summary="搜索长期记忆")
 async def search_long_term_memories(
     body: dict,
-    user_id: str = Query(default="default"),
+    user_id: str = Query(...),
     manager: LayeredMemoryManager = Depends(_get_manager),
 ) -> dict:
     """搜索长期记忆（支持关键词、分类、标签、时间范围筛选）
@@ -358,9 +381,15 @@ async def search_long_term_memories(
     query = MemoryRetrievalQuery(
         user_id=user_id,
         keyword=body.get("keyword", ""),
-        categories=[LongTermCategory(c) for c in body.get("categories", [])] if body.get("categories") else [],
+        categories=(
+            [_safe_enum(c, LongTermCategory, LongTermCategory.CUSTOM) for c in body.get("categories", [])]
+            if body.get("categories") else []
+        ),
         tags=body.get("tags") if body.get("tags") is not None else [],
-        priority=MemoryPriority(body["priority"]) if body.get("priority") else None,
+        priority=(
+            _safe_enum(body["priority"], MemoryPriority, MemoryPriority.MEDIUM)
+            if body.get("priority") else None
+        ),
         min_importance=body.get("min_importance", 0.0),
         max_results=body.get("max_results", 20),
         sort_by=body.get("sort_by", "relevance"),
@@ -388,15 +417,11 @@ async def search_long_term_memories(
 @router.post("/ltm/promote/{memory_id}", summary="将工作记忆提升为长期记忆")
 async def promote_to_long_term(
     memory_id: str,
-    session_id: str = Query(default="default"),
-    user_id: str = Query(default="default"),
     manager: LayeredMemoryManager = Depends(_get_manager),
 ) -> dict:
     """将工作记忆条目提升为持久化的长期记忆"""
-    if not manager.wm:
-        manager.init_session(session_id, user_id)
+    _require_session(manager)
 
-    # 在工作记忆中查找
     target = None
     for e in manager.wm.manual_entries:
         if e.id == memory_id:
@@ -423,14 +448,11 @@ async def promote_to_long_term(
 
 @router.get("/context", summary="获取三层记忆完整注入上下文")
 async def get_full_context(
-    session_id: str = Query(default="default"),
-    user_id: str = Query(default="default"),
     max_tokens: int = Query(default=4000),
     manager: LayeredMemoryManager = Depends(_get_manager),
 ) -> dict:
     """获取组合三层记忆后的完整注入上下文"""
-    if not manager.stm:
-        manager.init_session(session_id, user_id)
+    _require_session(manager)
     return {
         "context": manager.get_full_injection_context(max_tokens=max_tokens),
     }
@@ -441,13 +463,10 @@ async def get_full_context(
 
 @router.get("/stats", summary="获取记忆系统统计")
 async def get_memory_stats(
-    session_id: str = Query(default="default"),
-    user_id: str = Query(default="default"),
     manager: LayeredMemoryManager = Depends(_get_manager),
 ) -> dict:
     """获取三层记忆系统的完整统计"""
-    if not manager.stm:
-        manager.init_session(session_id, user_id)
+    _require_session(manager)
 
     stats = manager.get_stats()
     return {

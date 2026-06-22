@@ -75,20 +75,23 @@ class ShortTermMemory(BaseModel):
 
     def add_message(self, role: str, content: str) -> bool:
         """添加消息，返回是否成功（未超预算）"""
+        truncated = content[:2000]
+        tokens = self.estimate_tokens(truncated)
+
+        if self.current_tokens + tokens > self.token_budget:
+            self._compact()
+
         msg = {
             "role": role,
-            "content": content[:2000],
+            "content": truncated,
             "timestamp": datetime.now(timezone.utc).isoformat(),
         }
-        tokens = self.estimate_tokens(content)
         self.messages.append(msg)
         self.current_tokens += tokens
         self.updated_at = datetime.now(timezone.utc)
 
-        # 检查预算
         if self.current_tokens > self.token_budget:
             self._compact()
-            return False
         return True
 
     def _compact(self):
@@ -96,11 +99,12 @@ class ShortTermMemory(BaseModel):
         if len(self.messages) <= 10:
             return
         early_msgs = self.messages[:5]
-        # 简单摘要（实际可用 LLM 生成）
         content_texts = [m["content"][:100] for m in early_msgs if m["role"] == "user"]
         self.context_summary += " | " + " | ".join(content_texts)
         self.messages = self.messages[5:]
-        self.current_tokens = sum(self.estimate_tokens(m["content"]) for m in self.messages)
+        self.current_tokens = sum(
+            self.estimate_tokens(m["content"]) for m in self.messages
+        ) + self.estimate_tokens(self.context_summary)
         self.summarized = True
 
     def get_context_for_injection(self) -> str:
@@ -154,14 +158,18 @@ class WorkingMemory(BaseModel):
         return self.loaded_from_ltm + self.manual_entries
 
     def add_manual_entry(self, entry: "LongTermMemoryEntry"):
-        """用户手动添加工作记忆"""
-        entry.layer = MemoryLayer.WORKING
-        existing = [e for e in self.manual_entries if e.id == entry.id]
+        """用户手动添加工作记忆
+
+        注意: 会拷贝 entry 并将拷贝的 layer 设为 WORKING，原始对象不受影响。
+        """
+        entry_copy = entry.model_copy(deep=True)
+        entry_copy.layer = MemoryLayer.WORKING
+        existing = [e for e in self.manual_entries if e.id == entry_copy.id]
         if not existing:
-            self.manual_entries.append(entry)
+            self.manual_entries.append(entry_copy)
         else:
             idx = self.manual_entries.index(existing[0])
-            self.manual_entries[idx] = entry
+            self.manual_entries[idx] = entry_copy
         self.updated_at = datetime.now(timezone.utc)
 
     def clear_task(self):
