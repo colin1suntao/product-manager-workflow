@@ -153,7 +153,13 @@ class ExperienceCollector:
         
         # 从验证报告中提取
         if hasattr(state, 'verification_report') and state.verification_report:
-            issues = state.verification_report.get('manual_review_required', [])
+            report = state.verification_report
+            if hasattr(report, 'manual_review_required'):
+                issues = report.manual_review_required or []
+            elif isinstance(report, dict):
+                issues = report.get('manual_review_required', [])
+            else:
+                issues = []
             if issues:
                 insights.append(f"发现 {len(issues)} 个需要人工审查的问题")
         
@@ -237,15 +243,23 @@ class ExperienceCollector:
     def _extract_agent_chain(self, state: WorkflowState) -> list[str]:
         """提取 Agent 执行链"""
         agents = []
-        
-        # 从子任务结果中提取
+
         if hasattr(state, 'subtask_results') and state.subtask_results:
-            for task_result in state.subtask_results:
+            results = state.subtask_results
+            # subtask_results 可能是 dict[str, any] 或 list[dict]
+            if isinstance(results, dict):
+                items = results.values()
+            elif isinstance(results, list):
+                items = results
+            else:
+                items = []
+
+            for task_result in items:
                 if isinstance(task_result, dict):
                     agent_id = task_result.get('agent_id', 'unknown')
                     if agent_id and agent_id not in agents:
                         agents.append(agent_id)
-        
+
         return agents
     
     def _calculate_execution_time(self, state: WorkflowState) -> float:
@@ -258,17 +272,30 @@ class ExperienceCollector:
     
     def _extract_token_usage(self, state: WorkflowState) -> dict[str, int]:
         """提取 Token 用量"""
-        # 从推理痕迹中提取
-        token_usage = {}
-        
+        token_usage: dict[str, int] = {}
+
         if hasattr(state, 'reasoning_trace') and state.reasoning_trace:
-            for trace in state.reasoning_trace:
+            trace_data = state.reasoning_trace
+            # reasoning_trace 可能是 list[dict] 或 str(json) 或 str
+            if isinstance(trace_data, list):
+                items = trace_data
+            elif isinstance(trace_data, str):
+                try:
+                    items = json.loads(trace_data)
+                    if not isinstance(items, list):
+                        items = []
+                except (json.JSONDecodeError, TypeError):
+                    items = []
+            else:
+                items = []
+
+            for trace in items:
                 if isinstance(trace, dict):
                     model = trace.get('model', 'unknown')
                     tokens = trace.get('token_usage', {})
-                    if model and tokens:
+                    if model and isinstance(tokens, dict):
                         token_usage[model] = tokens.get('total_tokens', 0)
-        
+
         return token_usage
     
     def _parse_satisfaction(self, user_feedback: str | None) -> int | None:
@@ -311,8 +338,12 @@ class ExperienceCollector:
         
         with open(file_path, "r", encoding="utf-8") as f:
             data = json.load(f)
-        
-        return ExperienceRecord(**data)
+
+        try:
+            return ExperienceRecord(**data)
+        except Exception as e:
+            logger.error(f"Failed to deserialize experience {experience_id}: {e}")
+            return None
     
     def list_experiences(
         self,
@@ -333,12 +364,12 @@ class ExperienceCollector:
             经验记录列表
         """
         experiences = []
-        
-        for exp_id in list(self._index.keys())[:limit]:
+
+        for exp_id in self._index:
             exp = self.get_experience(exp_id)
             if not exp:
                 continue
-            
+
             # 过滤
             if task_type and exp.task_type != task_type:
                 continue
@@ -346,7 +377,9 @@ class ExperienceCollector:
                 continue
             if success is not None and exp.success != success:
                 continue
-            
+
             experiences.append(exp)
+            if len(experiences) >= limit:
+                break
         
         return experiences

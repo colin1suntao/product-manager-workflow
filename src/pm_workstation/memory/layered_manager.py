@@ -98,7 +98,7 @@ class LayeredMemoryManager:
         Returns:
             True 表示成功清理，False 表示会话不存在
         """
-        sid = session_id or self._current_session_id
+        sid = session_id if session_id is not None else self._current_session_id
         if not sid:
             return False
 
@@ -579,9 +579,10 @@ class LayeredMemoryManager:
         return self.store_long_term(entry)
 
     def promote_to_long_term(self, wm_entry: LongTermMemoryEntry) -> LongTermMemoryEntry:
-        """将工作记忆条目提升为长期记忆"""
-        wm_entry.layer = MemoryLayer.LONG_TERM
-        return self.store_long_term(wm_entry)
+        """将工作记忆条目提升为长期记忆（深拷贝，不修改原对象）"""
+        entry = wm_entry.model_copy(deep=True)
+        entry.layer = MemoryLayer.LONG_TERM
+        return self.store_long_term(entry)
 
 
 _layered_manager: LayeredMemoryManager | None = None

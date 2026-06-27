@@ -88,6 +88,11 @@ class ShortTermMemory(BaseModel):
         }
         self.messages.append(msg)
         self.current_tokens += tokens
+
+        # 强制执行 max_messages 上限
+        while len(self.messages) > self.max_messages:
+            self.messages.pop(0)
+
         self.updated_at = datetime.now(timezone.utc)
 
         if self.current_tokens > self.token_budget:
@@ -99,13 +104,20 @@ class ShortTermMemory(BaseModel):
         if len(self.messages) <= 10:
             return
         early_msgs = self.messages[:5]
-        content_texts = [m["content"][:100] for m in early_msgs if m["role"] == "user"]
-        self.context_summary += " | " + " | ".join(content_texts)
+        content_texts = [
+            m.get("content", "")[:100]
+            for m in early_msgs
+            if m.get("role", "") == "user"
+        ]
+        if content_texts:
+            prefix = " | " if self.context_summary else ""
+            self.context_summary += prefix + " | ".join(content_texts)
         self.messages = self.messages[5:]
         self.current_tokens = sum(
-            self.estimate_tokens(m["content"]) for m in self.messages
+            self.estimate_tokens(m.get("content", "")) for m in self.messages
         ) + self.estimate_tokens(self.context_summary)
         self.summarized = True
+        self.updated_at = datetime.now(timezone.utc)
 
     def get_context_for_injection(self) -> str:
         """获取可注入到提示词的上下文"""
@@ -115,7 +127,7 @@ class ShortTermMemory(BaseModel):
         if self.messages:
             recent = self.messages[-10:]
             parts.append("\n[近期对话]\n" + "\n".join(
-                f"{m['role']}: {m['content'][:200]}" for m in recent
+                f"{m.get('role', '')}: {m.get('content', '')[:200]}" for m in recent
             ))
         if self.active_topics:
             parts.append(f"\n[当前主题]\n" + ", ".join(self.active_topics))

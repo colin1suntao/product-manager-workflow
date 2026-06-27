@@ -199,9 +199,10 @@ class AgentEvolutionManager:
         # 计算平均值
         avg_time = sum(e.execution_time_seconds for e in all_experiences) / len(all_experiences)
         avg_tokens = sum(sum(e.token_usage.values()) for e in all_experiences) / len(all_experiences)
-        avg_satisfaction = sum(
-            e.user_satisfaction or 3 for e in all_experiences if e.user_satisfaction
-        ) / max(1, len([e for e in all_experiences if e.user_satisfaction]))
+        avg_satisfaction: float = 0.0
+        satisfactions = [e.user_satisfaction for e in all_experiences if e.user_satisfaction is not None]
+        if satisfactions:
+            avg_satisfaction = sum(satisfactions) / len(satisfactions)
         
         # 计算改进率
         improvement_rate = 0.0

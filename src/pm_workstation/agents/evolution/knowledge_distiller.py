@@ -40,13 +40,26 @@ class KnowledgeDistiller:
     def _load_knowledge(self):
         """加载知识"""
         if self.patterns_file.exists():
-            with open(self.patterns_file, "r", encoding="utf-8") as f:
-                self._patterns = json.load(f)
-        
+            try:
+                with open(self.patterns_file, "r", encoding="utf-8") as f:
+                    self._patterns = json.load(f)
+            except (json.JSONDecodeError, IOError) as e:
+                logger.error(f"Failed to load patterns from {self.patterns_file}: {e}")
+                self._patterns = {}
+
         if self.rules_file.exists():
-            with open(self.rules_file, "r", encoding="utf-8") as f:
-                data = json.load(f)
-                self._rules = {k: OptimizationRule(**v) for k, v in data.items()}
+            try:
+                with open(self.rules_file, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                    self._rules = {}
+                    for k, v in data.items():
+                        try:
+                            self._rules[k] = OptimizationRule(**v)
+                        except Exception as e:
+                            logger.error(f"Failed to load rule {k}: {e}")
+            except (json.JSONDecodeError, IOError) as e:
+                logger.error(f"Failed to load rules from {self.rules_file}: {e}")
+                self._rules = {}
     
     def _save_knowledge(self):
         """保存知识"""
@@ -169,7 +182,10 @@ class KnowledgeDistiller:
     def _generate_optimization_rules(self, experiences: list[ExperienceRecord]) -> list[dict]:
         """生成优化规则"""
         rules = []
-        rule_id = 0
+        existing_ids = [
+            int(k.split('_')[1]) for k in self._rules if k.startswith('opt_')
+        ]
+        rule_id = max(existing_ids) if existing_ids else 0
         
         # 规则 1: Token 用量优化
         high_token_exps = [e for e in experiences if sum(e.token_usage.values()) > 50000]
@@ -269,7 +285,7 @@ class KnowledgeDistiller:
         for exp in experiences:
             for insight in exp.key_insights:
                 # 简化洞察用于归类
-                key_insight = insight.split("：")[0] if ":" in insight else insight[:30]
+                key_insight = insight.split("：")[0] if "：" in insight else insight[:30]
                 all_insights[key_insight] = all_insights.get(key_insight, 0) + 1
         
         sorted_insights = sorted(all_insights.items(), key=lambda x: x[1], reverse=True)

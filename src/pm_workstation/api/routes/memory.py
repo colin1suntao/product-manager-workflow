@@ -77,6 +77,9 @@ async def get_active_soul(
     """获取用户当前激活的 Agent Soul"""
     soul = await manager.get_active_soul(user_id)
 
+    if not soul:
+        raise HTTPException(status_code=404, detail="未找到激活的 Agent Soul")
+
     return {
         "id": soul.id,
         "name": soul.name,
@@ -295,7 +298,14 @@ async def list_memories(
     manager: MemoryManager = Depends(_get_memory_manager),
 ) -> dict:
     """列出用户的记忆（支持分页和类型筛选）"""
-    mt = MemoryType(memory_type) if memory_type else None
+    try:
+        mt = MemoryType(memory_type) if memory_type else None
+    except ValueError:
+        valid = [e.value for e in MemoryType]
+        raise HTTPException(
+            status_code=422,
+            detail=f"Invalid memory_type '{memory_type}'. Valid: {valid}",
+        )
     memories = await manager.list_memories(
         user_id=user_id,
         memory_type=mt,
