@@ -23,7 +23,7 @@ def _get_manager() -> LayeredMemoryManager:
     return get_layered_memory_manager()
 
 
-def _safe_enum(value: str, enum_cls, default):
+def _safe_enum(value: str, enum_cls):
     """安全解析枚举值，无效时抛出 HTTPException(422)"""
     try:
         return enum_cls(value)
@@ -155,8 +155,8 @@ async def add_working_memory(
     title = _require_field(body, "title")
     content = _require_field(body, "content")
 
-    category = _safe_enum(body.get("category", "custom"), LongTermCategory, LongTermCategory.CUSTOM)
-    priority = _safe_enum(body.get("priority", "medium"), MemoryPriority, MemoryPriority.MEDIUM)
+    category = _safe_enum(body.get("category", "custom"), LongTermCategory)
+    priority = _safe_enum(body.get("priority", "medium"), MemoryPriority)
     importance = body.get("importance", 0.7)
     tags = body.get("tags", [])
 
@@ -233,9 +233,9 @@ async def create_long_term_memory(
         title=title,
         content=content,
         summary=body.get("summary", content[:200]),
-        category=_safe_enum(body.get("category", "custom"), LongTermCategory, LongTermCategory.CUSTOM),
-        tags=body.get("tags", []),
-        priority=_safe_enum(body.get("priority", "medium"), MemoryPriority, MemoryPriority.MEDIUM),
+        category=_safe_enum(body.get("category", "custom"), LongTermCategory),
+
+        priority=_safe_enum(body.get("priority", "medium"), MemoryPriority),
         importance=body.get("importance", 0.5),
         source="user_manual",
     )
@@ -260,8 +260,8 @@ async def list_long_term_memories(
     manager: LayeredMemoryManager = Depends(_get_manager),
 ) -> dict:
     """列出长期记忆条目（支持分页和筛选）"""
-    cat = _safe_enum(category, LongTermCategory, None) if category else None
-    pri = _safe_enum(priority, MemoryPriority, None) if priority else None
+    cat = _safe_enum(category, LongTermCategory) if category else None
+    pri = _safe_enum(priority, MemoryPriority) if priority else None
     tag_list = tags.split(",") if tags else None
 
     entries, total = manager.list_long_term(
@@ -334,9 +334,9 @@ async def update_long_term_memory(
     可更新字段: title, content, summary, tags, category, priority, importance, confidence
     """
     if "category" in body:
-        body["category"] = _safe_enum(body["category"], LongTermCategory, LongTermCategory.CUSTOM)
+        body["category"] = _safe_enum(body["category"], LongTermCategory)
     if "priority" in body:
-        body["priority"] = _safe_enum(body["priority"], MemoryPriority, MemoryPriority.MEDIUM)
+        body["priority"] = _safe_enum(body["priority"], MemoryPriority)
 
     entry = manager.update_long_term(memory_id, user_id=user_id, **body)
     if not entry:
@@ -382,12 +382,11 @@ async def search_long_term_memories(
         user_id=user_id,
         keyword=body.get("keyword", ""),
         categories=(
-            [_safe_enum(c, LongTermCategory, LongTermCategory.CUSTOM) for c in body.get("categories", [])]
-            if body.get("categories") else []
+            [_safe_enum(c, LongTermCategory) for c in body.get("categories", [])]
+            if body.get("categories") else None,
         ),
-        tags=body.get("tags") if body.get("tags") is not None else [],
         priority=(
-            _safe_enum(body["priority"], MemoryPriority, MemoryPriority.MEDIUM)
+            _safe_enum(body["priority"], MemoryPriority)
             if body.get("priority") else None
         ),
         min_importance=body.get("min_importance", 0.0),

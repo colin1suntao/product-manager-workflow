@@ -1,5 +1,6 @@
 """本地存储后端"""
 
+import os
 from io import BytesIO
 from pathlib import Path
 from typing import BinaryIO
@@ -12,12 +13,25 @@ class LocalStorage(StorageBackend):
     """本地文件系统存储"""
 
     def __init__(self, base_path: str | None = None):
-        self.base_path = Path(base_path or settings.storage_path)
+        self.base_path = Path(base_path or settings.storage_path).resolve()
         self.base_path.mkdir(parents=True, exist_ok=True)
 
+    def _validate_key(self, key: str) -> Path:
+        """验证并安全解析 key，防止路径穿越"""
+        raw_path = self.base_path / key
+        resolved = raw_path.resolve()
+
+        if not str(resolved).startswith(str(self.base_path)):
+            raise ValueError(f"Path traversal attempt: {key}")
+
+        return resolved
+
     def _get_file_path(self, key: str) -> Path:
-        """获取文件路径"""
-        return self.base_path / key
+        """获取安全的文件路径"""
+        sanitized = Path(os.path.normpath(key))
+        if sanitized.is_absolute() or ".." in sanitized.parts:
+            raise ValueError(f"Invalid key: {key}")
+        return self._validate_key(key)
 
     async def upload(
         self,

@@ -4,6 +4,7 @@
 """
 
 import logging
+import os
 import re
 
 from pm_workstation.sandbox.models import (
@@ -142,13 +143,14 @@ class SecurityController:
                 )
 
         if security_level == SecurityLevel.RESTRICTED:
-            restricted_commands = [
-                "apt", "yum", "dnf", "pacman", "brew",
-                "pip", "npm", "yarn", "gem",
+            restricted_prefixes = [
+                "apt", "apt-get", "yum", "dnf", "pacman", "brew",
+                "pip", "pip3", "npm", "yarn", "gem",
                 "git", "svn", "hg",
             ]
-            for cmd in restricted_commands:
-                if cmd in command_lower.split():
+            command_tokens = command_lower.split()
+            for cmd in restricted_prefixes:
+                if cmd in command_tokens:
                     return SecurityValidation(
                         valid=False,
                         reason=f"Restricted command in restricted mode: {cmd}",
@@ -197,11 +199,23 @@ class SecurityController:
                 )
 
         resolved_path = path_normalized
-        if not path_normalized.startswith(workspace.path):
+        if not path_normalized.startswith("/"):
             resolved_path = f"{workspace.path}/{path_normalized}"
+        else:
+            resolved_path = path_normalized
+
+        real_path = os.path.realpath(resolved_path)
+        workspace_real = os.path.realpath(workspace.path)
+
+        if not real_path.startswith(workspace_real + os.sep) and real_path != workspace_real:
+            return SecurityValidation(
+                valid=False,
+                reason=f"Path escapes workspace via symlink: {path}",
+                severity="critical",
+            )
 
         for dangerous_path in self.DANGEROUS_FILE_PATHS:
-            if resolved_path.startswith(dangerous_path):
+            if real_path.startswith(dangerous_path):
                 return SecurityValidation(
                     valid=False,
                     reason=f"Resolved path access denied: {dangerous_path}",

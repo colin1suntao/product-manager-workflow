@@ -105,9 +105,8 @@ class ShortTermMemory(BaseModel):
             return
         early_msgs = self.messages[:5]
         content_texts = [
-            m.get("content", "")[:100]
+            f"[{m.get('role', '?')}]: {m.get('content', '')[:80]}"
             for m in early_msgs
-            if m.get("role", "") == "user"
         ]
         if content_texts:
             prefix = " | " if self.context_summary else ""

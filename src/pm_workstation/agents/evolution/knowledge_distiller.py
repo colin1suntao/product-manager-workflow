@@ -63,17 +63,25 @@ class KnowledgeDistiller:
     
     def _save_knowledge(self):
         """保存知识"""
-        with open(self.patterns_file, "w", encoding="utf-8") as f:
-            json.dump(self._patterns, f, ensure_ascii=False, indent=2)
-        
-        with open(self.rules_file, "w", encoding="utf-8") as f:
-            json.dump(
-                {k: v.model_dump() for k, v in self._rules.items()},
-                f,
-                ensure_ascii=False,
-                indent=2,
-                default=str,
-            )
+        try:
+            with open(self.patterns_file, "w", encoding="utf-8") as f:
+                json.dump(self._patterns, f, ensure_ascii=False, indent=2)
+        except IOError as e:
+            logger.error(f"Failed to save patterns: {e}")
+
+        rules_data = {}
+        for k, v in self._rules.items():
+            try:
+                rules_data[k] = v.model_dump()
+            except Exception as e:
+                logger.error(f"Failed to serialize rule {k}: {e}")
+                rules_data[k] = {"id": k, "error": str(e)}
+
+        try:
+            with open(self.rules_file, "w", encoding="utf-8") as f:
+                json.dump(rules_data, f, ensure_ascii=False, indent=2, default=str)
+        except IOError as e:
+            logger.error(f"Failed to save rules: {e}")
     
     def distill(self) -> dict[str, Any]:
         """提炼知识
@@ -182,9 +190,13 @@ class KnowledgeDistiller:
     def _generate_optimization_rules(self, experiences: list[ExperienceRecord]) -> list[dict]:
         """生成优化规则"""
         rules = []
-        existing_ids = [
-            int(k.split('_')[1]) for k in self._rules if k.startswith('opt_')
-        ]
+        existing_ids = []
+        for k in self._rules:
+            if k.startswith('opt_'):
+                try:
+                    existing_ids.append(int(k.split('_')[1]))
+                except (ValueError, IndexError):
+                    pass
         rule_id = max(existing_ids) if existing_ids else 0
         
         # 规则 1: Token 用量优化

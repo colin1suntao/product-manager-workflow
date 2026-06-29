@@ -268,9 +268,17 @@ async def create_memory(
     manager: MemoryManager = Depends(_get_memory_manager),
 ) -> dict:
     """创建新的记忆条目"""
+    try:
+        memory_type = MemoryType(body.get("memory_type", "experience"))
+    except ValueError:
+        valid = [e.value for e in MemoryType]
+        raise HTTPException(
+            status_code=422,
+            detail=f"Invalid memory_type. Valid: {valid}",
+        )
     memory = MemoryEntry(
         user_id=user_id,
-        memory_type=MemoryType(body.get("memory_type", "experience")),
+        memory_type=memory_type,
         content=body.get("content", ""),
         summary=body.get("summary", ""),
         tags=body.get("tags", []),
@@ -312,7 +320,6 @@ async def list_memories(
         limit=size,
         offset=(page - 1) * size,
     )
-    all_memories = await manager.list_memories(user_id=user_id, memory_type=mt)
 
     return {
         "memories": [
@@ -320,16 +327,16 @@ async def list_memories(
                 "id": m.id,
                 "memory_type": m.memory_type.value,
                 "summary": m.summary,
-                "content": m.content,
+                "content_preview": m.content[:200] if m.content else "",
                 "tags": m.tags,
                 "importance": m.importance,
-                "created_at": m.created_at.isoformat(),
+                "created_at": m.created_at.isoformat() if m.created_at else "",
             }
             for m in memories
         ],
-        "total": len(all_memories),
         "page": page,
         "size": size,
+        "count": len(memories),
     }
 
 
@@ -399,7 +406,14 @@ async def search_memories(
     manager: MemoryManager = Depends(_get_memory_manager),
 ) -> dict:
     """搜索记忆"""
-    mt = MemoryType(memory_type) if memory_type else None
+    try:
+        mt = MemoryType(memory_type) if memory_type else None
+    except ValueError:
+        valid = [e.value for e in MemoryType]
+        raise HTTPException(
+            status_code=422,
+            detail=f"Invalid memory_type '{memory_type}'. Valid: {valid}",
+        )
     results = await manager.search_memories(user_id, q, memory_type=mt)
 
     return {

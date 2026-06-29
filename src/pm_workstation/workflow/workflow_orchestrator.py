@@ -243,9 +243,9 @@ class WorkflowOrchestrator:
             started_at=datetime.now(),
         )
 
-        # 保存初始输入到第一个步骤
+        # 保存初始输入到第一个步骤（深拷贝避免副作用）
         if initial_input and workflow.steps:
-            workflow.steps[0].input.update(initial_input)
+            workflow.steps[0].input = {**workflow.steps[0].input, **initial_input}
 
         self._active_executions[execution_id] = execution
 
@@ -308,6 +308,7 @@ class WorkflowOrchestrator:
                             )
                             execution.steps_results.append(step_result)
                             failed_steps.add(step_id)
+                            running_steps.discard(step_id)
                         else:
                             execution.steps_results.append(result)
                             running_steps.discard(step_id)
@@ -358,7 +359,7 @@ class WorkflowOrchestrator:
                 execution.error_message = f"关键步骤失败: {', '.join(s.name for s in failed_mandatory)}"
             elif failed_steps:
                 execution.status = WorkflowStatus.COMPLETED  # 有失败但都是可选步骤
-                execution.error_message = f"可选步骤失败: {', '.join(s.name for s.id in failed_steps for s in workflow.steps if s.id == s_id)}"
+                execution.error_message = f"可选步骤失败: {', '.join(s.name for s in workflow.steps if s.id in failed_steps)}"
             else:
                 execution.status = WorkflowStatus.COMPLETED
 

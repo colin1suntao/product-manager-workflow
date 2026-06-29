@@ -46,8 +46,11 @@ class ExperienceCollector:
     
     def _save_index(self):
         """保存索引"""
-        with open(self.index_file, "w", encoding="utf-8") as f:
-            json.dump(self._index, f, ensure_ascii=False, indent=2)
+        try:
+            with open(self.index_file, "w", encoding="utf-8") as f:
+                json.dump(self._index, f, ensure_ascii=False, indent=2)
+        except IOError as e:
+            logger.error(f"Failed to save index: {e}")
     
     def collect_from_workflow(self, state: WorkflowState, user_feedback: str | None = None) -> ExperienceRecord:
         """从工作流执行中收集经验
@@ -303,9 +306,9 @@ class ExperienceCollector:
         if not user_feedback:
             return None
         
-        # 简单的关键词匹配
-        positive = ['很好', '优秀', '满意', '好', 'great', 'excellent', 'good', 'perfect']
-        negative = ['差', '不好', '失望', '差劲', 'bad', 'poor', 'terrible', 'disappointed']
+        # 简单的关键词匹配（注意顺序：长词优先避免子串误匹配）
+        positive = ['很好', '优秀', '满意', 'great', 'excellent', 'good', 'perfect']
+        negative = ['不好', '糟糕', '差', '失望', '差劲', 'bad', 'poor', 'terrible', 'disappointed']
         
         feedback_lower = user_feedback.lower()
         positive_count = sum(1 for word in positive if word in feedback_lower)
@@ -321,11 +324,13 @@ class ExperienceCollector:
         """保存经验"""
         file_path = self.storage_dir / f"{experience.id}.json"
         
-        with open(file_path, "w", encoding="utf-8") as f:
-            json.dump(experience.model_dump(), f, ensure_ascii=False, indent=2, default=str)
-        
-        self._index[experience.id] = str(file_path)
-        self._save_index()
+        try:
+            with open(file_path, "w", encoding="utf-8") as f:
+                json.dump(experience.model_dump(), f, ensure_ascii=False, indent=2, default=str)
+            self._index[experience.id] = str(file_path)
+            self._save_index()
+        except IOError as e:
+            logger.error(f"Failed to save experience {experience.id}: {e}")
     
     def get_experience(self, experience_id: str) -> ExperienceRecord | None:
         """获取经验"""
@@ -336,8 +341,12 @@ class ExperienceCollector:
         if not Path(file_path).exists():
             return None
         
-        with open(file_path, "r", encoding="utf-8") as f:
-            data = json.load(f)
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+        except (json.JSONDecodeError, IOError, FileNotFoundError):
+            logger.error(f"Failed to read experience file {experience_id}")
+            return None
 
         try:
             return ExperienceRecord(**data)
