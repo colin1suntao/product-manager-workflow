@@ -170,7 +170,7 @@ def create_app() -> FastAPI:
     app.add_middleware(
         CORSMiddleware,
         allow_origins=["*"],
-        allow_credentials=True,
+        allow_credentials=False,
         allow_methods=["*"],
         allow_headers=["*"],
     )
@@ -202,19 +202,34 @@ def create_app() -> FastAPI:
     async def health_check() -> dict:
         return {"status": "ok", "version": "0.1.0"}
 
-    # 静态文件服务 - 产物
+    # 静态文件服务 - 产物（防止路径穿越）
     @app.get("/artifacts/{workflow_id}/{filename}")
     async def serve_artifact(workflow_id: str, filename: str):
-        filepath = os.path.join(ARTIFACTS_DIR, workflow_id, filename)
+        safe_workflow = os.path.normpath(workflow_id)
+        safe_filename = os.path.normpath(filename)
+        if safe_workflow.startswith("..") or safe_workflow.startswith("/"):
+            return {"error": "Invalid workflow_id"}
+        if safe_filename.startswith("..") or safe_filename.startswith("/"):
+            return {"error": "Invalid filename"}
+        filepath = os.path.join(ARTIFACTS_DIR, safe_workflow, safe_filename)
+        real_path = os.path.realpath(filepath)
+        if not real_path.startswith(os.path.realpath(ARTIFACTS_DIR)):
+            return {"error": "Path traversal denied"}
         if not os.path.exists(filepath):
             return {"error": "Artifact not found"}
         media_type = "text/html" if filename.endswith(".html") else "text/markdown" if filename.endswith(".md") else "application/json"
         return FileResponse(filepath, media_type=media_type)
 
-    # 静态文件服务 - Chat 产物
+    # 静态文件服务 - Chat 产物（防止路径穿越）
     @app.get("/artifacts/chat/{filename}")
     async def serve_chat_artifact(filename: str):
-        filepath = os.path.join(ARTIFACTS_DIR, "chat", filename)
+        safe_filename = os.path.normpath(filename)
+        if safe_filename.startswith("..") or safe_filename.startswith("/"):
+            return {"error": "Invalid filename"}
+        filepath = os.path.join(ARTIFACTS_DIR, "chat", safe_filename)
+        real_path = os.path.realpath(filepath)
+        if not real_path.startswith(os.path.realpath(ARTIFACTS_DIR)):
+            return {"error": "Path traversal denied"}
         if not os.path.exists(filepath):
             return {"error": "Artifact not found"}
         media_type = "text/html" if filename.endswith(".html") else "text/markdown" if filename.endswith(".md") else "application/json"
@@ -227,17 +242,21 @@ def create_app() -> FastAPI:
         if next_static_dir.exists():
             app.mount("/_next", StaticFiles(directory=str(next_static_dir)), name="next_static")
 
-        # Catch-all 路由处理前端页面
+        # Catch-all 路由处理前端页面（防止路径穿越）
         @app.get("/{path:path}", response_class=HTMLResponse)
         async def serve_frontend(request: Request, path: str):
-            # 尝试查找精确匹配的文件
-            file_path = FRONTEND_DIR / path
-            if file_path.is_file():
-                return FileResponse(str(file_path))
+            safe_path = os.path.normpath(path)
+            if safe_path.startswith(".."):
+                return HTMLResponse(content="<h1>Forbidden</h1>", status_code=403)
+            file_path = FRONTEND_DIR / safe_path
+            resolved = file_path.resolve()
+            if not str(resolved).startswith(str(FRONTEND_DIR.resolve())):
+                return HTMLResponse(content="<h1>Forbidden</h1>", status_code=403)
+            if resolved.is_file():
+                return FileResponse(str(resolved))
 
-            # 尝试查找 index.html
             if path and not path.endswith((".js", ".css", ".ico", ".png", ".jpg", ".svg")):
-                page_path = FRONTEND_DIR / path / "index.html"
+                page_path = FRONTEND_DIR / safe_path / "index.html"
                 if page_path.is_file():
                     return FileResponse(str(page_path))
 

@@ -3,6 +3,7 @@
 提供产物管理、版本管理、内容查看等 API。
 """
 
+import html
 import logging
 
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -416,14 +417,22 @@ async def list_artifacts(
         try:
             type_filter = ArtifactType(type)
         except ValueError:
-            pass
+            valid = [e.value for e in ArtifactType]
+            raise HTTPException(
+                status_code=422,
+                detail=f"Invalid type '{type}'. Valid: {valid}",
+            )
 
     status_filter = None
     if status:
         try:
             status_filter = ArtifactStatus(status)
         except ValueError:
-            pass
+            valid = [e.value for e in ArtifactStatus]
+            raise HTTPException(
+                status_code=422,
+                detail=f"Invalid status '{status}'. Valid: {valid}",
+            )
 
     artifacts = await manager.list_by_user(
         user_id=user_id,
@@ -478,16 +487,13 @@ async def preview_artifact(
 
     # 根据类型渲染
     if artifact.type == ArtifactType.PROTOTYPE:
-        # HTML 原型直接返回
         return HTMLResponse(content=content)
     elif artifact.type in [ArtifactType.DOCUMENT, ArtifactType.REPORT]:
-        # Markdown 文档需要转换为 HTML（简化实现）
-        html = f"""
-<!DOCTYPE html>
+        html_out = f"""<!DOCTYPE html>
 <html>
 <head>
     <meta charset="utf-8">
-    <title>{artifact.name}</title>
+    <title>{html.escape(artifact.name)}</title>
     <style>
         body {{
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -512,17 +518,15 @@ async def preview_artifact(
     </style>
 </head>
 <body>
-    <h1>{artifact.name}</h1>
+    <h1>{html.escape(artifact.name)}</h1>
     <div id="content">
-        <!-- 简化实现：直接显示原始内容 -->
-        <pre>{content}</pre>
+        <pre>{html.escape(content)}</pre>
     </div>
 </body>
-</html>
-"""
-        return HTMLResponse(content=html)
+</html>"""
+        return HTMLResponse(content=html_out)
     else:
-        return HTMLResponse(content=f"<pre>{content}</pre>")
+        return HTMLResponse(content=f"<pre>{html.escape(content)}</pre>")
 
 
 @router.get("/{artifact_id}/download", summary="下载产物")

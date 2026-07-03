@@ -412,7 +412,7 @@ class WorkflowOrchestrator:
             agent_config = self.registry.get(step.agent_id)
         else:
             # 根据能力匹配 Agent
-            matched = self.registry.match_by_capability(step.mode)
+            matched = self.registry.match_by_capability([step.mode])
             if matched:
                 agent_config = matched[0]
 

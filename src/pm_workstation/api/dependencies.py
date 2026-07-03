@@ -6,10 +6,22 @@
 from collections.abc import AsyncGenerator
 
 from fastapi import Header, Request
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 
+from pm_workstation.auth.models import Base
 from pm_workstation.llm.provider_store import LLMProviderStore
 from pm_workstation.orchestrator.workflow_manager import WorkflowManager
+
+_engine = None
+
+
+def _get_engine():
+    global _engine
+    if _engine is None:
+        _engine = create_async_engine(
+            "sqlite+aiosqlite:///./pm_workstation.db", echo=False
+        )
+    return _engine
 
 
 def get_workflow_manager(request: Request) -> WorkflowManager:
@@ -24,11 +36,7 @@ def get_provider_store(request: Request) -> LLMProviderStore:
 
 async def get_db_session(request: Request) -> AsyncGenerator[AsyncSession, None]:
     """获取数据库会话"""
-    from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-
-    from pm_workstation.auth.models import Base
-
-    engine = create_async_engine("sqlite+aiosqlite:///./pm_workstation.db", echo=False)
+    engine = _get_engine()
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 

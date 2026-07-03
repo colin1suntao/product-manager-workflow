@@ -257,8 +257,9 @@ class ConsistencyChecker:
         doc_set = set(doc_words)
         proto_set = set(proto_words)
 
-        common = doc_set & proto_set
-        for term in common:
+        # 使用差集：文档中存在但原型中不存在的术语
+        extra_terms = doc_set - proto_set
+        for term in extra_terms:
             if len(term) < 2:
                 continue
             doc_count = doc_words.count(term)

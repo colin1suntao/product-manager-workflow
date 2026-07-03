@@ -1,5 +1,6 @@
 """Redis消息队列"""
 
+import asyncio
 import json
 from collections.abc import Callable
 from typing import Any
@@ -21,6 +22,7 @@ class MessageQueue:
         self.config = config or redis_config
         self._pool: aioredis.ConnectionPool | None = None
         self._pubsub: aioredis.client.PubSub | None = None
+        self._listen_task: asyncio.Task | None = None
 
     async def connect(self):
         """连接到Redis"""
@@ -29,6 +31,10 @@ class MessageQueue:
 
     async def disconnect(self):
         """断开Redis连接"""
+        if self._listen_task and not self._listen_task.done():
+            self._listen_task.cancel()
+            self._listen_task = None
+
         if self._pubsub:
             await self._pubsub.unsubscribe()
             await self._pubsub.close()
@@ -79,9 +85,7 @@ class MessageQueue:
         await self._pubsub.subscribe(*channels)
 
         if callback:
-            # 在后台处理消息
-            import asyncio
-            asyncio.create_task(self._listen(callback))
+            self._listen_task = asyncio.create_task(self._listen(callback))
 
         return self._pubsub
 
@@ -106,14 +110,18 @@ class MessageQueue:
         if not self._pubsub:
             return
 
-        async for message in self._pubsub.listen():
-            if message["type"] == "message":
-                try:
-                    data = json.loads(message["data"])
-                    await callback(message["channel"], data)
-                except json.JSONDecodeError:
-                    # 非JSON消息，直接传递原始数据
-                    await callback(message["channel"], message["data"])
+        try:
+            async for message in self._pubsub.listen():
+                if message["type"] == "message":
+                    try:
+                        data = json.loads(message["data"])
+                        await callback(message["channel"], data)
+                    except json.JSONDecodeError:
+                        await callback(message["channel"], message["data"])
+        except asyncio.CancelledError:
+            pass
+        except Exception:
+            logger.exception("Error in message listener")
 
     async def get_client(self) -> aioredis.Redis:
         """获取Redis客户端"""

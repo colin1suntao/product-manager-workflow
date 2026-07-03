@@ -245,7 +245,11 @@ async def update_channel(
         try:
             updates["status"] = ChannelStatus(body["status"])
         except ValueError:
-            pass
+            valid = [e.value for e in ChannelStatus]
+            raise HTTPException(
+                status_code=422,
+                detail=f"Invalid status '{body['status']}'. Valid: {valid}",
+            )
 
     result = await store.update(channel_id, updates)
 
