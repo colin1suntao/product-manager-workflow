@@ -98,10 +98,15 @@ async def create_session(
 @router.get("/sessions", summary="获取会话列表")
 async def list_sessions(
     user_id: str = Depends(get_current_user),
+    page: int = 1,
+    page_size: int = 50,
     manager: ChatManager = Depends(_get_chat_manager),
 ) -> dict:
-    """获取用户的会话列表"""
+    """获取用户的会话列表（分页）"""
     sessions = await manager.list_sessions(user_id)
+    total = len(sessions)
+    start = (page - 1) * page_size
+    paged = sessions[start:start + page_size]
 
     return {
         "sessions": [
@@ -111,9 +116,11 @@ async def list_sessions(
                 "created_at": s.created_at.isoformat(),
                 "updated_at": s.updated_at.isoformat(),
             }
-            for s in sessions
+            for s in paged
         ],
-        "total": len(sessions),
+        "total": total,
+        "page": page,
+        "page_size": page_size,
     }
 
 

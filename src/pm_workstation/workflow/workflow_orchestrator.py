@@ -256,6 +256,8 @@ class WorkflowOrchestrator:
         failed_steps: set[str] = set()
         skipped_steps: set[str] = set()
 
+        step_map = {s.id: s for s in workflow.steps}
+
         start_time = time.monotonic()
 
         try:
@@ -277,7 +279,7 @@ class WorkflowOrchestrator:
                 # 执行就绪的步骤（支持并行）
                 step_tasks = []
                 for step_id in ready_step_ids:
-                    step = next(s for s in workflow.steps if s.id == step_id)
+                    step = step_map[step_id]
                     running_steps.add(step_id)
                     execution.current_step_index = workflow.steps.index(step)
 
@@ -299,7 +301,7 @@ class WorkflowOrchestrator:
                         step_id = ready_step_ids[i]
                         if isinstance(result, Exception):
                             logger.error(f"Step {step_id} failed with exception: {result}")
-                            step = next(s for s in workflow.steps if s.id == step_id)
+                            step = step_map[step_id]
                             step_result = StepResult(
                                 step_id=step_id,
                                 step_name=step.name,

@@ -125,4 +125,7 @@ class TokenUsageStore:
         )
 
     def get_records(self, limit: int = 100, offset: int = 0) -> list[TokenUsageRecord]:
-        return list(reversed(self._records))[offset : offset + limit]
+        total = len(self._records)
+        start = max(0, total - offset - limit)
+        end = max(0, total - offset)
+        return list(reversed(self._records[start:end]))

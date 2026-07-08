@@ -364,41 +364,46 @@ class LayeredMemoryManager:
         scored_entries: list[tuple[float, LongTermMemoryEntry]] = []
 
         keywords = query.keyword.lower().split() if query.keyword else []
+        has_keywords = bool(keywords)
+        kw_count = len(keywords) or 1
 
         for item in data:
+            # 预检：重要性门槛（快速跳过大部分条目）
+            imp = item.get("importance", 0)
+            if imp < query.min_importance:
+                continue
+            if query.priority and item.get("priority") != query.priority.value:
+                continue
+
+            # 关键词匹配
+            score = 0.0
+            matched = not has_keywords
+            if has_keywords:
+                content_lower = (
+                    f"{item.get('title', '')} {item.get('content', '')} {' '.join(item.get('tags', []))}"
+                ).lower()
+                for kw in keywords:
+                    if kw in content_lower:
+                        score += 1.0 / kw_count
+                        matched = True
+                        break  # 短路：第一个匹配即停止
+
+            # 跳过无关键词匹配的条目
+            if not matched:
+                continue
+
+            # 仅对通过预检的条目创建 Pydantic 模型
             entry = LongTermMemoryEntry(**item)
 
-            # 过滤条件
+            # 进一步过滤（需要完整模型）
             if query.categories and entry.category not in query.categories:
                 continue
             if query.tags:
                 if not any(t in entry.tags for t in query.tags):
                     continue
-            if entry.importance < query.min_importance:
+            if query.time_range_start and entry.created_at < query.time_range_start:
                 continue
-            if query.priority and entry.priority != query.priority:
-                continue
-            if query.time_range_start:
-                if entry.created_at < query.time_range_start:
-                    continue
-            if query.time_range_end:
-                if entry.created_at > query.time_range_end:
-                    continue
-
-            # 相关性评分
-            score = 0.0
-            matched = not keywords  # 无关键词时全部匹配
-            if keywords:
-                content_lower = (
-                    entry.title + " " + entry.content + " " + " ".join(entry.tags)
-                ).lower()
-                for kw in keywords:
-                    if kw in content_lower:
-                        score += 1.0 / (len(keywords) or 1)
-                        matched = True
-
-            # 跳过无关键词匹配的条目
-            if not matched:
+            if query.time_range_end and entry.created_at > query.time_range_end:
                 continue
 
             # 结合重要性

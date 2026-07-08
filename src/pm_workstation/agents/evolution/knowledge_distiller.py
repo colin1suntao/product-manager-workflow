@@ -199,8 +199,18 @@ class KnowledgeDistiller:
                     pass
         rule_id = max(existing_ids) if existing_ids else 0
         
-        # 规则 1: Token 用量优化
-        high_token_exps = [e for e in experiences if sum(e.token_usage.values()) > 50000]
+        # 单次遍历分类 + 规则检测
+        high_token_exps = []
+        slow_exps = []
+        many_skills = []
+
+        for e in experiences:
+            if sum(e.token_usage.values()) > 50000:
+                high_token_exps.append(e)
+            if e.execution_time_seconds > 300:
+                slow_exps.append(e)
+            if len(e.selected_skills) > 5:
+                many_skills.append(e)
         if len(high_token_exps) > 3:
             rule_id += 1
             rule = OptimizationRule(
@@ -217,7 +227,6 @@ class KnowledgeDistiller:
             rules.append(rule.model_dump())
         
         # 规则 2: 执行时间优化
-        slow_exps = [e for e in experiences if e.execution_time_seconds > 300]
         if len(slow_exps) > 3:
             rule_id += 1
             rule = OptimizationRule(
@@ -234,7 +243,6 @@ class KnowledgeDistiller:
             rules.append(rule.model_dump())
         
         # 规则 3: 技能数量优化
-        many_skills = [e for e in experiences if len(e.selected_skills) > 5]
         if len(many_skills) > 3:
             rule_id += 1
             rule = OptimizationRule(
