@@ -23,11 +23,13 @@ class MessageQueue:
         self._pool: aioredis.ConnectionPool | None = None
         self._pubsub: aioredis.client.PubSub | None = None
         self._listen_task: asyncio.Task | None = None
+        self._client: aioredis.Redis | None = None
 
     async def connect(self):
-        """连接到Redis"""
+        """连接Redis"""
         if self._pool is None:
             self._pool = self.config.create_pool()
+            self._client = aioredis.Redis(connection_pool=self._pool)
 
     async def disconnect(self):
         """断开Redis连接"""
@@ -39,6 +41,10 @@ class MessageQueue:
             await self._pubsub.unsubscribe()
             await self._pubsub.close()
             self._pubsub = None
+
+        if self._client:
+            await self._client.aclose()
+            self._client = None
 
         if self._pool:
             await self._pool.disconnect()
@@ -57,10 +63,9 @@ class MessageQueue:
         if self._pool is None:
             await self.connect()
 
-        redis_client = aioredis.Redis(connection_pool=self._pool)
-
         message_json = json.dumps(message)
-        return await redis_client.publish(channel, message_json)
+        client = await self.get_client()
+        return await client.publish(channel, message_json)
 
     async def subscribe(
         self,
@@ -79,8 +84,8 @@ class MessageQueue:
         if self._pool is None:
             await self.connect()
 
-        redis_client = aioredis.Redis(connection_pool=self._pool)
-        self._pubsub = redis_client.pubsub()
+        client = await self.get_client()
+        self._pubsub = client.pubsub()
 
         await self._pubsub.subscribe(*channels)
 
@@ -127,8 +132,9 @@ class MessageQueue:
         """获取Redis客户端"""
         if self._pool is None:
             await self.connect()
-
-        return aioredis.Redis(connection_pool=self._pool)
+        if self._client is None:
+            self._client = aioredis.Redis(connection_pool=self._pool)
+        return self._client
 
     async def health_check(self) -> bool:
         """健康检查

@@ -166,54 +166,61 @@ class AgentEvolutionManager:
     
     def get_evolution_metrics(self) -> EvolutionMetrics:
         """获取进化指标"""
-        # 获取所有经验
         all_experiences = self.collector.list_experiences(limit=1000)
-        
+
         if not all_experiences:
             return EvolutionMetrics(
                 period_start=datetime.utcnow(),
                 period_end=datetime.utcnow(),
             )
-        
-        # 计算指标
-        excellent = [e for e in all_experiences if e.quality == ExperienceQuality.EXCELLENT]
-        good = [e for e in all_experiences if e.quality == ExperienceQuality.GOOD]
-        average = [e for e in all_experiences if e.quality == ExperienceQuality.AVERAGE]
-        poor = [e for e in all_experiences if e.quality == ExperienceQuality.POOR]
-        
-        successful = [e for e in all_experiences if e.success]
-        
-        # 按任务类型分类的成功率
+
+        # 单次遍历聚合所有指标（替代原来 7+ 次遍历）
+        quality_count = {"excellent": 0, "good": 0, "average": 0, "poor": 0}
+        success_count = 0
+        total_time = 0
+        total_tokens = 0
+        total_satisfaction = 0
+        satisfaction_count = 0
         by_type: dict[str, list[ExperienceRecord]] = {}
-        for exp in all_experiences:
-            task_type = exp.task_type
-            if task_type not in by_type:
-                by_type[task_type] = []
-            by_type[task_type].append(exp)
-        
+
+        for e in all_experiences:
+            quality_count[e.quality] += 1
+            if e.success:
+                success_count += 1
+            total_time += e.execution_time_seconds
+            total_tokens += sum(e.token_usage.values())
+            if e.user_satisfaction is not None:
+                total_satisfaction += e.user_satisfaction
+                satisfaction_count += 1
+            if e.task_type not in by_type:
+                by_type[e.task_type] = []
+            by_type[e.task_type].append(e)
+
+        n = len(all_experiences)
         success_rate_by_type = {}
         for task_type, exps in by_type.items():
-            successes = len([e for e in exps if e.success])
-            success_rate_by_type[task_type] = successes / len(exps) if exps else 0
-        
-        # 计算平均值
-        avg_time = sum(e.execution_time_seconds for e in all_experiences) / len(all_experiences)
-        avg_tokens = sum(sum(e.token_usage.values()) for e in all_experiences) / len(all_experiences)
-        avg_satisfaction: float = 0.0
-        satisfactions = [e.user_satisfaction for e in all_experiences if e.user_satisfaction is not None]
-        if satisfactions:
-            avg_satisfaction = sum(satisfactions) / len(satisfactions)
+            successes = sum(1 for e in exps if e.success)
+            success_rate_by_type[task_type] = successes / len(exps)
+
+        avg_time = total_time / n
+        avg_tokens = total_tokens / n
+        avg_satisfaction = total_satisfaction / satisfaction_count if satisfaction_count else 0.0
+
+        excellent_count = quality_count["excellent"]
+        good_count = quality_count["good"]
+        average_count = quality_count["average"]
+        poor_count = quality_count["poor"]
         
         # 计算改进率
         improvement_rate = 0.0
         if self.baseline_metrics:
             current_metrics = EvolutionMetrics(
-                total_experiences=len(all_experiences),
-                excellent_count=len(excellent),
-                good_count=len(good),
-                average_count=len(average),
-                poor_count=len(poor),
-                overall_success_rate=len(successful) / len(all_experiences),
+                total_experiences=n,
+                excellent_count=excellent_count,
+                good_count=good_count,
+                average_count=average_count,
+                poor_count=poor_count,
+                overall_success_rate=success_count / n,
                 success_rate_by_type=success_rate_by_type,
                 avg_execution_time=avg_time,
                 avg_token_usage=int(avg_tokens),
@@ -226,14 +233,13 @@ class AgentEvolutionManager:
             )
             self.baseline_metrics = current_metrics
         else:
-            # 设置基线
             self.baseline_metrics = EvolutionMetrics(
-                total_experiences=len(all_experiences),
-                excellent_count=len(excellent),
-                good_count=len(good),
-                average_count=len(average),
-                poor_count=len(poor),
-                overall_success_rate=len(successful) / len(all_experiences),
+                total_experiences=n,
+                excellent_count=excellent_count,
+                good_count=good_count,
+                average_count=average_count,
+                poor_count=poor_count,
+                overall_success_rate=success_count / n,
                 success_rate_by_type=success_rate_by_type,
                 avg_execution_time=avg_time,
                 avg_token_usage=int(avg_tokens),
@@ -243,12 +249,12 @@ class AgentEvolutionManager:
             )
         
         return EvolutionMetrics(
-            total_experiences=len(all_experiences),
-            excellent_count=len(excellent),
-            good_count=len(good),
-            average_count=len(average),
-            poor_count=len(poor),
-            overall_success_rate=len(successful) / len(all_experiences),
+            total_experiences=n,
+            excellent_count=excellent_count,
+            good_count=good_count,
+            average_count=average_count,
+            poor_count=poor_count,
+            overall_success_rate=success_count / n,
             success_rate_by_type=success_rate_by_type,
             avg_execution_time=avg_time,
             avg_token_usage=int(avg_tokens),

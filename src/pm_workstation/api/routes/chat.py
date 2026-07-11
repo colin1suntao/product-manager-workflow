@@ -256,9 +256,8 @@ async def send_message(
         except Exception:
             pass
 
-    # 计算当前上下文长度（所有消息的字符数总和）
-    all_messages = await manager.get_messages(session_id)
-    context_length = sum(len(m.content) for m in all_messages)
+    # 计算上下文长度（使用已获取的 context 消息，避免重复查询）
+    context_length = sum(len(m.content) for m in context) + len(content)
     context_limit = 128000
 
     # 处理消息（记录耗时）

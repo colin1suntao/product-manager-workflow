@@ -1,5 +1,6 @@
 """任务分发器"""
 
+import asyncio
 from collections.abc import Callable
 from datetime import datetime
 from enum import StrEnum
@@ -144,8 +145,6 @@ class TaskDispatcher:
         Returns:
             任务列表
         """
-        import asyncio
-
         # 支持 StructuredRequirement 或 dict
         if hasattr(requirement, 'model_dump'):
             tasks_data = requirement.model_dump()

@@ -1,6 +1,7 @@
 """消息队列测试"""
 
 import json
+import os
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -17,7 +18,7 @@ class TestRedisConfig:
         config = RedisConfig()
         
         assert config.url == "redis://localhost:6379/0"
-        assert config.max_connections == 10
+        assert config.max_connections == max(20, (os.cpu_count() or 2) * 5)
         assert config.socket_timeout == 5.0
     
     def test_custom_config(self):
@@ -44,7 +45,7 @@ class TestRedisConfig:
             
             mock_from_url.assert_called_once()
             call_kwargs = mock_from_url.call_args.kwargs
-            assert call_kwargs["max_connections"] == 10
+            assert call_kwargs["max_connections"] == max(20, (os.cpu_count() or 2) * 5)
             assert call_kwargs["decode_responses"] is True
 
 
