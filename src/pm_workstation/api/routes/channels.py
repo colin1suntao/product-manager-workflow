@@ -1,13 +1,21 @@
 """渠道管理 API - 渠道配置、Webhook 接收、AI 会话对接"""
 
+import asyncio
 import logging
+import time
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 
+from pm_workstation.agents.coordinator_chat import CoordinatorChatAgent
+from pm_workstation.api.routes.chat import _build_coordinator_from_store
 from pm_workstation.auth.dependencies import get_current_user
 from pm_workstation.channels.channel_store import ChannelStore
 from pm_workstation.channels.models import ChannelConfig, ChannelStatus, ChannelType, IncomingMessage, OutgoingMessage
+from pm_workstation.chat.chat_manager import ChatManager
+from pm_workstation.chat.chat_models import ChatMessage
+from pm_workstation.chat.task_router import TaskRouter
+from pm_workstation.llm.token_usage import TokenUsageStore
 
 logger = logging.getLogger(__name__)
 
@@ -31,13 +39,7 @@ def _build_adapter(config: ChannelConfig):
 
 
 async def _process_incoming_message(incoming: IncomingMessage) -> str:
-    from pm_workstation.agents.coordinator_chat import CoordinatorChatAgent
     from pm_workstation.api.app import app_state_provider_store
-    from pm_workstation.api.routes.chat import _build_coordinator_from_store
-    from pm_workstation.chat.chat_manager import ChatManager
-    from pm_workstation.chat.chat_models import ChatMessage
-    from pm_workstation.chat.task_router import TaskRouter
-    from pm_workstation.llm.token_usage import TokenUsageStore
 
     chat_manager = ChatManager()
     token_usage_store = TokenUsageStore()
@@ -58,8 +60,6 @@ async def _process_incoming_message(incoming: IncomingMessage) -> str:
         session.metadata["channel_id"] = incoming.channel_id
         session.metadata["channel_type"] = incoming.channel_type.value
 
-    import time
-
     user_message = ChatMessage(
         id=uuid.uuid4().hex,
         session_id=session.id,
@@ -77,7 +77,6 @@ async def _process_incoming_message(incoming: IncomingMessage) -> str:
 
     start_time = time.monotonic()
     try:
-        import asyncio
         response = await asyncio.wait_for(
             coordinator.process_message(
                 message=incoming.content,

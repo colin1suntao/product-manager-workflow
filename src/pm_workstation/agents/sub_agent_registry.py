@@ -209,10 +209,10 @@ class SubAgentRegistry:
 
         capability_count: dict[str, int] = {}
         for capability, agent_ids in self._capability_index.items():
-            capability_count[capability] = len([
-                aid for aid in agent_ids
+            capability_count[capability] = sum(
+                1 for aid in agent_ids
                 if aid in self._agents and self._agents[aid].enabled
-            ])
+            )
 
         avg_timeout = (
             sum(a.timeout for a in enabled_agents) / len(enabled_agents)

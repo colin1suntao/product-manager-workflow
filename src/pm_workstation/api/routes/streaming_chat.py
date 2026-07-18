@@ -12,6 +12,7 @@ import uuid
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
 
+from pm_workstation.agents.coordinator_chat import CoordinatorChatAgent
 from pm_workstation.agents.pm_sub_agents import register_pm_sub_agents
 from pm_workstation.agents.sub_agent_executor import SubAgentExecutor
 from pm_workstation.agents.sub_agent_models import SubAgentConfig
@@ -22,6 +23,9 @@ from pm_workstation.chat.chat_models import (
     TaskMode,
     TaskStatus,
 )
+from pm_workstation.component_library.store import ComponentTemplateStore
+from pm_workstation.knowledge_base.store import TemplateStore
+from pm_workstation.model_router.base import LLMMessage
 
 logger = logging.getLogger(__name__)
 
@@ -130,8 +134,6 @@ async def stream_message(
 
             if llm_handler:
                 try:
-                    from pm_workstation.agents.coordinator_chat import CoordinatorChatAgent
-
                     coordinator = CoordinatorChatAgent(
                         llm_handler=llm_handler,
                         memory_retriever=_memory_retriever,
@@ -207,9 +209,6 @@ async def stream_message(
             # 如果有模板，注入模板内容
             if template_id:
                 try:
-                    from pm_workstation.component_library.store import ComponentTemplateStore
-                    from pm_workstation.knowledge_base.store import TemplateStore
-
                     ts = TemplateStore()
                     tmpl = await ts.get(template_id)
                     if tmpl:
@@ -219,7 +218,7 @@ async def stream_message(
                             role="system",
                             content=f"[模板: {tmpl.name}]\n{tmpl.content}",
                         )
-                        context_messages = list(context_messages) + [template_context]
+                        context_messages = [*context_messages, template_context]
                         yield f"event: template_loaded\ndata: {json.dumps({'template': tmpl.name, 'type': tmpl.type.value})}\n\n"
                     else:
                         cs = ComponentTemplateStore()
@@ -231,7 +230,7 @@ async def stream_message(
                                 role="system",
                                 content=f"[组件模板: {comp.name}]\n{comp.content}",
                             )
-                            context_messages = list(context_messages) + [template_context]
+                            context_messages = [*context_messages, template_context]
                             yield f"event: template_loaded\ndata: {json.dumps({'template': comp.name, 'type': 'prototype'})}\n\n"
                 except Exception as e:
                     logger.warning(f"Template loading error: {e}")
@@ -268,10 +267,6 @@ async def stream_message(
                         break
 
             elif llm_handler:
-                # 直接使用 LLM 生成
-                from pm_workstation.agents.coordinator_chat import CoordinatorChatAgent
-                from pm_workstation.model_router.base import LLMMessage
-
                 coordinator = CoordinatorChatAgent(
                     llm_handler=llm_handler,
                     memory_retriever=_memory_retriever,

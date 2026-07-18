@@ -87,46 +87,47 @@ class WorkflowOrchestrator:
         return dependencies
 
     def _analyze_parallel_groups(self, workflow: WorkflowDefinition) -> list[list[str]]:
-        """分析并行组
-        
+        """分析并行组（O(n α(n)) Union-Find）
+
         找出可以并行执行的步骤组
-        
+
         Args:
             workflow: 工作流定义
-        
+
         Returns:
             并行组列表（每个组是一组可并行执行的步骤 ID）
         """
-        groups: list[list[str]] = []
-        processed: set[str] = set()
+        if not workflow.steps:
+            return []
 
-        # 找出所有 parallel_with 关系
-        parallel_map: dict[str, str] = {}
+        parent: dict[str, str] = {}
+
+        def find(x: str) -> str:
+            while parent[x] != x:
+                parent[x] = parent[parent[x]]
+                x = parent[x]
+            return x
+
+        def union(x: str, y: str) -> None:
+            rx, ry = find(x), find(y)
+            if rx != ry:
+                parent[rx] = ry
+
+        for step in workflow.steps:
+            parent[step.id] = step.id
+
         for step in workflow.steps:
             if step.parallel_with:
-                parallel_map[step.id] = step.parallel_with
+                union(step.id, step.parallel_with)
 
-        # 构建并行组
+        groups: dict[str, list[str]] = {}
         for step in workflow.steps:
-            if step.id in processed:
-                continue
+            root = find(step.id)
+            if root not in groups:
+                groups[root] = []
+            groups[root].append(step.id)
 
-            group = [step.id]
-
-            # 找出与当前步骤并行执行的其他步骤
-            for other_step in workflow.steps:
-                if other_step.id != step.id and other_step.parallel_with == step.id:
-                    group.append(other_step.id)
-                elif other_step.id == step.parallel_with:
-                    group.append(other_step.id)
-
-            for sid in group:
-                processed.add(sid)
-
-            if len(group) > 1:
-                groups.append(group)
-
-        return groups
+        return [g for g in groups.values() if len(g) > 1]
 
     def _get_ready_steps(
         self,

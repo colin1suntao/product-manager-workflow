@@ -21,6 +21,8 @@ from pm_workstation.chat.chat_models import (
     ToolCall,
 )
 from pm_workstation.chat.task_router import TaskRouter
+from pm_workstation.component_library.store import ComponentTemplateStore
+from pm_workstation.knowledge_base.store import TemplateStore
 from pm_workstation.llm.token_usage import TokenUsageStore
 from pm_workstation.memory.memory_manager import MemoryManager
 from pm_workstation.memory.memory_retriever import MemoryRetriever
@@ -227,8 +229,6 @@ async def send_message(
     template_info = None
     if template_id:
         try:
-            from pm_workstation.component_library.store import ComponentTemplateStore
-            from pm_workstation.knowledge_base.store import TemplateStore
             ts = TemplateStore()
             tmpl = await ts.get(template_id)
             if tmpl:
@@ -252,7 +252,7 @@ async def send_message(
                         role="system",
                         content=f"[组件模板: {comp.name}]\n{comp.content}",
                     )
-                    context = list(context) + [template_context]
+                context = [*context, template_context]
         except Exception:
             pass
 

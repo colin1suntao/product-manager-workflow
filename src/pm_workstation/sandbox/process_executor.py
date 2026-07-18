@@ -368,24 +368,21 @@ class ProcessExecutor:
         Returns:
             str: 包装后的代码
         """
-        import_lines = ""
-        if imports:
-            for module in imports:
-                import_lines += f"import {module}\n"
+        import_lines = "\n".join(f"import {m}" for m in imports) + "\n" if imports else ""
 
         input_setup = ""
         if input_data:
+            lines = []
             for key, value in input_data.items():
                 if isinstance(value, str):
-                    input_setup += f"{key} = '{value}'\n"
+                    lines.append(f"{key} = '{value}'")
                 elif isinstance(value, (int, float, bool)):
-                    input_setup += f"{key} = {value}\n"
-                elif isinstance(value, dict):
-                    input_setup += f"{key} = {json.dumps(value)}\n"
-                elif isinstance(value, list):
-                    input_setup += f"{key} = {json.dumps(value)}\n"
+                    lines.append(f"{key} = {value}")
+                elif isinstance(value, (dict, list)):
+                    lines.append(f"{key} = {json.dumps(value)}")
                 else:
-                    input_setup += f"{key} = None\n"
+                    lines.append(f"{key} = None")
+            input_setup = "\n".join(lines) + "\n"
 
         result_file = os.path.join(workspace.path, "temp", f"result_{uuid.uuid4().hex[:8]}.json")
 

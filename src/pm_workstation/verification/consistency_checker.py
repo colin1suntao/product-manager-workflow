@@ -6,6 +6,7 @@
 
 import re
 import uuid
+from collections import Counter
 
 from pm_workstation.models.core import StructuredRequirement
 from pm_workstation.prototype.page_structure import PageStructure
@@ -256,15 +257,15 @@ class ConsistencyChecker:
 
         doc_set = set(doc_words)
         proto_set = set(proto_words)
+        doc_counter = Counter(doc_words)
+        proto_counter = Counter(proto_words)
 
         # 使用差集：文档中存在但原型中不存在的术语
         extra_terms = doc_set - proto_set
         for term in extra_terms:
             if len(term) < 2:
                 continue
-            doc_count = doc_words.count(term)
-            proto_count = proto_words.count(term)
-            terms.append((term, doc_count, proto_count))
+            terms.append((term, doc_counter[term], proto_counter[term]))
 
         return sorted(terms, key=lambda x: x[1] + x[2], reverse=True)
 
@@ -285,9 +286,10 @@ class ConsistencyChecker:
         if not issues:
             return "原型和文档内容一致，未发现不一致问题"
 
-        major_count = sum(1 for i in issues if i.severity == DocIssueSeverity.MAJOR)
-        minor_count = sum(1 for i in issues if i.severity == DocIssueSeverity.MINOR)
-        info_count = sum(1 for i in issues if i.severity == DocIssueSeverity.INFO)
+        sev_counter = Counter(i.severity for i in issues)
+        major_count = sev_counter.get(DocIssueSeverity.MAJOR, 0)
+        minor_count = sev_counter.get(DocIssueSeverity.MINOR, 0)
+        info_count = sev_counter.get(DocIssueSeverity.INFO, 0)
 
         parts = [f"发现 {len(issues)} 个一致性问题"]
         if major_count > 0:

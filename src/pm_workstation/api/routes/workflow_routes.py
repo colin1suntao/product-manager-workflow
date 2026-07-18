@@ -51,7 +51,7 @@ async def list_workflows() -> dict:
     return {
         "workflows": [_workflow_to_template(w).model_dump() for w in workflows],
         "total": len(workflows),
-        "categories": list(set(w.category for w in workflows)),
+        "categories": list({w.category for w in workflows})
     }
 
 
