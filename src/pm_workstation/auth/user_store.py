@@ -69,7 +69,8 @@ class UserStore:
         """
         stmt = select(User).where(User.email == email)
         result = await self.db.execute(stmt)
-        return result.scalar_one_or_none()
+        user = result.scalar_one_or_none()
+        return user if isinstance(user, User) else None
 
     async def find_by_id(self, user_id: str) -> User | None:
         """通过 ID 查找用户
@@ -82,7 +83,8 @@ class UserStore:
         """
         stmt = select(User).where(User.id == user_id)
         result = await self.db.execute(stmt)
-        return result.scalar_one_or_none()
+        user = result.scalar_one_or_none()
+        return user if isinstance(user, User) else None
 
     async def update_password(self, user_id: str, new_password: str) -> bool:
         """更新用户密码

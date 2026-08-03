@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 class SubAgentRegistry:
     """Sub-Agent 注册表
-    
+
     管理所有已注册的 Sub-Agent，支持：
     - 动态注册/注销
     - 能力匹配
@@ -32,10 +32,10 @@ class SubAgentRegistry:
 
     def register(self, config: SubAgentConfig) -> None:
         """注册 Sub-Agent
-        
+
         Args:
             config: Sub-Agent 配置
-        
+
         Raises:
             ValueError: 如果 agent_id 已存在
         """
@@ -55,10 +55,10 @@ class SubAgentRegistry:
 
     def unregister(self, agent_id: str) -> bool:
         """注销 Sub-Agent
-        
+
         Args:
             agent_id: Agent ID
-        
+
         Returns:
             是否成功注销
         """
@@ -81,10 +81,10 @@ class SubAgentRegistry:
 
     def get(self, agent_id: str) -> SubAgentConfig | None:
         """获取 Sub-Agent 配置
-        
+
         Args:
             agent_id: Agent ID
-        
+
         Returns:
             Sub-Agent 配置，如果不存在返回 None
         """
@@ -92,10 +92,10 @@ class SubAgentRegistry:
 
     def get_by_name(self, name: str) -> SubAgentConfig | None:
         """根据名称获取 Sub-Agent
-        
+
         Args:
             name: 显示名称
-        
+
         Returns:
             Sub-Agent 配置
         """
@@ -106,10 +106,10 @@ class SubAgentRegistry:
 
     def match_by_capability(self, capability: str) -> list[SubAgentConfig]:
         """根据能力匹配 Sub-Agent
-        
+
         Args:
             capability: 能力标签
-        
+
         Returns:
             匹配的 Sub-Agent 列表（按优先级排序）
         """
@@ -132,11 +132,11 @@ class SubAgentRegistry:
         min_match_score: float = 0.3,
     ) -> list[SubAgentMatch]:
         """根据多个能力匹配 Sub-Agent
-        
+
         Args:
             capabilities: 能力标签列表
             min_match_score: 最小匹配分数
-        
+
         Returns:
             匹配结果列表（按匹配分数排序）
         """
@@ -175,10 +175,10 @@ class SubAgentRegistry:
 
     def list_all(self, enabled_only: bool = True) -> list[SubAgentConfig]:
         """列出所有 Sub-Agent
-        
+
         Args:
             enabled_only: 是否只列出启用的
-        
+
         Returns:
             Sub-Agent 列表
         """
@@ -192,7 +192,7 @@ class SubAgentRegistry:
 
     def list_capabilities(self) -> list[str]:
         """列出所有能力标签
-        
+
         Returns:
             能力标签列表
         """
@@ -200,7 +200,7 @@ class SubAgentRegistry:
 
     def get_stats(self) -> SubAgentRegistryStats:
         """获取注册表统计信息
-        
+
         Returns:
             统计信息
         """
@@ -237,11 +237,11 @@ class SubAgentRegistry:
         updates: dict,
     ) -> SubAgentConfig | None:
         """更新 Sub-Agent 配置
-        
+
         Args:
             agent_id: Agent ID
             updates: 要更新的字段
-        
+
         Returns:
             更新后的配置，如果不存在返回 None
         """

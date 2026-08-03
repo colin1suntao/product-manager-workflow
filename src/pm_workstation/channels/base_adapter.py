@@ -14,11 +14,11 @@ class ChannelAdapter(ABC):
         self.config = config
 
     @abstractmethod
-    async def validate_webhook(self, request_data: dict[str, Any], headers: dict[str, str] = {}) -> dict[str, Any] | None:
+    async def validate_webhook(self, request_data: dict[str, Any], headers: dict[str, str] | None = None) -> dict[str, Any] | None:
         pass
 
     @abstractmethod
-    async def parse_incoming(self, request_data: dict[str, Any], headers: dict[str, str] = {}) -> IncomingMessage | None:
+    async def parse_incoming(self, request_data: dict[str, Any], headers: dict[str, str] | None = None) -> IncomingMessage | None:
         pass
 
     @abstractmethod

@@ -17,7 +17,7 @@ class ChatManager:
     提供会话和消息的 CRUD 操作，使用内存存储（生产环境应使用数据库）。
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._sessions: dict[str, ChatSession] = {}
         self._messages: dict[str, list[ChatMessage]] = {}
 
@@ -67,7 +67,7 @@ class ChatManager:
         sessions.sort(key=lambda s: s.updated_at, reverse=True)
         return sessions
 
-    async def update_session(self, session_id: str, **kwargs) -> ChatSession | None:
+    async def update_session(self, session_id: str, **kwargs: object) -> ChatSession | None:
         """更新会话信息
 
         Args:

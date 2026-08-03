@@ -31,7 +31,7 @@ def create_access_token(user_id: str) -> str:
         "exp": expire,
     }
 
-    return jwt.encode(payload, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
+    return str(jwt.encode(payload, settings.jwt_secret_key, algorithm=settings.jwt_algorithm))
 
 
 def create_refresh_token(user_id: str) -> tuple[str, str]:
@@ -72,7 +72,8 @@ def decode_token(token: str, secret: str | None = None) -> dict[str, Any]:
     Raises:
         JWTError: Token 无效或已过期
     """
-    return jwt.decode(token, secret or settings.jwt_secret_key, algorithms=[settings.jwt_algorithm])
+    result = jwt.decode(token, secret or settings.jwt_secret_key, algorithms=[settings.jwt_algorithm])
+    return result if isinstance(result, dict) else {}
 
 
 def verify_access_token(token: str) -> dict[str, Any]:

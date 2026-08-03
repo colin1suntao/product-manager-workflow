@@ -516,7 +516,6 @@ async def compress_context(
     # 保留最近的 20 条消息，移除更早的消息
     keep_count = 20
     if len(messages) > keep_count:
-        total = len(messages)
         # 收集需要删除的消息 ID（先收集，避免迭代时列表被修改）
         ids_to_remove = [m.id for m in messages[:-keep_count]]
 

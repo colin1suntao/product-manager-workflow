@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 
 class ToolManager:
     """工具管理器
-    
+
     管理所有工具的：
     - 注册
     - 验证参数
@@ -67,7 +67,7 @@ class ToolManager:
         executor: Callable,
     ) -> None:
         """注册工具
-        
+
         Args:
             tool: 工具定义
             executor: 执行函数
@@ -82,10 +82,10 @@ class ToolManager:
         name: str,
     ) -> bool:
         """注销工具
-        
+
         Args:
             name: 工具名称
-            
+
         Returns:
             bool: 是否成功
         """
@@ -101,10 +101,10 @@ class ToolManager:
         name: str,
     ) -> ToolDefinition | None:
         """获取工具定义
-        
+
         Args:
             name: 工具名称
-            
+
         Returns:
             Optional[ToolDefinition]: 工具定义
         """
@@ -115,10 +115,10 @@ class ToolManager:
         category: ToolCategory | None = None,
     ) -> list[ToolDefinition]:
         """列出工具
-        
+
         Args:
             category: 工具类别过滤
-            
+
         Returns:
             list[ToolDefinition]: 工具列表
         """
@@ -132,11 +132,11 @@ class ToolManager:
         params: dict,
     ) -> tuple[bool, str | None]:
         """验证工具参数
-        
+
         Args:
             tool: 工具定义
             params: 参数
-            
+
         Returns:
             tuple: (是否有效, 错误信息)
         """
@@ -180,13 +180,13 @@ class ToolManager:
         context: ExecutionContext | None = None,
     ) -> ToolResult:
         """执行工具
-        
+
         Args:
             tool_name: 工具名称
             workspace: 工作区
             params: 参数
             context: 执行上下文
-            
+
         Returns:
             ToolResult: 执行结果
         """

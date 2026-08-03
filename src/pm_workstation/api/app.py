@@ -1,5 +1,6 @@
 """FastAPI 应用配置"""
 
+import logging
 import os
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
@@ -18,11 +19,12 @@ from pm_workstation.api.routes.channels import router as channels_router
 from pm_workstation.api.routes.chat import router as chat_router
 from pm_workstation.api.routes.component_library import router as component_library_router
 from pm_workstation.api.routes.components import router as components_router
+from pm_workstation.api.routes.evolution import router as evolution_router
 from pm_workstation.api.routes.integrations import router as integrations_router
 from pm_workstation.api.routes.knowledge_base import router as knowledge_base_router
+from pm_workstation.api.routes.layered_memory import router as layered_memory_router
 from pm_workstation.api.routes.llm import router as llm_router
 from pm_workstation.api.routes.market_research import router as market_research_router
-from pm_workstation.api.routes.layered_memory import router as layered_memory_router
 from pm_workstation.api.routes.memory import router as memory_router
 from pm_workstation.api.routes.persistent_memory import router as persistent_memory_router
 from pm_workstation.api.routes.skills import router as skills_router
@@ -30,7 +32,6 @@ from pm_workstation.api.routes.streaming_chat import router as streaming_chat_ro
 from pm_workstation.api.routes.token_usage import router as token_usage_router
 from pm_workstation.api.routes.workflow_routes import router as workflow_routes_router
 from pm_workstation.api.routes.workflows import router as workflows_router
-from pm_workstation.api.routes.evolution import router as evolution_router
 from pm_workstation.llm.provider_store import LLMProviderStore
 from pm_workstation.model_router.anthropic_adapter import AnthropicAdapter
 from pm_workstation.model_router.base import LLMConfig
@@ -38,6 +39,8 @@ from pm_workstation.model_router.fallback_handler import FallbackHandler
 from pm_workstation.model_router.openai_adapter import OpenAIAdapter
 from pm_workstation.orchestrator.workflow_manager import WorkflowManager
 from pm_workstation.sandbox.api.routes import router as sandbox_router
+
+logger = logging.getLogger(__name__)
 
 ARTIFACTS_DIR = os.path.join(os.path.dirname(__file__), "..", "artifacts")
 
@@ -83,60 +86,22 @@ def _build_llm_handler(provider_config, model_override: str | None = None) -> Fa
     return FallbackHandler(primary_model=primary, fallback_models=[])
 
 
-@asynccontextmanager
-async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
-    """应用生命周期管理"""
-    from pm_workstation.agents.pm_sub_agents import register_pm_sub_agents
-
-    # 启动时初始化
-    app.state.provider_store = LLMProviderStore()
-
-    # 如果没有配置，尝试从环境变量创建默认配置
-    configs = await app.state.provider_store.list_configs()
-    if not configs:
-        _try_create_default_provider(app.state.provider_store)
-
-    # 尝试构建 LLM handler
-    llm_handler = None
-    try:
-        default_config = await app.state.provider_store.get_default_config()
-        if default_config:
-            llm_handler = _build_llm_handler(default_config)
-    except Exception:
-        pass
-
-    app.state.llm_handler = llm_handler
-    app.state.workflow_manager = WorkflowManager(llm_handler=llm_handler)
-
-    # 暴露 provider_store 给其他模块使用
-    global app_state_provider_store
-    app_state_provider_store = app.state.provider_store
-
-    # 注册 PM Sub-Agents
-    register_pm_sub_agents()
-
-    yield
-    # 关闭时清理
-    pass
-
-
-def _try_create_default_provider(store) -> None:
-    """尝试从环境变量创建默认 LLM Provider 配置
-    
-    注意：为了安全性，不再自动从环境变量创建配置。
-    用户需要通过 UI 手动配置 LLM Provider。
-    """
-    # 已禁用自动创建配置功能
-    # 用户需要通过 /settings/llm 页面手动配置
-    pass
-
-
 def create_app() -> FastAPI:
     """创建 FastAPI 应用实例"""
     global app_state_provider_store
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+        global app_state_provider_store
+
+        from pm_workstation.api.dependencies import init_db_tables
+
+        # 初始化数据库表（仅启动时一次）
+        try:
+            await init_db_tables()
+        except Exception as e:
+            logger.error(f"Failed to initialize database tables: {e}")
+
         # 初始化 LLM Provider Store
         provider_store = LLMProviderStore()
         app_state_provider_store = provider_store
@@ -149,8 +114,8 @@ def create_app() -> FastAPI:
             default_config = await provider_store.get_default_config()
             if default_config:
                 llm_handler = _build_llm_handler(default_config)
-        except Exception:
-            pass
+        except Exception as e:
+            logger.error(f"Failed to initialize LLM handler: {e}")
 
         # 初始化 Workflow Manager（带 LLM handler 和 provider_store）
         workflow_manager = WorkflowManager(llm_handler=llm_handler, provider_store=provider_store)

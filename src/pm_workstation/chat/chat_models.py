@@ -4,13 +4,13 @@
 """
 
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
 
-class TaskMode(str, Enum):
+class TaskMode(StrEnum):
     """任务模式枚举"""
     REQUIREMENT = "requirement"
     PROTOTYPE = "prototype"
@@ -18,7 +18,7 @@ class TaskMode(str, Enum):
     MARKET_RESEARCH = "market_research"
 
 
-class TaskStatus(str, Enum):
+class TaskStatus(StrEnum):
     """任务状态枚举"""
     PENDING = "pending"
     RUNNING = "running"

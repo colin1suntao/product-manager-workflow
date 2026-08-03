@@ -4,12 +4,12 @@
 """
 
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 
 from pydantic import BaseModel, Field
 
 
-class SubAgentStatus(str, Enum):
+class SubAgentStatus(StrEnum):
     """Sub-Agent 状态"""
     PENDING = "pending"
     RUNNING = "running"
@@ -20,7 +20,7 @@ class SubAgentStatus(str, Enum):
 
 class SubAgentConfig(BaseModel):
     """Sub-Agent 配置
-    
+
     定义一个 Sub-Agent 的能力、默认技能和执行参数。
     """
     agent_id: str = Field(..., description="Sub-Agent ID")
@@ -39,7 +39,7 @@ class SubAgentConfig(BaseModel):
 
 class IsolatedContext(BaseModel):
     """隔离上下文
-    
+
     为 Sub-Agent 创建独立的执行空间，隔离主 Agent 和其他 Sub-Agent 的对话历史。
     """
     agent_id: str = Field(..., description="Agent ID")

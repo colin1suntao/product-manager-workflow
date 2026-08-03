@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 
 
 class ComponentTemplateStore:
-    def __init__(self):
+    def __init__(self) -> None:
         self._templates: dict[str, ComponentTemplate] = {}
         self._load_defaults()
 

@@ -6,7 +6,7 @@
 import html
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import FileResponse, HTMLResponse
 
 from pm_workstation.artifact.artifact_manager import get_artifact_manager
@@ -23,12 +23,12 @@ router = APIRouter(prefix="/artifact-manager", tags=["产物管理"])
 
 @router.get("/search", summary="搜索产物")
 async def search_artifacts(
-    query: str,
-    limit: int = 20,
+    query: str = Query(..., max_length=200),
+    limit: int = Query(20, ge=1, le=100),
     user_id: str = Depends(get_current_user),
 ) -> dict:
     """搜索产物
-    
+
     Args:
         query: 搜索关键词
         limit: 最大数量
@@ -58,7 +58,7 @@ async def list_session_artifacts(
     user_id: str = Depends(get_current_user),
 ) -> dict:
     """获取会话的所有产物
-    
+
     Args:
         session_id: 会话 ID
     """
@@ -91,7 +91,7 @@ async def create_artifact(
     user_id: str = Depends(get_current_user),
 ) -> dict:
     """创建新产物
-    
+
     Args:
         body: 包含 name、type、content、description（可选）、tags（可选）等
     """
@@ -150,7 +150,7 @@ async def get_artifact(
     user_id: str = Depends(get_current_user),
 ) -> dict:
     """获取产物详情
-    
+
     Args:
         artifact_id: 产物 ID
         version: 版本号（可选，默认当前版本）
@@ -209,7 +209,7 @@ async def update_artifact(
     user_id: str = Depends(get_current_user),
 ) -> dict:
     """更新产物（创建新版本）
-    
+
     Args:
         artifact_id: 产物 ID
         body: 包含 content、diff_summary（可选）
@@ -255,7 +255,7 @@ async def get_artifact_version(
     user_id: str = Depends(get_current_user),
 ) -> dict:
     """获取产物的指定版本
-    
+
     Args:
         artifact_id: 产物 ID
         version_number: 版本号
@@ -295,7 +295,7 @@ async def rollback_artifact(
     user_id: str = Depends(get_current_user),
 ) -> dict:
     """回滚产物到指定版本
-    
+
     Args:
         artifact_id: 产物 ID
         target_version: 目标版本号
@@ -338,7 +338,7 @@ async def compare_versions(
     user_id: str = Depends(get_current_user),
 ) -> dict:
     """对比两个版本的差异
-    
+
     Args:
         artifact_id: 产物 ID
         version_from: 起始版本
@@ -375,7 +375,7 @@ async def delete_artifact(
     user_id: str = Depends(get_current_user),
 ) -> dict:
     """删除产物（标记为已删除）
-    
+
     Args:
         artifact_id: 产物 ID
     """
@@ -400,11 +400,11 @@ async def delete_artifact(
 async def list_artifacts(
     type: str | None = None,
     status: str | None = None,
-    limit: int = 50,
+    limit: int = Query(50, ge=1, le=200),
     user_id: str = Depends(get_current_user),
 ) -> dict:
     """获取用户的产物列表
-    
+
     Args:
         type: 类型过滤（可选）
         status: 状态过滤（可选）
@@ -466,10 +466,10 @@ async def list_artifacts(
 async def preview_artifact(
     artifact_id: str,
     version: int | None = None,
-    request: Request = None,
+    user_id: str = Depends(get_current_user),
 ) -> HTMLResponse:
     """预览产物内容
-    
+
     Args:
         artifact_id: 产物 ID
         version: 版本号（可选）
@@ -478,16 +478,23 @@ async def preview_artifact(
     artifact = await manager.get(artifact_id)
 
     if not artifact:
-        raise HTMLResponse(content="<h1>产物不存在</h1>", status_code=404)
+        raise HTTPException(status_code=404, detail="产物不存在")
 
     content = await manager.get_content(artifact_id, version or artifact.current_version)
 
     if not content:
-        return HTMLResponse(content="<h1>内容不存在</h1>", status_code=404)
+        raise HTTPException(status_code=404, detail="内容不存在")
 
     # 根据类型渲染
     if artifact.type == ArtifactType.PROTOTYPE:
-        return HTMLResponse(content=content)
+        # 原型本身是 HTML，需保持渲染；通过 CSP 阻止脚本执行以缓解存储型 XSS
+        return HTMLResponse(
+            content=content,
+            headers={
+                "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; img-src 'self' data:",
+                "X-Content-Type-Options": "nosniff",
+            },
+        )
     elif artifact.type in [ArtifactType.DOCUMENT, ArtifactType.REPORT]:
         html_out = f"""<!DOCTYPE html>
 <html>
@@ -533,9 +540,10 @@ async def preview_artifact(
 async def download_artifact(
     artifact_id: str,
     version: int | None = None,
+    user_id: str = Depends(get_current_user),
 ) -> FileResponse:
     """下载产物文件
-    
+
     Args:
         artifact_id: 产物 ID
         version: 版本号（可选）

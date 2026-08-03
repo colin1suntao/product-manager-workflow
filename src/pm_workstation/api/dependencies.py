@@ -3,6 +3,7 @@
 提供全局依赖项，如数据库连接、工作流管理器、当前用户等。
 """
 
+import threading
 from collections.abc import AsyncGenerator
 
 from fastapi import Header, Request
@@ -13,15 +14,30 @@ from pm_workstation.llm.provider_store import LLMProviderStore
 from pm_workstation.orchestrator.workflow_manager import WorkflowManager
 
 _engine = None
+_engine_lock = threading.Lock()
+_tables_created = False
 
 
 def _get_engine():
     global _engine
     if _engine is None:
-        _engine = create_async_engine(
-            "sqlite+aiosqlite:///./pm_workstation.db", echo=False
-        )
+        with _engine_lock:
+            if _engine is None:
+                _engine = create_async_engine(
+                    "sqlite+aiosqlite:///./pm_workstation.db", echo=False
+                )
     return _engine
+
+
+async def init_db_tables():
+    """初始化数据库表（应用启动时调用一次，避免每次请求执行 create_all）"""
+    global _tables_created
+    if _tables_created:
+        return
+    engine = _get_engine()
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    _tables_created = True
 
 
 def get_workflow_manager(request: Request) -> WorkflowManager:
@@ -37,9 +53,6 @@ def get_provider_store(request: Request) -> LLMProviderStore:
 async def get_db_session(request: Request) -> AsyncGenerator[AsyncSession, None]:
     """获取数据库会话"""
     engine = _get_engine()
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-
     async with AsyncSession(engine) as session:
         yield session
 

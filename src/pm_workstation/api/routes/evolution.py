@@ -61,17 +61,17 @@ async def trigger_evolution(
     manager: AgentEvolutionManager = Depends(get_evolution_manager),
 ):
     """手动触发 Agent 进化流程
-    
+
     会执行：
     1. 经验数据分析
     2. 知识提炼
     3. 应用优化规则
     """
     result = manager.trigger_evolution()
-    
+
     if result["status"] == "failed":
         raise HTTPException(status_code=500, detail=result.get("error"))
-    
+
     return result
 
 
@@ -81,7 +81,7 @@ async def get_evolution_metrics(
 ):
     """获取 Agent 进化相关指标"""
     metrics = manager.get_evolution_metrics()
-    
+
     return EvolutionMetricsResponse(
         total_experiences=metrics.total_experiences,
         excellent_count=metrics.excellent_count,
@@ -121,10 +121,10 @@ async def rollback_optimization(
 ):
     """回滚指定的优化规则"""
     success = manager.optimizer.rollback_optimization(rule_id)
-    
+
     if not success:
         raise HTTPException(status_code=400, detail="Failed to rollback optimization")
-    
+
     return {"status": "success", "rule_id": rule_id}
 
 
@@ -138,21 +138,21 @@ async def list_experiences(
 ):
     """查询历史经验记录"""
     from pm_workstation.agents.evolution.evolution_models import ExperienceQuality
-    
+
     quality_filter = None
     if quality:
         try:
             quality_filter = ExperienceQuality(quality)
         except ValueError:
             raise HTTPException(status_code=400, detail=f"Invalid quality: {quality}")
-    
+
     experiences = manager.collector.list_experiences(
         task_type=task_type if task_type else None,
         quality=quality_filter,
         success=success,
         limit=limit,
     )
-    
+
     return {
         "count": len(experiences),
         "experiences": [
@@ -177,10 +177,10 @@ async def get_experience(
 ):
     """获取单个经验记录的详细信息"""
     experience = manager.collector.get_experience(experience_id)
-    
+
     if not experience:
         raise HTTPException(status_code=404, detail="Experience not found")
-    
+
     return experience.model_dump()
 
 
@@ -192,13 +192,13 @@ async def submit_feedback(
 ):
     """为经验记录提交用户反馈"""
     experience = manager.collector.get_experience(experience_id)
-    
+
     if not experience:
         raise HTTPException(status_code=404, detail="Experience not found")
-    
+
     # 更新经验记录（这里简化处理，实际应该调用 collector 的更新方法）
     # 为了简化，我们只记录反馈，不修改原经验
-    
+
     return {
         "status": "success",
         "message": "反馈已记录，将用于后续进化分析",

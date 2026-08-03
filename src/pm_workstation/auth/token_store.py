@@ -8,7 +8,7 @@
 class TokenStore:
     """Token 撤销存储"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._revoked_tokens: dict[str, int] = {}
 
     async def revoke_token(self, jti: str, expires_at: int) -> None:

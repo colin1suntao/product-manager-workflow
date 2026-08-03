@@ -6,7 +6,10 @@
   - 长期记忆 (LTM): 完整 CRUD + 搜索 + 提升
 """
 
+from typing import Literal
+
 from fastapi import APIRouter, Depends, HTTPException, Query
+from pydantic import BaseModel, Field
 
 from pm_workstation.memory.layered_manager import LayeredMemoryManager, get_layered_memory_manager
 from pm_workstation.memory.layered_models import (
@@ -17,6 +20,62 @@ from pm_workstation.memory.layered_models import (
 )
 
 router = APIRouter(prefix="/memory/v2", tags=["三层记忆"])
+
+
+# ======================== 请求模型 ========================
+
+
+class LoadWorkingMemoryRequest(BaseModel):
+    """从长期记忆加载到工作记忆的请求"""
+    task_description: str = Field(default="", description="任务描述")
+    task_type: str = Field(default="", description="任务类型")
+    task_id: str | None = Field(default=None, description="任务 ID")
+    max_items: int = Field(default=10, ge=1, le=50, description="最大加载数量")
+
+
+class AddWorkingMemoryRequest(BaseModel):
+    """手动添加工作记忆的请求"""
+    title: str = Field(..., min_length=1, max_length=500, description="记忆标题")
+    content: str = Field(..., min_length=1, max_length=20000, description="记忆内容")
+    category: LongTermCategory = Field(default=LongTermCategory.CUSTOM, description="分类")
+    tags: list[str] = Field(default_factory=list, description="标签列表")
+    priority: MemoryPriority = Field(default=MemoryPriority.MEDIUM, description="优先级")
+    importance: float = Field(default=0.7, ge=0.0, le=1.0, description="重要性 0-1")
+    promote: bool = Field(default=False, description="是否同时保存为长期记忆")
+
+
+class CreateLongTermMemoryRequest(BaseModel):
+    """创建长期记忆的请求"""
+    title: str = Field(..., min_length=1, max_length=500, description="记忆标题")
+    content: str = Field(..., min_length=1, max_length=20000, description="记忆内容")
+    category: LongTermCategory = Field(default=LongTermCategory.CUSTOM, description="分类")
+    tags: list[str] = Field(default_factory=list, description="标签列表")
+    priority: MemoryPriority = Field(default=MemoryPriority.MEDIUM, description="优先级")
+    importance: float = Field(default=0.5, ge=0.0, le=1.0, description="重要性 0-1")
+    summary: str | None = Field(default=None, max_length=2000, description="自定义摘要")
+
+
+class UpdateLongTermMemoryRequest(BaseModel):
+    """更新长期记忆的请求"""
+    title: str | None = Field(default=None, min_length=1, max_length=500)
+    content: str | None = Field(default=None, min_length=1, max_length=20000)
+    summary: str | None = Field(default=None, max_length=2000)
+    tags: list[str] | None = Field(default=None)
+    category: LongTermCategory | None = Field(default=None)
+    priority: MemoryPriority | None = Field(default=None)
+    importance: float | None = Field(default=None, ge=0.0, le=1.0)
+    confidence: float | None = Field(default=None, ge=0.0, le=1.0)
+
+
+class SearchLongTermMemoryRequest(BaseModel):
+    """搜索长期记忆的请求"""
+    keyword: str = Field(default="", max_length=500, description="搜索关键词")
+    categories: list[LongTermCategory] | None = Field(default=None, description="分类列表")
+    tags: list[str] | None = Field(default=None, description="标签列表")
+    priority: MemoryPriority | None = Field(default=None, description="优先级")
+    min_importance: float = Field(default=0.0, ge=0.0, le=1.0, description="最低重要性")
+    max_results: int = Field(default=20, ge=1, le=200, description="最大结果数")
+    sort_by: Literal["importance", "recency", "relevance"] = Field(default="relevance", description="排序方式")
 
 
 def _get_manager() -> LayeredMemoryManager:
@@ -33,17 +92,6 @@ def _safe_enum(value: str, enum_cls):
             status_code=422,
             detail=f"Invalid value '{value}' for {enum_cls.__name__}. Valid: {valid}",
         )
-
-
-def _require_field(body: dict, field: str):
-    """校验必填字段"""
-    value = body.get(field, "")
-    if not value or not str(value).strip():
-        raise HTTPException(
-            status_code=422,
-            detail=f"Required field '{field}' is missing or empty",
-        )
-    return value
 
 
 def _require_session(manager: LayeredMemoryManager):
@@ -107,17 +155,17 @@ async def get_stm_context(
 
 @router.post("/wm/load", summary="从长期记忆加载到工作记忆")
 async def load_working_memory(
-    body: dict,
+    body: LoadWorkingMemoryRequest,
     manager: LayeredMemoryManager = Depends(_get_manager),
 ) -> dict:
     """根据当前任务从长期记忆加载关联条目到工作记忆"""
     _require_session(manager)
 
     results = manager.load_wm_from_ltm(
-        task_description=body.get("task_description", ""),
-        task_type=body.get("task_type", ""),
-        task_id=body.get("task_id"),
-        max_items=body.get("max_items", 10),
+        task_description=body.task_description,
+        task_type=body.task_type,
+        task_id=body.task_id,
+        max_items=body.max_items,
     )
     return {
         "loaded_count": len(results),
@@ -136,7 +184,7 @@ async def load_working_memory(
 
 @router.post("/wm/entries", summary="用户手动添加工作记忆")
 async def add_working_memory(
-    body: dict,
+    body: AddWorkingMemoryRequest,
     manager: LayeredMemoryManager = Depends(_get_manager),
 ) -> dict:
     """用户手动添加一条工作记忆
@@ -152,24 +200,16 @@ async def add_working_memory(
     """
     _require_session(manager)
 
-    title = _require_field(body, "title")
-    content = _require_field(body, "content")
-
-    category = _safe_enum(body.get("category", "custom"), LongTermCategory)
-    priority = _safe_enum(body.get("priority", "medium"), MemoryPriority)
-    importance = body.get("importance", 0.7)
-    tags = body.get("tags", [])
-
     entry = manager.add_wm_entry(
-        title=title,
-        content=content,
-        category=category,
-        tags=tags,
-        priority=priority,
-        importance=importance,
+        title=body.title,
+        content=body.content,
+        category=body.category,
+        tags=body.tags,
+        priority=body.priority,
+        importance=body.importance,
     )
 
-    if body.get("promote", False):
+    if body.promote:
         manager.promote_to_long_term(entry)
 
     return {
@@ -177,7 +217,7 @@ async def add_working_memory(
         "title": entry.title,
         "category": entry.category.value,
         "priority": entry.priority.value,
-        "promoted": body.get("promote", False),
+        "promoted": body.promote,
     }
 
 
@@ -210,7 +250,7 @@ async def clear_working_memory(
 
 @router.post("/ltm/entries", summary="创建长期记忆")
 async def create_long_term_memory(
-    body: dict,
+    body: CreateLongTermMemoryRequest,
     user_id: str = Query(...),
     manager: LayeredMemoryManager = Depends(_get_manager),
 ) -> dict:
@@ -225,18 +265,15 @@ async def create_long_term_memory(
         - importance (可选): 重要性 0-1
         - summary (可选): 自定义摘要
     """
-    title = _require_field(body, "title")
-    content = _require_field(body, "content")
-
     entry = LongTermMemoryEntry(
         user_id=user_id,
-        title=title,
-        content=content,
-        summary=body.get("summary", content[:200]),
-        category=_safe_enum(body.get("category", "custom"), LongTermCategory),
-
-        priority=_safe_enum(body.get("priority", "medium"), MemoryPriority),
-        importance=body.get("importance", 0.5),
+        title=body.title,
+        content=body.content,
+        summary=body.summary or body.content[:200],
+        category=body.category,
+        tags=body.tags,
+        priority=body.priority,
+        importance=body.importance,
         source="user_manual",
     )
     entry = manager.store_long_term(entry)
@@ -325,7 +362,7 @@ async def get_long_term_memory(
 @router.put("/ltm/entries/{memory_id}", summary="更新长期记忆")
 async def update_long_term_memory(
     memory_id: str,
-    body: dict,
+    body: UpdateLongTermMemoryRequest,
     user_id: str = Query(...),
     manager: LayeredMemoryManager = Depends(_get_manager),
 ) -> dict:
@@ -333,12 +370,11 @@ async def update_long_term_memory(
 
     可更新字段: title, content, summary, tags, category, priority, importance, confidence
     """
-    if "category" in body:
-        body["category"] = _safe_enum(body["category"], LongTermCategory)
-    if "priority" in body:
-        body["priority"] = _safe_enum(body["priority"], MemoryPriority)
+    updates = body.model_dump(exclude_unset=True, exclude_none=True)
+    if not updates:
+        raise HTTPException(status_code=422, detail="No fields to update")
 
-    entry = manager.update_long_term(memory_id, user_id=user_id, **body)
+    entry = manager.update_long_term(memory_id, user_id=user_id, **updates)
     if not entry:
         raise HTTPException(status_code=404, detail="记忆不存在")
     return {
@@ -363,7 +399,7 @@ async def delete_long_term_memory(
 
 @router.post("/ltm/search", summary="搜索长期记忆")
 async def search_long_term_memories(
-    body: dict,
+    body: SearchLongTermMemoryRequest,
     user_id: str = Query(...),
     manager: LayeredMemoryManager = Depends(_get_manager),
 ) -> dict:
@@ -380,18 +416,12 @@ async def search_long_term_memories(
     """
     query = MemoryRetrievalQuery(
         user_id=user_id,
-        keyword=body.get("keyword", ""),
-        categories=(
-            [_safe_enum(c, LongTermCategory) for c in body.get("categories", [])]
-            if body.get("categories") else None,
-        ),
-        priority=(
-            _safe_enum(body["priority"], MemoryPriority)
-            if body.get("priority") else None
-        ),
-        min_importance=body.get("min_importance", 0.0),
-        max_results=body.get("max_results", 20),
-        sort_by=body.get("sort_by", "relevance"),
+        keyword=body.keyword,
+        categories=body.categories,
+        priority=body.priority,
+        min_importance=body.min_importance,
+        max_results=body.max_results,
+        sort_by=body.sort_by,
     )
     results = manager.search_long_term(query)
     return {

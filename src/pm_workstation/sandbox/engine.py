@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 
 class SandboxEngine:
     """Sandbox 执行引擎
-    
+
     核心功能：
     - 创建执行上下文
     - 协调工具调用
@@ -63,14 +63,14 @@ class SandboxEngine:
         workflow_id: str | None = None,
     ) -> ExecutionContext:
         """创建执行上下文
-        
+
         Args:
             task_params: 任务参数
             timeout: 超时时间
             resource_limits: 资源限制
             session_id: 会话 ID
             workflow_id: 工作流 ID
-            
+
         Returns:
             ExecutionContext: 执行上下文
         """
@@ -107,12 +107,12 @@ class SandboxEngine:
         params: dict,
     ) -> ToolResult:
         """调用工具
-        
+
         Args:
             context: 执行上下文
             tool_name: 工具名称
             params: 参数
-            
+
         Returns:
             ToolResult: 执行结果
         """
@@ -145,11 +145,11 @@ class SandboxEngine:
         tool_calls: list[ToolCall],
     ) -> AsyncGenerator[dict, None]:
         """流式执行多个工具调用
-        
+
         Args:
             context: 执行上下文
             tool_calls: 工具调用列表
-            
+
         Yields:
             dict: 执行事件
         """
@@ -241,10 +241,10 @@ class SandboxEngine:
         context: ExecutionContext,
     ) -> ExecutionSummary:
         """结束执行，收集产物
-        
+
         Args:
             context: 执行上下文
-            
+
         Returns:
             ExecutionSummary: 执行摘要
         """
@@ -292,10 +292,10 @@ class SandboxEngine:
         execution_id: str,
     ) -> ExecutionContext | None:
         """获取执行状态
-        
+
         Args:
             execution_id: 执行 ID
-            
+
         Returns:
             Optional[ExecutionContext]: 执行上下文
         """
@@ -306,10 +306,10 @@ class SandboxEngine:
         execution_id: str,
     ) -> bool:
         """取消执行
-        
+
         Args:
             execution_id: 执行 ID
-            
+
         Returns:
             bool: 是否成功
         """
@@ -331,11 +331,11 @@ class SandboxEngine:
         preserve_artifacts: bool = True,
     ) -> bool:
         """清理工作区
-        
+
         Args:
             execution_id: 执行 ID
             preserve_artifacts: 是否保留产物
-            
+
         Returns:
             bool: 是否成功
         """
@@ -351,11 +351,11 @@ class SandboxEngine:
         data: dict,
     ) -> dict:
         """创建事件
-        
+
         Args:
             event_type: 事件类型
             data: 数据
-            
+
         Returns:
             dict: SSE 事件格式
         """

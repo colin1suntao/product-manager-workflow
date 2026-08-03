@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 class ResourceMonitor:
     """资源监控器
-    
+
     监控执行过程的资源使用：
     - CPU 时间
     - 内存使用
@@ -48,7 +48,7 @@ class ResourceMonitor:
         limits: ResourceLimits | None = None,
     ) -> None:
         """开始监控执行
-        
+
         Args:
             context: 执行上下文
             limits: 资源限制（可选）
@@ -65,7 +65,7 @@ class ResourceMonitor:
         pid: int,
     ) -> None:
         """注册进程进行监控
-        
+
         Args:
             context: 执行上下文
             pid: 进程 ID
@@ -82,11 +82,11 @@ class ResourceMonitor:
         limits: ResourceLimits | None = None,
     ) -> tuple[bool, str | None]:
         """检查是否超出资源限制
-        
+
         Args:
             context: 执行上下文
             limits: 资源限制
-            
+
         Returns:
             tuple: (是否超出, 原因)
         """
@@ -129,7 +129,6 @@ class ResourceMonitor:
                     except OSError:
                         pass
 
-            total_size_mb = total_size / (1024 * 1024)
             usage = self._resource_usages.get(execution_id, ResourceUsage())
             usage.cpu_time_seconds = elapsed_time
             usage.file_count = file_count
@@ -143,10 +142,10 @@ class ResourceMonitor:
         context: ExecutionContext,
     ) -> ResourceUsage:
         """获取资源使用统计
-        
+
         Args:
             context: 执行上下文
-            
+
         Returns:
             ResourceUsage: 资源使用统计
         """
@@ -175,7 +174,7 @@ class ResourceMonitor:
         check_interval: float = 1.0,
     ) -> None:
         """持续监控循环
-        
+
         Args:
             context: 执行上下文
             limits: 资源限制
@@ -197,11 +196,11 @@ class ResourceMonitor:
         reason: str,
     ) -> bool:
         """终止执行
-        
+
         Args:
             context: 执行上下文
             reason: 终止原因
-            
+
         Returns:
             bool: 是否成功终止
         """
@@ -232,10 +231,10 @@ class ResourceMonitor:
         context: ExecutionContext,
     ) -> ResourceUsage:
         """停止监控并返回使用统计
-        
+
         Args:
             context: 执行上下文
-            
+
         Returns:
             ResourceUsage: 最终资源使用统计
         """

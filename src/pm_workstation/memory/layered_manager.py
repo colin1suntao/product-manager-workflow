@@ -6,14 +6,14 @@
 3. Long-term Memory (LTM)  - 持久化 CRUD + 自动提取
 """
 
-import asyncio
 import hashlib
 import json
 import logging
 import os
-from datetime import datetime, timezone
+import threading
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from .layered_models import (
     LongTermCategory,
@@ -39,6 +39,12 @@ class LayeredMemoryManager:
         wm = manager.wm    # 工作记忆
         manager.store_long_term(entry)  # 持久化长期记忆
     """
+
+    _STOP_WORDS = frozenset({
+        "的", "是", "在", "了", "和", "与", "或", "这", "那", "我", "你", "他",
+        "the", "is", "are", "was", "were", "a", "an", "and", "or", "of",
+        "to", "in", "for", "on", "with", "this", "that",
+    })
 
     def __init__(self, storage_dir: str = "./data/memory"):
         self._storage_dir = Path(storage_dir)
@@ -159,7 +165,7 @@ class LayeredMemoryManager:
         )
 
         self.wm.loaded_from_ltm = results
-        self.wm.updated_at = datetime.now(timezone.utc)
+        self.wm.updated_at = datetime.now(UTC)
         return results
 
     def add_wm_entry(
@@ -218,7 +224,7 @@ class LayeredMemoryManager:
         except json.JSONDecodeError:
             logger.error("LTM file corrupted for user %s: %s", user_id[:8], filepath)
             return []
-        except IOError as e:
+        except OSError as e:
             logger.error("LTM file read error for user %s: %s", user_id[:8], e)
             return []
 
@@ -231,7 +237,7 @@ class LayeredMemoryManager:
                 json.dumps(data, ensure_ascii=False, indent=2, default=str)
             )
             os.replace(tmp_path, filepath)
-        except IOError as e:
+        except OSError as e:
             logger.error("LTM file write error for user %s: %s", user_id[:8], e)
             raise
 
@@ -247,7 +253,7 @@ class LayeredMemoryManager:
                 break
 
         entry.layer = MemoryLayer.LONG_TERM
-        entry.updated_at = datetime.now(timezone.utc)
+        entry.updated_at = datetime.now(UTC)
         entry_dict = entry.model_dump(mode="json")
 
         if existing_idx is not None:
@@ -258,15 +264,21 @@ class LayeredMemoryManager:
         self._save_ltm(entry.user_id, data)
         return entry
 
-    def get_long_term(self, user_id: str, memory_id: str) -> LongTermMemoryEntry | None:
+    def get_long_term(
+        self,
+        user_id: str,
+        memory_id: str,
+        track_access: bool = True,
+    ) -> LongTermMemoryEntry | None:
         """获取单个长期记忆条目"""
         data = self._load_ltm(user_id)
         for i, item in enumerate(data):
             if item.get("id") == memory_id:
                 entry = LongTermMemoryEntry(**item)
-                entry.update_access()
-                data[i] = entry.model_dump(mode="json")
-                self._save_ltm(user_id, data)
+                if track_access:
+                    entry.update_access()
+                    data[i] = entry.model_dump(mode="json")
+                    self._save_ltm(user_id, data)
                 return entry
         return None
 
@@ -281,7 +293,7 @@ class LayeredMemoryManager:
         if not uid:
             raise RuntimeError("No user_id available")
 
-        entry = self.get_long_term(uid, memory_id)
+        entry = self.get_long_term(uid, memory_id, track_access=False)
         if not entry:
             return None
 
@@ -302,7 +314,7 @@ class LayeredMemoryManager:
             if key in allowed_fields and value is not None:
                 setattr(entry, key, value)
 
-        entry.updated_at = datetime.now(timezone.utc)
+        entry.updated_at = datetime.now(UTC)
         entry.layer = MemoryLayer.LONG_TERM
         return self.store_long_term(entry)
 
@@ -540,7 +552,7 @@ class LayeredMemoryManager:
             if filepath.exists():
                 stats.storage_size_bytes = filepath.stat().st_size
 
-        stats.last_updated = datetime.now(timezone.utc)
+        stats.last_updated = datetime.now(UTC)
         return stats
 
     # ==================== 自动提取辅助 ====================
@@ -548,11 +560,7 @@ class LayeredMemoryManager:
     @staticmethod
     def _extract_keywords(text: str, max_keywords: int = 5) -> list[str]:
         """简单关键词提取（实际可用 LLM 或 TF-IDF）"""
-        stop_words = {
-            "的", "是", "在", "了", "和", "与", "或", "这", "那", "我", "你", "他",
-            "the", "is", "are", "was", "were", "a", "an", "and", "or", "of",
-            "to", "in", "for", "on", "with", "this", "that",
-        }
+        stop_words = LayeredMemoryManager._STOP_WORDS
         words = [w.lower() for w in text.split() if len(w) > 2 and w.lower() not in stop_words]
         word_freq: dict[str, int] = {}
         for w in words:
@@ -591,11 +599,14 @@ class LayeredMemoryManager:
 
 
 _layered_manager: LayeredMemoryManager | None = None
+_layered_manager_lock = threading.Lock()
 
 
 def get_layered_memory_manager(storage_dir: str = "./data/memory") -> LayeredMemoryManager:
     """获取单例三层记忆管理器"""
     global _layered_manager
     if _layered_manager is None:
-        _layered_manager = LayeredMemoryManager(storage_dir=storage_dir)
+        with _layered_manager_lock:
+            if _layered_manager is None:
+                _layered_manager = LayeredMemoryManager(storage_dir=storage_dir)
     return _layered_manager

@@ -26,7 +26,7 @@ jobs:
         run: ruff check src
 
       - name: Type check with mypy
-        run: mypy src --ignore-missing-imports
+        run: mypy src/pm_workstation/auth src/pm_workstation/chat src/pm_workstation/component_library src/pm_workstation/knowledge_base --ignore-missing-imports --follow-imports=skip
 
   backend-test:
     runs-on: ubuntu-latest

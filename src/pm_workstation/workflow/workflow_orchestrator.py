@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 
 class WorkflowOrchestrator:
     """工作流编排器
-    
+
     执行预定义的多步骤工作流，支持：
     - 步骤依赖管理（等待前置步骤完成）
     - 并行执行（同时运行多个步骤）
@@ -50,7 +50,7 @@ class WorkflowOrchestrator:
         task_router: TaskRouter | None = None,
     ):
         """初始化编排器
-        
+
         Args:
             llm_handler: LLM 处理器
             task_router: 任务路由器
@@ -69,10 +69,10 @@ class WorkflowOrchestrator:
 
     def _analyze_dependencies(self, workflow: WorkflowDefinition) -> dict[str, list[str]]:
         """分析步骤依赖关系
-        
+
         Args:
             workflow: 工作流定义
-        
+
         Returns:
             步骤 ID 到其依赖步骤 ID 列表的映射
         """
@@ -137,13 +137,13 @@ class WorkflowOrchestrator:
         failed_steps: set[str],
     ) -> list[str]:
         """获取就绪的步骤（依赖已满足）
-        
+
         Args:
             workflow: 工作流定义
             completed_steps: 已完成的步骤 ID
             running_steps: 正在运行的步骤 ID
             failed_steps: 已失败的步骤 ID
-        
+
         Returns:
             就绪的步骤 ID 列表
         """
@@ -187,12 +187,12 @@ class WorkflowOrchestrator:
         execution: WorkflowExecution,
     ) -> dict:
         """构建步骤输入参数
-        
+
         Args:
             step: 当前步骤
             workflow: 工作流定义
             execution: 执行记录
-        
+
         Returns:
             输入参数字典
         """
@@ -219,14 +219,14 @@ class WorkflowOrchestrator:
         llm_handler: LLMBackend | None = None,
     ) -> WorkflowExecution:
         """执行工作流
-        
+
         Args:
             workflow: 工作流定义
             user_id: 用户 ID
             session_id: 会话 ID（可选）
             initial_input: 初始输入参数
             llm_handler: LLM 处理器（覆盖默认）
-        
+
         Returns:
             工作流执行记录
         """
@@ -391,13 +391,13 @@ class WorkflowOrchestrator:
         handler: LLMBackend | None = None,
     ) -> StepResult:
         """执行单个步骤
-        
+
         Args:
             step: 步骤定义
             workflow: 工作流定义
             execution: 执行记录
             handler: LLM 处理器
-        
+
         Returns:
             步骤执行结果
         """
@@ -508,10 +508,10 @@ class WorkflowOrchestrator:
 
     def get_progress(self, execution_id: str) -> WorkflowProgress | None:
         """获取执行进度
-        
+
         Args:
             execution_id: 执行 ID
-        
+
         Returns:
             进度信息
         """

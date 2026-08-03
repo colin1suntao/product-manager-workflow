@@ -41,8 +41,8 @@ async def get_current_user(token: str | None = Depends(oauth2_scheme)) -> str:
         )
 
     # 检查 Refresh Token 是否被撤销（Access Token 通过过期机制失效）
-    user_id = payload["sub"]
-    return user_id
+    user_id = payload.get("sub")
+    return str(user_id) if user_id is not None else ""
 
 
 async def get_current_user_optional(
@@ -57,6 +57,7 @@ async def get_current_user_optional(
 
     try:
         payload = verify_access_token(token)
-        return payload["sub"]
+        sub = payload.get("sub")
+        return str(sub) if sub is not None else None
     except ValueError:
         return None

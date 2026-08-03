@@ -17,6 +17,12 @@ from pm_workstation.agents.pm_sub_agents import register_pm_sub_agents
 from pm_workstation.agents.sub_agent_executor import SubAgentExecutor
 from pm_workstation.agents.sub_agent_models import SubAgentConfig
 from pm_workstation.agents.sub_agent_registry import get_sub_agent_registry
+from pm_workstation.api.routes.chat import (
+    _get_chat_manager,
+    _memory_retriever,
+    _soul_manager,
+    _token_usage_store,
+)
 from pm_workstation.auth.dependencies import get_current_user
 from pm_workstation.chat.chat_models import (
     ChatMessage,
@@ -30,14 +36,6 @@ from pm_workstation.model_router.base import LLMMessage
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/chat", tags=["会话交互-流式"])
-
-# 使用 chat.py 中的共享实例
-from pm_workstation.api.routes.chat import (
-    _get_chat_manager,
-    _memory_retriever,
-    _soul_manager,
-    _token_usage_store,
-)
 
 
 async def _build_llm_handler_for_streaming(request: Request, provider_id: str | None = None, model_name: str | None = None):

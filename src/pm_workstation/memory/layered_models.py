@@ -5,7 +5,7 @@ Working Memory (WM)     - 工作记忆: 任务相关记忆，动态加载
 Long-term Memory (LTM)  - 长期记忆: 持久化存储，跨会话可检索
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import StrEnum
 from typing import Any
 from uuid import uuid4
@@ -66,8 +66,8 @@ class ShortTermMemory(BaseModel):
     active_entities: list[str] = Field(default_factory=list)
     active_topics: list[str] = Field(default_factory=list)
 
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
     def estimate_tokens(self, text: str) -> int:
         """粗略估算 token 数（约 4 字符 = 1 token）"""
@@ -84,7 +84,7 @@ class ShortTermMemory(BaseModel):
         msg = {
             "role": role,
             "content": truncated,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         }
         self.messages.append(msg)
         self.current_tokens += tokens
@@ -93,7 +93,7 @@ class ShortTermMemory(BaseModel):
         while len(self.messages) > self.max_messages:
             self.messages.pop(0)
 
-        self.updated_at = datetime.now(timezone.utc)
+        self.updated_at = datetime.now(UTC)
 
         if self.current_tokens > self.token_budget:
             self._compact()
@@ -116,7 +116,7 @@ class ShortTermMemory(BaseModel):
             self.estimate_tokens(m.get("content", "")) for m in self.messages
         ) + self.estimate_tokens(self.context_summary)
         self.summarized = True
-        self.updated_at = datetime.now(timezone.utc)
+        self.updated_at = datetime.now(UTC)
 
     def get_context_for_injection(self) -> str:
         """获取可注入到提示词的上下文"""
@@ -129,7 +129,7 @@ class ShortTermMemory(BaseModel):
                 f"{m.get('role', '')}: {m.get('content', '')[:200]}" for m in recent
             ))
         if self.active_topics:
-            parts.append(f"\n[当前主题]\n" + ", ".join(self.active_topics))
+            parts.append("\n[当前主题]\n" + ", ".join(self.active_topics))
         return "\n".join(parts)
 
 
@@ -160,8 +160,8 @@ class WorkingMemory(BaseModel):
     # 检索配置
     max_loaded_items: int = Field(default=10)
 
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
     @property
     def all_entries(self) -> list["LongTermMemoryEntry"]:
@@ -181,7 +181,7 @@ class WorkingMemory(BaseModel):
         else:
             idx = self.manual_entries.index(existing[0])
             self.manual_entries[idx] = entry_copy
-        self.updated_at = datetime.now(timezone.utc)
+        self.updated_at = datetime.now(UTC)
 
     def clear_task(self):
         """清除当前任务的工作记忆"""
@@ -190,7 +190,7 @@ class WorkingMemory(BaseModel):
         self.task_id = None
         self.task_description = ""
         self.task_type = ""
-        self.updated_at = datetime.now(timezone.utc)
+        self.updated_at = datetime.now(UTC)
 
     def get_context_for_injection(self, max_tokens: int = 2000) -> str:
         """获取可注入的上下文"""
@@ -250,9 +250,9 @@ class LongTermMemoryEntry(BaseModel):
     context: dict[str, Any] = Field(default_factory=dict)
 
     # 时间
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    last_accessed: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    last_accessed: datetime = Field(default_factory=lambda: datetime.now(UTC))
     access_count: int = Field(default=0)
     expires_at: datetime | None = None
 
@@ -262,7 +262,7 @@ class LongTermMemoryEntry(BaseModel):
 
     def update_access(self):
         """更新访问记录并提升重要性"""
-        self.last_accessed = datetime.now(timezone.utc)
+        self.last_accessed = datetime.now(UTC)
         self.access_count += 1
         if self.access_count >= 5 and self.importance < 0.8:
             self.importance = min(0.95, self.importance + 0.1)

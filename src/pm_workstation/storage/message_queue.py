@@ -2,12 +2,15 @@
 
 import asyncio
 import json
+import logging
 from collections.abc import Callable
 from typing import Any
 
 import redis.asyncio as aioredis
 
 from pm_workstation.storage.redis_config import redis_config
+
+logger = logging.getLogger(__name__)
 
 
 class MessageQueue:

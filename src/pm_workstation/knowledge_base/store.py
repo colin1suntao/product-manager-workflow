@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 
 
 class TemplateStore:
-    def __init__(self):
+    def __init__(self) -> None:
         self._templates: dict[str, Template] = {}
         self._load_defaults()
 

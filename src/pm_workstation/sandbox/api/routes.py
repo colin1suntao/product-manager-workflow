@@ -32,10 +32,10 @@ async def create_execution(
     user_id: str = Depends(get_current_user),
 ) -> dict:
     """创建 Sandbox 执行上下文
-    
+
     Args:
         body: 创建请求
-    
+
     Returns:
         dict: 执行上下文信息
     """
@@ -66,12 +66,12 @@ async def invoke_tool(
     user_id: str = Depends(get_current_user),
 ) -> ToolResult:
     """在执行上下文中调用工具
-    
+
     Args:
         execution_id: 执行 ID
         tool_name: 工具名称
         body: 工具调用请求
-    
+
     Returns:
         ToolResult: 工具执行结果
     """
@@ -104,11 +104,11 @@ async def stream_execution(
     user_id: str = Depends(get_current_user),
 ) -> StreamingResponse:
     """流式执行多个工具调用
-    
+
     Args:
         execution_id: 执行 ID
         body: 流式执行请求
-    
+
     Returns:
         StreamingResponse: SSE 流式响应
     """
@@ -145,10 +145,10 @@ async def finalize_execution(
     user_id: str = Depends(get_current_user),
 ) -> ExecutionSummary:
     """结束执行，收集产物
-    
+
     Args:
         execution_id: 执行 ID
-    
+
     Returns:
         ExecutionSummary: 执行摘要
     """
@@ -170,10 +170,10 @@ async def get_execution_status(
     user_id: str = Depends(get_current_user),
 ) -> dict:
     """获取执行状态和日志
-    
+
     Args:
         execution_id: 执行 ID
-    
+
     Returns:
         dict: 执行状态
     """
@@ -201,10 +201,10 @@ async def get_execution_artifacts(
     user_id: str = Depends(get_current_user),
 ) -> dict:
     """获取执行产物列表
-    
+
     Args:
         execution_id: 执行 ID
-    
+
     Returns:
         dict: 产物列表
     """
@@ -237,10 +237,10 @@ async def cancel_execution(
     user_id: str = Depends(get_current_user),
 ) -> dict:
     """取消执行
-    
+
     Args:
         execution_id: 执行 ID
-    
+
     Returns:
         dict: 取消结果
     """
@@ -265,7 +265,7 @@ async def cleanup_execution(
     user_id: str = Depends(get_current_user),
 ) -> dict:
     """清理执行工作区
-    
+
     Args:
         execution_id: 执行 ID
         preserve_artifacts: 是否保留产物
@@ -329,7 +329,7 @@ async def validate_tool_params(
     body: dict,
 ) -> dict:
     """验证工具参数
-    
+
     Args:
         tool_name: 工具名称
         body: 参数

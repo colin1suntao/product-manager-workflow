@@ -41,7 +41,7 @@ class FeishuAdapter(ChannelAdapter):
     def get_webhook_url_hint(self) -> str:
         return f"/api/v1/channels/{self.config.id}/webhook"
 
-    async def validate_webhook(self, request_data: dict[str, Any], headers: dict[str, str] = {}) -> dict[str, Any] | None:
+    async def validate_webhook(self, request_data: dict[str, Any], headers: dict[str, str] | None = None) -> dict[str, Any] | None:
         challenge = request_data.get("challenge")
         token = request_data.get("token")
 
@@ -52,7 +52,7 @@ class FeishuAdapter(ChannelAdapter):
             return None
 
         if self.encrypt_key:
-            if not self._verify_signature(headers, request_data):
+            if not self._verify_signature(headers or {}, request_data):
                 logger.warning("[Feishu] Signature verification failed")
                 return None
 
@@ -82,7 +82,7 @@ class FeishuAdapter(ChannelAdapter):
         import base64
         return hmac.compare_digest(base64.b64encode(expected).decode(), signature)
 
-    async def parse_incoming(self, request_data: dict[str, Any], headers: dict[str, str] = {}) -> IncomingMessage | None:
+    async def parse_incoming(self, request_data: dict[str, Any], headers: dict[str, str] | None = None) -> IncomingMessage | None:
         event = request_data.get("event", {})
         if not event:
             return None
