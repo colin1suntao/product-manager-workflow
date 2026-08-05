@@ -416,7 +416,7 @@ class WorkspaceManager:
         workspace: Workspace,
         file_path: str,
     ) -> str:
-        """解析文件路径
+        """解析文件路径（限制在工作区根目录内）
 
         Args:
             workspace: 工作区
@@ -425,10 +425,18 @@ class WorkspaceManager:
         Returns:
             str: 绝对路径
         """
-        if file_path.startswith(workspace.path):
-            return file_path
+        workspace_root = os.path.realpath(workspace.path)
+        if file_path.startswith(workspace_root):
+            candidate = file_path
+        else:
+            candidate = os.path.join(workspace.path, file_path)
 
-        return os.path.join(workspace.path, file_path)
+        # 规范化并校验包含关系，防止 .. / 绝对路径逃逸工作区
+        resolved = os.path.realpath(candidate)
+        if resolved != workspace_root and not resolved.startswith(workspace_root + os.sep):
+            raise ValueError(f"Path escapes workspace root: {file_path}")
+
+        return resolved
 
     def _get_content_type(
         self,

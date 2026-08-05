@@ -374,7 +374,9 @@ async def stream_message(
 
 
 @router.get("/sub-agents", summary="获取 Sub-Agent 列表")
-async def list_sub_agents():
+async def list_sub_agents(
+    user_id: str = Depends(get_current_user),
+):
     """获取所有已注册的 Sub-Agent"""
     registry = get_sub_agent_registry()
 
@@ -403,7 +405,10 @@ async def list_sub_agents():
 
 
 @router.post("/sub-agents/match", summary="能力匹配")
-async def match_sub_agents(body: dict):
+async def match_sub_agents(
+    body: dict,
+    user_id: str = Depends(get_current_user),
+):
     """根据能力匹配 Sub-Agent"""
     registry = get_sub_agent_registry()
 

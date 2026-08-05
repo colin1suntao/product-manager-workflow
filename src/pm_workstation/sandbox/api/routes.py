@@ -126,7 +126,7 @@ async def stream_execution(
         )
 
     async def event_generator():
-        for event in await engine.execute_streaming(context, body.tool_calls):
+        async for event in engine.execute_streaming(context, body.tool_calls):
             yield f"event: {event['event']}\ndata: {event['data']}\n\n"
 
     return StreamingResponse(
@@ -285,7 +285,9 @@ async def cleanup_execution(
 
 
 @router.get("/tools", summary="获取工具列表")
-async def list_tools() -> dict:
+async def list_tools(
+    user_id: str = Depends(get_current_user),
+) -> dict:
     """获取所有可用工具定义"""
     tool_manager = get_tool_manager()
 
@@ -311,6 +313,7 @@ async def list_tools() -> dict:
 @router.get("/tools/{tool_name}", summary="获取工具详情")
 async def get_tool_detail(
     tool_name: str,
+    user_id: str = Depends(get_current_user),
 ) -> ToolDefinition:
     """获取工具详细定义"""
     tool_manager = get_tool_manager()
@@ -327,6 +330,7 @@ async def get_tool_detail(
 async def validate_tool_params(
     tool_name: str,
     body: dict,
+    user_id: str = Depends(get_current_user),
 ) -> dict:
     """验证工具参数
 

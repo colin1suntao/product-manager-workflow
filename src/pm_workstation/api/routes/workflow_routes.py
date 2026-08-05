@@ -178,7 +178,10 @@ async def execute_workflow(
 
 
 @router.get("/execution/{execution_id}", summary="获取执行记录")
-async def get_execution(execution_id: str) -> dict:
+async def get_execution(
+    execution_id: str,
+    user_id: str = Depends(get_current_user),
+) -> dict:
     """获取工作流执行记录
 
     Args:
@@ -208,7 +211,10 @@ async def get_execution(execution_id: str) -> dict:
 
 
 @router.get("/execution/{execution_id}/progress", summary="获取执行进度")
-async def get_execution_progress(execution_id: str) -> dict:
+async def get_execution_progress(
+    execution_id: str,
+    user_id: str = Depends(get_current_user),
+) -> dict:
     """获取工作流执行进度（用于轮询）
 
     Args:
@@ -231,7 +237,10 @@ async def get_execution_progress(execution_id: str) -> dict:
 
 
 @router.get("/execution/{execution_id}/artifacts", summary="获取执行产物")
-async def get_execution_artifacts(execution_id: str) -> dict:
+async def get_execution_artifacts(
+    execution_id: str,
+    user_id: str = Depends(get_current_user),
+) -> dict:
     """获取工作流执行的产物列表
 
     Args:
