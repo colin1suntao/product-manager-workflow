@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 
 class ProcessExecutor:
     """进程执行器
-    
+
     在安全隔离环境中执行：
     - Shell 命令
     - Python 代码
@@ -59,14 +59,14 @@ class ProcessExecutor:
         cwd: str | None = None,
     ) -> CommandResult:
         """执行 Shell 命令
-        
+
         Args:
             command: 命令字符串
             workspace: 工作区
             timeout: 超时时间（秒）
             env: 环境变量
             cwd: 工作目录
-            
+
         Returns:
             CommandResult: 命令执行结果
         """
@@ -161,14 +161,14 @@ class ProcessExecutor:
         imports: list[str] | None = None,
     ) -> PythonResult:
         """执行 Python 代码
-        
+
         Args:
             code: Python 代码
             workspace: 工作区
             timeout: 超时时间（秒）
             input_data: 输入数据（作为全局变量）
             imports: 预导入的模块列表
-            
+
         Returns:
             PythonResult: Python 执行结果
         """
@@ -187,7 +187,8 @@ class ProcessExecutor:
 
         start_time = time.time()
 
-        wrapper_code = self._wrap_python_code(code, workspace, input_data, imports)
+        result_path = os.path.join(workspace.path, "temp", f"result_{uuid.uuid4().hex[:8]}.json")
+        wrapper_code = self._wrap_python_code(code, workspace, input_data, imports, result_path)
 
         script_path = os.path.join(workspace.path, "temp", f"script_{uuid.uuid4().hex[:8]}.py")
         with open(script_path, "w", encoding="utf-8") as f:
@@ -203,6 +204,7 @@ class ProcessExecutor:
                 env={
                     "PYTHONPATH": workspace.path,
                     "HOME": workspace.path,
+                    "PATH": os.environ.get("PATH", "/usr/local/bin:/usr/bin:/bin"),
                 },
             )
 
@@ -233,7 +235,6 @@ class ProcessExecutor:
         except OSError:
             pass
 
-        result_path = os.path.join(workspace.path, "temp", f"result_{uuid.uuid4().hex[:8]}.json")
         return_value = None
         exception = None
         files_created = []
@@ -264,7 +265,6 @@ class ProcessExecutor:
             execution_time_ms=execution_time_ms,
             files_created=files_created,
         )
-
     async def execute_script(
         self,
         script_path: str,
@@ -274,14 +274,14 @@ class ProcessExecutor:
         interpreter: str | None = None,
     ) -> CommandResult:
         """执行脚本文件
-        
+
         Args:
             script_path: 脚本文件路径
             workspace: 工作区
             args: 参数列表
             timeout: 超时时间
             interpreter: 解释器路径
-            
+
         Returns:
             CommandResult: 执行结果
         """
@@ -294,6 +294,37 @@ class ProcessExecutor:
                 stdout="",
                 stderr=f"Script not found: {script_path}",
             )
+
+        path_validation = self.security_controller.validate_file_path(script_path, workspace)
+        if not path_validation.valid:
+            logger.warning(f"Script path blocked: {path_validation.reason}")
+            return CommandResult(
+                command=script_path,
+                exit_code=-1,
+                stdout="",
+                stderr=f"Script blocked: {path_validation.reason}",
+            )
+
+        if script_path.endswith(".py"):
+            try:
+                with open(script_path, encoding="utf-8") as f:
+                    script_content = f.read()
+                code_validation = self.security_controller.validate_python_code(script_content)
+                if not code_validation.valid:
+                    logger.warning(f"Script content blocked: {code_validation.reason}")
+                    return CommandResult(
+                        command=script_path,
+                        exit_code=-1,
+                        stdout="",
+                        stderr=f"Script blocked: {code_validation.reason}",
+                    )
+            except OSError as e:
+                return CommandResult(
+                    command=script_path,
+                    exit_code=-1,
+                    stdout="",
+                    stderr=f"Failed to read script: {e}",
+                )
 
         if script_path.endswith(".py"):
             interpreter = interpreter or self.PYTHON_EXECUTABLE
@@ -356,38 +387,34 @@ class ProcessExecutor:
         workspace: Workspace,
         input_data: dict | None = None,
         imports: list[str] | None = None,
+        result_path: str | None = None,
     ) -> str:
         """包装 Python 代码以捕获输出和返回值
-        
+
         Args:
             code: 原始代码
             workspace: 工作区
             input_data: 输入数据
             imports: 预导入模块
-            
+            result_path: 结果文件路径
+
         Returns:
             str: 包装后的代码
         """
-        import_lines = ""
-        if imports:
-            for module in imports:
-                import_lines += f"import {module}\n"
+        import_lines = "\n".join(f"import {m}" for m in imports) + "\n" if imports else ""
 
         input_setup = ""
         if input_data:
+            lines = []
             for key, value in input_data.items():
-                if isinstance(value, str):
-                    input_setup += f"{key} = '{value}'\n"
-                elif isinstance(value, (int, float, bool)):
-                    input_setup += f"{key} = {value}\n"
-                elif isinstance(value, dict):
-                    input_setup += f"{key} = {json.dumps(value)}\n"
-                elif isinstance(value, list):
-                    input_setup += f"{key} = {json.dumps(value)}\n"
-                else:
-                    input_setup += f"{key} = None\n"
+                lines.append(f"{key} = {value!r}")
+            input_setup = "\n".join(lines) + "\n"
 
-        result_file = os.path.join(workspace.path, "temp", f"result_{uuid.uuid4().hex[:8]}.json")
+        if result_path is None:
+            result_path = os.path.join(workspace.path, "temp", f"result_{uuid.uuid4().hex[:8]}.json")
+        result_file = result_path.replace("\\", "\\\\").replace("'", "\\'")
+
+        workdir = workspace.path.replace("\\", "\\\\").replace("'", "\\'")
 
         wrapper = f"""
 import sys
@@ -396,7 +423,7 @@ import json
 import traceback
 
 # Set workspace as working directory
-os.chdir('{workspace.path}')
+os.chdir('{workdir}')
 
 # Pre-imports
 {import_lines}
@@ -406,10 +433,10 @@ os.chdir('{workspace.path}')
 
 # Capture stdout
 _original_stdout = sys.stdout
-sys.stdout = open(os.path.join('{workspace.path}', 'temp', 'stdout.txt'), 'w')
+sys.stdout = open(os.path.join('{workdir}', 'temp', 'stdout.txt'), 'w')
 
 # Track created files
-_initial_files = set(os.listdir('{workspace.path}'))
+_initial_files = set(os.listdir('{workdir}'))
 _created_files = []
 
 # Execute code
@@ -426,7 +453,7 @@ sys.stdout.close()
 sys.stdout = _original_stdout
 
 # Find created files
-_final_files = set(os.listdir('{workspace.path}'))
+_final_files = set(os.listdir('{workdir}'))
 _created_files = list(_final_files - _initial_files)
 
 # Save result
@@ -440,7 +467,7 @@ with open('{result_file}', 'w') as f:
     json.dump(result, f)
 
 # Print stdout content
-stdout_file = os.path.join('{workspace.path}', 'temp', 'stdout.txt')
+stdout_file = os.path.join('{workdir}', 'temp', 'stdout.txt')
 if os.path.exists(stdout_file):
     with open(stdout_file, 'r') as f:
         print(f.read())
@@ -455,11 +482,11 @@ if os.path.exists(stdout_file):
         indent: int = 4,
     ) -> str:
         """缩进代码
-        
+
         Args:
             code: 原始代码
             indent: 缩进空格数
-            
+
         Returns:
             str: 缩进后的代码
         """

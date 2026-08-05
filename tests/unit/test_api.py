@@ -114,8 +114,14 @@ class TestWorkflowAPI:
         response = client.get(f"/api/v1/workflows/{workflow_id}", headers=auth_headers)
         assert response.status_code == 403
 
-    def test_pause_workflow(self, client, auth_headers):
+    def test_pause_workflow(self, client, auth_headers, monkeypatch):
         """测试暂停工作流"""
+        # 阻止后台线程执行工作流，确保状态可预测
+        monkeypatch.setattr(
+            "pm_workstation.orchestrator.workflow_manager.WorkflowManager.execute_workflow_sync",
+            lambda self, run_id: None,
+        )
+
         # 创建工作流
         create_response = client.post(
             "/api/v1/workflows",
@@ -131,9 +137,7 @@ class TestWorkflowAPI:
             json={"reason": "需要补充信息"},
             headers=auth_headers,
         )
-        # 在真实环境中，如果工作流正在执行会暂停；如果已完成会返回 400
-        # 测试环境中工作流可能已执行完成，但也可能返回 200
-        assert response.status_code in (200, 400)
+        assert response.status_code == 200
 
     def test_pause_workflow_not_found(self, client, auth_headers):
         """测试暂停不存在的工作流"""
@@ -144,8 +148,14 @@ class TestWorkflowAPI:
         )
         assert response.status_code == 404
 
-    def test_resume_workflow(self, client, auth_headers):
+    def test_resume_workflow(self, client, auth_headers, monkeypatch):
         """测试恢复工作流"""
+        # 阻止后台线程执行工作流，确保状态可预测
+        monkeypatch.setattr(
+            "pm_workstation.orchestrator.workflow_manager.WorkflowManager.execute_workflow_sync",
+            lambda self, run_id: None,
+        )
+
         # 创建工作流并暂停
         create_response = client.post(
             "/api/v1/workflows",

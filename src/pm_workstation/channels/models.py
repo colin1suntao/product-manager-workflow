@@ -1,18 +1,18 @@
 """渠道模型定义"""
 
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 from pydantic import BaseModel, Field
 
 
-class ChannelType(str, Enum):
+class ChannelType(StrEnum):
     FEISHU = "feishu"
     WECHAT = "wechat"
 
 
-class ChannelStatus(str, Enum):
+class ChannelStatus(StrEnum):
     ACTIVE = "active"
     INACTIVE = "inactive"
     ERROR = "error"

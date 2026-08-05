@@ -155,8 +155,10 @@ class MemoryRetriever:
                 limit=max_memories,
             )
 
+            seen_ids = {r.memory.id for r in results}
             for sr in search_results:
-                if sr.memory.id not in [r.memory.id for r in results]:
+                if sr.memory.id not in seen_ids:
+                    seen_ids.add(sr.memory.id)
                     results.append(sr)
 
         results = self._rank_memories(results)

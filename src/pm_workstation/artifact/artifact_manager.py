@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 
 class ArtifactManager:
     """产物管理器
-    
+
     管理产物的生命周期，包括：
     - 创建新产物
     - 更新版本
@@ -38,7 +38,7 @@ class ArtifactManager:
 
     def __init__(self, storage_path: str = "/tmp/artifacts"):
         """初始化管理器
-        
+
         Args:
             storage_path: 产物存储目录
         """
@@ -77,7 +77,7 @@ class ArtifactManager:
 
     def _save_artifact(self, artifact: Artifact) -> None:
         """保存产物元数据
-        
+
         Args:
             artifact: 产物对象
         """
@@ -94,7 +94,7 @@ class ArtifactManager:
 
     def _save_content(self, artifact_id: str, version_number: int, content: str) -> None:
         """保存产物内容
-        
+
         Args:
             artifact_id: 产物 ID
             version_number: 版本号
@@ -113,10 +113,10 @@ class ArtifactManager:
 
     def _load_artifact(self, artifact_id: str) -> Artifact | None:
         """加载产物
-        
+
         Args:
             artifact_id: 产物 ID
-        
+
         Returns:
             产物对象，如果不存在返回 None
         """
@@ -139,11 +139,11 @@ class ArtifactManager:
 
     def _load_content(self, artifact_id: str, version_number: int) -> str | None:
         """加载产物内容
-        
+
         Args:
             artifact_id: 产物 ID
             version_number: 版本号
-        
+
         Returns:
             内容，如果不存在返回 None
         """
@@ -160,11 +160,11 @@ class ArtifactManager:
         content_to: str,
     ) -> tuple[str, dict]:
         """计算内容差异
-        
+
         Args:
             content_from: 原内容
             content_to: 新内容
-        
+
         Returns:
             (差异摘要, 详细差异统计)
         """
@@ -184,7 +184,6 @@ class ArtifactManager:
         # 统计差异
         additions = 0
         deletions = 0
-        modifications = 0
 
         for line in diff_content.splitlines():
             if line.startswith("+") and not line.startswith("+++"):
@@ -215,10 +214,10 @@ class ArtifactManager:
         step_id: str | None = None,
         agent_id: str | None = None,
         description: str = "",
-        tags: list[str] = [],
+        tags: list[str] | None = None,
     ) -> Artifact:
         """创建新产物
-        
+
         Args:
             name: 产物名称
             type: 产物类型
@@ -233,7 +232,7 @@ class ArtifactManager:
             agent_id: 生成 Agent ID
             description: 描述
             tags: 标签
-        
+
         Returns:
             创建的产物对象
         """
@@ -288,7 +287,7 @@ class ArtifactManager:
             user_id=user_id,
             versions=[version],
             current_version=1,
-            tags=tags,
+            tags=tags or [],
             preview_url=preview_url,
             download_url=f"/artifacts/{artifact_id}/download",
             file_path=self._get_content_path(artifact_id, 1),
@@ -312,17 +311,17 @@ class ArtifactManager:
         diff_summary: str | None = None,
     ) -> Artifact:
         """更新产物（创建新版本）
-        
+
         Args:
             artifact_id: 产物 ID
             new_content: 新内容
             created_by: 创建者 ID
             created_by_name: 创建者名称
             diff_summary: 差异摘要（可选）
-        
+
         Returns:
             更新后的产物对象
-        
+
         Raises:
             ValueError: 如果产物不存在
         """
@@ -374,10 +373,10 @@ class ArtifactManager:
 
     async def get(self, artifact_id: str) -> Artifact | None:
         """获取产物
-        
+
         Args:
             artifact_id: 产物 ID
-        
+
         Returns:
             产物对象，如果不存在返回 None
         """
@@ -390,12 +389,12 @@ class ArtifactManager:
         include_content: bool = True,
     ) -> ArtifactVersion | None:
         """获取指定版本的产物
-        
+
         Args:
             artifact_id: 产物 ID
             version_number: 版本号
             include_content: 是否包含内容
-        
+
         Returns:
             版本对象，如果不存在返回 None
         """
@@ -420,11 +419,11 @@ class ArtifactManager:
         version_number: int | None = None,
     ) -> str | None:
         """获取产物内容
-        
+
         Args:
             artifact_id: 产物 ID
             version_number: 版本号（可选，默认当前版本）
-        
+
         Returns:
             内容，如果不存在返回 None
         """
@@ -444,12 +443,12 @@ class ArtifactManager:
         version_to: int,
     ) -> ArtifactDiff | None:
         """对比两个版本
-        
+
         Args:
             artifact_id: 产物 ID
             version_from: 起始版本
             version_to: 目标版本
-        
+
         Returns:
             差异对象
         """
@@ -478,13 +477,13 @@ class ArtifactManager:
         created_by_name: str = "",
     ) -> Artifact:
         """回滚到指定版本
-        
+
         Args:
             artifact_id: 产物 ID
             target_version: 目标版本号
             created_by: 创建者 ID
             created_by_name: 创建者名称
-        
+
         Returns:
             更新后的产物对象
         """
@@ -503,10 +502,10 @@ class ArtifactManager:
 
     async def delete(self, artifact_id: str) -> bool:
         """删除产物（标记为已删除）
-        
+
         Args:
             artifact_id: 产物 ID
-        
+
         Returns:
             是否成功删除
         """
@@ -532,13 +531,13 @@ class ArtifactManager:
         limit: int = 50,
     ) -> list[Artifact]:
         """获取用户的产物列表
-        
+
         Args:
             user_id: 用户 ID
             type_filter: 类型过滤（可选）
             status_filter: 状态过滤（可选）
             limit: 最大数量
-        
+
         Returns:
             产物列表
         """
@@ -569,10 +568,10 @@ class ArtifactManager:
 
     async def list_by_session(self, session_id: str) -> list[Artifact]:
         """获取会话的产物列表
-        
+
         Args:
             session_id: 会话 ID
-        
+
         Returns:
             产物列表
         """
@@ -596,10 +595,10 @@ class ArtifactManager:
         workflow_execution_id: str,
     ) -> list[Artifact]:
         """获取工作流执行的产物列表
-        
+
         Args:
             workflow_execution_id: 工作流执行 ID
-        
+
         Returns:
             产物列表
         """
@@ -625,12 +624,12 @@ class ArtifactManager:
         limit: int = 20,
     ) -> list[Artifact]:
         """搜索产物
-        
+
         Args:
             user_id: 用户 ID
             query: 搜索关键词
             limit: 最大数量
-        
+
         Returns:
             匹配的产物列表
         """

@@ -1,6 +1,8 @@
 """Redis消息队列配置"""
 
 
+import os
+
 import redis.asyncio as aioredis
 
 from pm_workstation.config import settings
@@ -12,13 +14,13 @@ class RedisConfig:
     def __init__(
         self,
         url: str | None = None,
-        max_connections: int = 10,
+        max_connections: int = 0,
         socket_timeout: float = 5.0,
         socket_connect_timeout: float = 5.0,
         retry_on_timeout: bool = True,
     ):
         self.url = url or settings.redis_url
-        self.max_connections = max_connections
+        self.max_connections = max_connections or max(20, (os.cpu_count() or 2) * 5)
         self.socket_timeout = socket_timeout
         self.socket_connect_timeout = socket_connect_timeout
         self.retry_on_timeout = retry_on_timeout

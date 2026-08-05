@@ -1,13 +1,13 @@
 """Sandbox 执行环境数据模型"""
 
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 from pydantic import BaseModel, Field
 
 
-class ExecutionStatus(str, Enum):
+class ExecutionStatus(StrEnum):
     """执行状态"""
     CREATED = "created"
     RUNNING = "running"
@@ -62,7 +62,7 @@ class FileContent(BaseModel):
     size_bytes: int
 
 
-class ToolCategory(str, Enum):
+class ToolCategory(StrEnum):
     """工具类别"""
     FILE = "file"
     SHELL = "shell"
@@ -71,7 +71,7 @@ class ToolCategory(str, Enum):
     UTILITY = "utility"
 
 
-class SecurityLevel(str, Enum):
+class SecurityLevel(StrEnum):
     """安全级别"""
     SAFE = "safe"
     NORMAL = "normal"
@@ -138,7 +138,7 @@ class HTTPResult(BaseModel):
     execution_time_ms: int = Field(default=0)
 
 
-class ExecutionEvent(str, Enum):
+class ExecutionEvent(StrEnum):
     """执行事件类型"""
     EXECUTION_STARTED = "execution_started"
     TOOL_STARTED = "tool_started"

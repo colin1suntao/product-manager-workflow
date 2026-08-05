@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 class SubAgentExecutor:
     """Sub-Agent 执行器
-    
+
     执行单个 Sub-Agent 的任务，支持：
     - 上下文隔离
     - 超时控制
@@ -40,7 +40,7 @@ class SubAgentExecutor:
         skill_loader: SkillLoader | None = None,
     ):
         """初始化执行器
-        
+
         Args:
             llm_handler: LLM 处理器
             skill_loader: 技能加载器
@@ -60,11 +60,11 @@ class SubAgentExecutor:
         parent_context: IsolatedContext | None = None,
     ) -> IsolatedContext:
         """创建隔离上下文
-        
+
         Args:
             agent_config: Sub-Agent 配置
             parent_context: 父上下文（用于继承共享数据）
-        
+
         Returns:
             隔离上下文
         """
@@ -99,11 +99,11 @@ class SubAgentExecutor:
         skills: list[Any],
     ) -> str:
         """构建系统提示词
-        
+
         Args:
             agent_config: Sub-Agent 配置
             skills: 加载的技能列表
-        
+
         Returns:
             系统提示词
         """
@@ -145,14 +145,14 @@ class SubAgentExecutor:
         parent_context: IsolatedContext | None = None,
     ) -> SubAgentResult:
         """执行 Sub-Agent 任务
-        
+
         Args:
             agent_config: Sub-Agent 配置
             task_params: 任务参数
             context: 预创建的上下文（可选）
             llm_handler: LLM 处理器（覆盖默认）
             parent_context: 父上下文（用于继承）
-        
+
         Returns:
             执行结果
         """
@@ -278,18 +278,17 @@ class SubAgentExecutor:
         parent_context: IsolatedContext | None = None,
     ):
         """执行 Sub-Agent 任务（流式）
-        
+
         Args:
             agent_config: Sub-Agent 配置
             task_params: 任务参数
             context: 预创建的上下文（可选）
             llm_handler: LLM 处理器（覆盖默认）
             parent_context: 父上下文（用于继承）
-        
+
         Yields:
             流式输出事件
         """
-        started_at = datetime.now()
         start_time = time.monotonic()
 
         handler = llm_handler or self.llm_handler
@@ -367,7 +366,7 @@ class SubAgentExecutor:
 
     def cleanup_context(self, context: IsolatedContext) -> None:
         """清理上下文
-        
+
         Args:
             context: 要清理的上下文
         """

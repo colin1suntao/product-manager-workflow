@@ -362,10 +362,10 @@ PM_WORKFLOWS: list[WorkflowDefinition] = [
 
 def get_workflow_by_id(workflow_id: str) -> WorkflowDefinition | None:
     """根据 ID 获取工作流
-    
+
     Args:
         workflow_id: 工作流 ID
-    
+
     Returns:
         工作流定义，如果不存在返回 None
     """
@@ -377,10 +377,10 @@ def get_workflow_by_id(workflow_id: str) -> WorkflowDefinition | None:
 
 def get_workflows_by_category(category: str) -> list[WorkflowDefinition]:
     """根据分类获取工作流
-    
+
     Args:
         category: 分类名称
-    
+
     Returns:
         工作流列表
     """
@@ -389,7 +389,7 @@ def get_workflows_by_category(category: str) -> list[WorkflowDefinition]:
 
 def get_all_workflows() -> list[WorkflowDefinition]:
     """获取所有预定义工作流
-    
+
     Returns:
         所有工作流列表
     """
@@ -398,10 +398,10 @@ def get_all_workflows() -> list[WorkflowDefinition]:
 
 def search_workflows(query: str) -> list[WorkflowDefinition]:
     """搜索工作流
-    
+
     Args:
         query: 搜索关键词
-    
+
     Returns:
         匹配的工作流列表
     """

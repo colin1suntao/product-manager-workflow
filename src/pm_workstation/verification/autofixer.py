@@ -32,6 +32,7 @@ class FixResult(BaseModel):
     fix_actions: list[FixAction] = Field(default_factory=list, description="修复动作列表")
     skipped_issues: list[str] = Field(default_factory=list, description="跳过的问题ID列表")
     failed_fixes: list[str] = Field(default_factory=list, description="修复失败的问题ID列表")
+    fixed_content: str = Field(default="", description="修复后的文档内容")
     summary: str = Field(default="", description="修复总结")
 
 
@@ -60,13 +61,14 @@ class AutoFixer:
         skipped_issues = []
         failed_fixes = []
 
+        current_content = document_content
+
         for issue in issues:
             if not issue.auto_fixable:
                 skipped_issues.append(issue.issue_id)
                 continue
-
             try:
-                action = self._apply_document_fix(document_content, issue)
+                action, current_content = self._apply_document_fix(current_content, issue)
                 if action:
                     fix_actions.append(action)
                     fixed_issues.append(issue.issue_id)
@@ -82,6 +84,7 @@ class AutoFixer:
             fix_actions=fix_actions,
             skipped_issues=skipped_issues,
             failed_fixes=failed_fixes,
+            fixed_content=current_content,
             summary=summary,
         )
 
@@ -148,10 +151,10 @@ class AutoFixer:
         self,
         document_content: str,
         issue: DocumentIssue,
-    ) -> FixAction | None:
+    ) -> tuple[FixAction | None, str]:
         """修复空链接"""
         if "空链接" not in issue.description:
-            return None
+            return (None, document_content)
 
         match = re.search(r'\[([^\]]+)\]\(\)', document_content)
         if match:
@@ -160,41 +163,41 @@ class AutoFixer:
             fixed = f"~~{link_text}~~"
             document_content = document_content.replace(original, fixed, 1)
 
-            return FixAction(
+            return (FixAction(
                 issue_id=issue.issue_id,
                 action_type="remove_empty_link",
                 description=f"移除空链接: [{link_text}]()",
                 original_value=original,
                 fixed_value=fixed,
-            )
+            ), document_content)
 
-        return None
+        return (None, document_content)
 
     def _fix_format_issue(
         self,
         document_content: str,
         issue: DocumentIssue,
-    ) -> FixAction | None:
+    ) -> tuple[FixAction | None, str]:
         """修复格式问题"""
         if "未闭合" in issue.description and "代码块" in issue.description:
             if document_content.count("```") % 2 != 0:
                 document_content += "\n```\n"
 
-                return FixAction(
+                return (FixAction(
                     issue_id=issue.issue_id,
                     action_type="close_code_block",
                     description="闭合未闭合的代码块",
                     original_value="...",
                     fixed_value="...\n```\n",
-                )
+                ), document_content)
 
-        return None
+        return (None, document_content)
 
     def _fix_table_format(
         self,
         document_content: str,
         issue: DocumentIssue,
-    ) -> FixAction | None:
+    ) -> tuple[FixAction | None, str]:
         """修复表格格式"""
         if "分隔行格式不正确" in issue.description:
             lines = document_content.split('\n')
@@ -209,21 +212,21 @@ class AutoFixer:
                             lines[i + 1] = separator
                             document_content = '\n'.join(lines)
 
-                            return FixAction(
+                            return (FixAction(
                                 issue_id=issue.issue_id,
                                 action_type="fix_table_separator",
                                 description="修复表格分隔行格式",
                                 original_value=original,
                                 fixed_value=separator,
-                            )
+                            ), document_content)
 
-        return None
+        return (None, document_content)
 
     def _fix_heading_hierarchy(
         self,
         document_content: str,
         issue: DocumentIssue,
-    ) -> FixAction | None:
+    ) -> tuple[FixAction | None, str]:
         """修复标题层级"""
         if "文档应以一级标题开头" in issue.description:
             lines = document_content.split('\n')
@@ -236,15 +239,15 @@ class AutoFixer:
                     lines[i] = new_heading
                     document_content = '\n'.join(lines)
 
-                    return FixAction(
+                    return (FixAction(
                         issue_id=issue.issue_id,
                         action_type="fix_heading_level",
                         description=f"将 H{current_level} 提升为 H1",
                         original_value=original,
                         fixed_value=new_heading,
-                    )
+                    ), document_content)
 
-        return None
+        return (None, document_content)
 
     def _apply_prototype_fix(
         self,

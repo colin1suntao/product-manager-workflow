@@ -21,7 +21,7 @@ from pm_workstation.agents.evolution.strategy_optimizer import StrategyOptimizer
 __all__ = [
     # Manager
     "AgentEvolutionManager",
-    
+
     # Models
     "AgentEvolutionConfig",
     "EvolutionMetrics",
@@ -30,7 +30,7 @@ __all__ = [
     "ExperienceRecord",
     "ExperienceType",
     "OptimizationRule",
-    
+
     # Collectors
     "ExperienceCollector",
     "KnowledgeDistiller",

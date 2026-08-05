@@ -85,14 +85,22 @@ async def search_components(
         try:
             cat_enum = ComponentCategory(category)
         except ValueError:
-            pass
+            valid = [e.value for e in ComponentCategory]
+            raise HTTPException(
+                status_code=422,
+                detail=f"Invalid category '{category}'. Valid: {valid}",
+            )
 
     stat_enum = None
     if status:
         try:
             stat_enum = ComponentStatus(status)
         except ValueError:
-            pass
+            valid = [e.value for e in ComponentStatus]
+            raise HTTPException(
+                status_code=422,
+                detail=f"Invalid status '{status}'. Valid: {valid}",
+            )
 
     search_request = ComponentSearchRequest(
         query=q or "",

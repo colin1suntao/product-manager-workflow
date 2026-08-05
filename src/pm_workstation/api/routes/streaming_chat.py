@@ -12,28 +12,30 @@ import uuid
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
 
+from pm_workstation.agents.coordinator_chat import CoordinatorChatAgent
 from pm_workstation.agents.pm_sub_agents import register_pm_sub_agents
 from pm_workstation.agents.sub_agent_executor import SubAgentExecutor
 from pm_workstation.agents.sub_agent_models import SubAgentConfig
 from pm_workstation.agents.sub_agent_registry import get_sub_agent_registry
-from pm_workstation.auth.dependencies import get_current_user
-from pm_workstation.chat.chat_models import (
-    ChatMessage,
-    TaskMode,
-    TaskStatus,
-)
-
-logger = logging.getLogger(__name__)
-
-router = APIRouter(prefix="/chat", tags=["会话交互-流式"])
-
-# 使用 chat.py 中的共享实例
 from pm_workstation.api.routes.chat import (
     _get_chat_manager,
     _memory_retriever,
     _soul_manager,
     _token_usage_store,
 )
+from pm_workstation.auth.dependencies import get_current_user
+from pm_workstation.chat.chat_models import (
+    ChatMessage,
+    TaskMode,
+    TaskStatus,
+)
+from pm_workstation.component_library.store import ComponentTemplateStore
+from pm_workstation.knowledge_base.store import TemplateStore
+from pm_workstation.model_router.base import LLMMessage
+
+logger = logging.getLogger(__name__)
+
+router = APIRouter(prefix="/chat", tags=["会话交互-流式"])
 
 
 async def _build_llm_handler_for_streaming(request: Request, provider_id: str | None = None, model_name: str | None = None):
@@ -130,8 +132,6 @@ async def stream_message(
 
             if llm_handler:
                 try:
-                    from pm_workstation.agents.coordinator_chat import CoordinatorChatAgent
-
                     coordinator = CoordinatorChatAgent(
                         llm_handler=llm_handler,
                         memory_retriever=_memory_retriever,
@@ -207,9 +207,6 @@ async def stream_message(
             # 如果有模板，注入模板内容
             if template_id:
                 try:
-                    from pm_workstation.component_library.store import ComponentTemplateStore
-                    from pm_workstation.knowledge_base.store import TemplateStore
-
                     ts = TemplateStore()
                     tmpl = await ts.get(template_id)
                     if tmpl:
@@ -219,7 +216,7 @@ async def stream_message(
                             role="system",
                             content=f"[模板: {tmpl.name}]\n{tmpl.content}",
                         )
-                        context_messages = list(context_messages) + [template_context]
+                        context_messages = [*context_messages, template_context]
                         yield f"event: template_loaded\ndata: {json.dumps({'template': tmpl.name, 'type': tmpl.type.value})}\n\n"
                     else:
                         cs = ComponentTemplateStore()
@@ -231,18 +228,18 @@ async def stream_message(
                                 role="system",
                                 content=f"[组件模板: {comp.name}]\n{comp.content}",
                             )
-                            context_messages = list(context_messages) + [template_context]
+                            context_messages = [*context_messages, template_context]
                             yield f"event: template_loaded\ndata: {json.dumps({'template': comp.name, 'type': 'prototype'})}\n\n"
                 except Exception as e:
                     logger.warning(f"Template loading error: {e}")
 
             # 执行生成
             if sub_agent_config and llm_handler:
-                # 使用 Sub-Agent 执行
+                # 使用 Sub-Agent 执行（流式）
                 executor = SubAgentExecutor(llm_handler=llm_handler)
 
                 thinking_step_id = 0
-                for event in await executor.execute(
+                async for event in executor.execute_streaming(
                     agent_config=sub_agent_config,
                     task_params={
                         "input": content,
@@ -268,10 +265,6 @@ async def stream_message(
                         break
 
             elif llm_handler:
-                # 直接使用 LLM 生成
-                from pm_workstation.agents.coordinator_chat import CoordinatorChatAgent
-                from pm_workstation.model_router.base import LLMMessage
-
                 coordinator = CoordinatorChatAgent(
                     llm_handler=llm_handler,
                     memory_retriever=_memory_retriever,
@@ -381,7 +374,9 @@ async def stream_message(
 
 
 @router.get("/sub-agents", summary="获取 Sub-Agent 列表")
-async def list_sub_agents():
+async def list_sub_agents(
+    user_id: str = Depends(get_current_user),
+):
     """获取所有已注册的 Sub-Agent"""
     registry = get_sub_agent_registry()
 
@@ -410,7 +405,10 @@ async def list_sub_agents():
 
 
 @router.post("/sub-agents/match", summary="能力匹配")
-async def match_sub_agents(body: dict):
+async def match_sub_agents(
+    body: dict,
+    user_id: str = Depends(get_current_user),
+):
     """根据能力匹配 Sub-Agent"""
     registry = get_sub_agent_registry()
 

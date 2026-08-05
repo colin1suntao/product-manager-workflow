@@ -4,6 +4,7 @@
 """
 
 import logging
+import os
 import re
 
 from pm_workstation.sandbox.models import (
@@ -17,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 class SecurityController:
     """安全控制器
-    
+
     验证执行操作的安全性，防止：
     - 危险 Shell 命令（如 rm、sudo、shutdown）
     - 路径穿越攻击（如 ../../../etc/passwd）
@@ -92,11 +93,11 @@ class SecurityController:
         security_level: SecurityLevel = SecurityLevel.NORMAL,
     ) -> SecurityValidation:
         """验证 Shell 命令安全性
-        
+
         Args:
             command: 要执行的命令
             security_level: 安全级别
-            
+
         Returns:
             SecurityValidation: 验证结果
         """
@@ -142,13 +143,14 @@ class SecurityController:
                 )
 
         if security_level == SecurityLevel.RESTRICTED:
-            restricted_commands = [
-                "apt", "yum", "dnf", "pacman", "brew",
-                "pip", "npm", "yarn", "gem",
+            restricted_prefixes = [
+                "apt", "apt-get", "yum", "dnf", "pacman", "brew",
+                "pip", "pip3", "npm", "yarn", "gem",
                 "git", "svn", "hg",
             ]
-            for cmd in restricted_commands:
-                if cmd in command_lower.split():
+            command_tokens = command_lower.split()
+            for cmd in restricted_prefixes:
+                if cmd in command_tokens:
                     return SecurityValidation(
                         valid=False,
                         reason=f"Restricted command in restricted mode: {cmd}",
@@ -163,11 +165,11 @@ class SecurityController:
         workspace: Workspace,
     ) -> SecurityValidation:
         """验证文件路径安全性
-        
+
         Args:
             path: 文件路径
             workspace: 工作区
-            
+
         Returns:
             SecurityValidation: 验证结果
         """
@@ -197,11 +199,23 @@ class SecurityController:
                 )
 
         resolved_path = path_normalized
-        if not path_normalized.startswith(workspace.path):
+        if not path_normalized.startswith("/"):
             resolved_path = f"{workspace.path}/{path_normalized}"
+        else:
+            resolved_path = path_normalized
+
+        real_path = os.path.realpath(resolved_path)
+        workspace_real = os.path.realpath(workspace.path)
+
+        if not real_path.startswith(workspace_real + os.sep) and real_path != workspace_real:
+            return SecurityValidation(
+                valid=False,
+                reason=f"Path escapes workspace via symlink: {path}",
+                severity="critical",
+            )
 
         for dangerous_path in self.DANGEROUS_FILE_PATHS:
-            if resolved_path.startswith(dangerous_path):
+            if real_path.startswith(dangerous_path):
                 return SecurityValidation(
                     valid=False,
                     reason=f"Resolved path access denied: {dangerous_path}",
@@ -216,11 +230,11 @@ class SecurityController:
         allow_public_network: bool = True,
     ) -> SecurityValidation:
         """验证 URL 安全性
-        
+
         Args:
             url: URL 字符串
             allow_public_network: 是否允许公网访问
-            
+
         Returns:
             SecurityValidation: 验证结果
         """
@@ -283,11 +297,11 @@ class SecurityController:
         security_level: SecurityLevel = SecurityLevel.NORMAL,
     ) -> SecurityValidation:
         """验证 Python 代码安全性
-        
+
         Args:
             code: Python 代码
             security_level: 安全级别
-            
+
         Returns:
             SecurityValidation: 验证结果
         """
@@ -344,11 +358,11 @@ class SecurityController:
         max_length: int = 10000,
     ) -> str:
         """清理命令输出，移除敏感信息
-        
+
         Args:
             output: 原始输出
             max_length: 最大长度
-            
+
         Returns:
             str: 清理后的输出
         """

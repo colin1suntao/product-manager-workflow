@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 class WorkspaceManager:
     """工作区管理器
-    
+
     管理执行环境的文件系统：
     - 创建/删除工作区
     - 读写文件
@@ -59,12 +59,12 @@ class WorkspaceManager:
         workflow_id: str | None = None,
     ) -> Workspace:
         """创建工作区
-        
+
         Args:
             execution_id: 执行 ID
             session_id: 会话 ID（可选）
             workflow_id: 工作流 ID（可选）
-            
+
         Returns:
             Workspace: 工作区对象
         """
@@ -97,14 +97,14 @@ class WorkspaceManager:
         file_path: str,
     ) -> FileContent:
         """读取文件内容
-        
+
         Args:
             workspace: 工作区
             file_path: 文件路径（相对路径或绝对路径）
-            
+
         Returns:
             FileContent: 文件内容
-            
+
         Raises:
             FileNotFoundError: 文件不存在
         """
@@ -132,11 +132,11 @@ class WorkspaceManager:
         file_path: str,
     ) -> bytes:
         """读取二进制文件
-        
+
         Args:
             workspace: 工作区
             file_path: 文件路径
-            
+
         Returns:
             bytes: 文件内容
         """
@@ -156,13 +156,13 @@ class WorkspaceManager:
         content_type: str | None = None,
     ) -> FileInfo:
         """写入文件
-        
+
         Args:
             workspace: 工作区
             file_path: 文件路径（相对路径）
             content: 文件内容
             content_type: 内容类型（可选）
-            
+
         Returns:
             FileInfo: 文件信息
         """
@@ -208,12 +208,12 @@ class WorkspaceManager:
         content: bytes,
     ) -> FileInfo:
         """写入二进制文件
-        
+
         Args:
             workspace: 工作区
             file_path: 文件路径
             content: 二进制内容
-            
+
         Returns:
             FileInfo: 文件信息
         """
@@ -245,12 +245,12 @@ class WorkspaceManager:
         recursive: bool = False,
     ) -> list[FileInfo]:
         """列出文件
-        
+
         Args:
             workspace: 工作区
             directory: 目录路径（相对路径）
             recursive: 是否递归列出
-            
+
         Returns:
             list[FileInfo]: 文件列表
         """
@@ -286,11 +286,11 @@ class WorkspaceManager:
         file_path: str,
     ) -> bool:
         """删除文件
-        
+
         Args:
             workspace: 工作区
             file_path: 文件路径
-            
+
         Returns:
             bool: 是否成功删除
         """
@@ -314,12 +314,12 @@ class WorkspaceManager:
         target: str,
     ) -> FileInfo:
         """复制文件
-        
+
         Args:
             workspace: 工作区
             source: 源文件路径
             target: 目标文件路径
-            
+
         Returns:
             FileInfo: 目标文件信息
         """
@@ -344,12 +344,12 @@ class WorkspaceManager:
         target: str,
     ) -> FileInfo:
         """移动文件
-        
+
         Args:
             workspace: 工作区
             source: 源文件路径
             target: 目标文件路径
-            
+
         Returns:
             FileInfo: 目标文件信息
         """
@@ -373,7 +373,7 @@ class WorkspaceManager:
         preserve_artifacts: bool = False,
     ) -> None:
         """清理工作区
-        
+
         Args:
             workspace: 工作区
             preserve_artifacts: 是否保留产物文件
@@ -397,10 +397,10 @@ class WorkspaceManager:
         workspace: Workspace,
     ) -> list[FileInfo]:
         """获取所有产物文件
-        
+
         Args:
             workspace: 工作区
-            
+
         Returns:
             list[FileInfo]: 产物文件列表
         """
@@ -416,29 +416,37 @@ class WorkspaceManager:
         workspace: Workspace,
         file_path: str,
     ) -> str:
-        """解析文件路径
-        
+        """解析文件路径（限制在工作区根目录内）
+
         Args:
             workspace: 工作区
             file_path: 文件路径
-            
+
         Returns:
             str: 绝对路径
         """
-        if file_path.startswith(workspace.path):
-            return file_path
+        workspace_root = os.path.realpath(workspace.path)
+        if file_path.startswith(workspace_root):
+            candidate = file_path
+        else:
+            candidate = os.path.join(workspace.path, file_path)
 
-        return os.path.join(workspace.path, file_path)
+        # 规范化并校验包含关系，防止 .. / 绝对路径逃逸工作区
+        resolved = os.path.realpath(candidate)
+        if resolved != workspace_root and not resolved.startswith(workspace_root + os.sep):
+            raise ValueError(f"Path escapes workspace root: {file_path}")
+
+        return resolved
 
     def _get_content_type(
         self,
         file_path: str,
     ) -> str:
         """获取文件内容类型
-        
+
         Args:
             file_path: 文件路径
-            
+
         Returns:
             str: 内容类型
         """
@@ -451,11 +459,11 @@ class WorkspaceManager:
         full_path: str,
     ) -> FileInfo:
         """获取文件信息
-        
+
         Args:
             rel_path: 相对路径
             full_path: 绝对路径
-            
+
         Returns:
             FileInfo: 文件信息
         """

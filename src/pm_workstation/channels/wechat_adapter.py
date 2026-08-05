@@ -39,27 +39,21 @@ class WeChatAdapter(ChannelAdapter):
     def get_webhook_url_hint(self) -> str:
         return f"/api/v1/channels/{self.config.id}/webhook"
 
-    async def validate_webhook(self, request_data: dict[str, Any], headers: dict[str, str] = {}) -> dict[str, Any] | None:
+    async def validate_webhook(self, request_data: dict[str, Any], headers: dict[str, str] | None = None) -> dict[str, Any] | None:
         echostr = request_data.get("echostr")
         if echostr:
             return {"echostr": echostr}
         return {}
 
-    async def parse_incoming(self, request_data: dict[str, Any], headers: dict[str, str] = {}) -> IncomingMessage | None:
-        xml_str = request_data.get("xml", {})
-        if isinstance(request_data, dict) and "Content" in request_data:
-            xml_str = request_data
-
+    async def parse_incoming(self, request_data: dict[str, Any], headers: dict[str, str] | None = None) -> IncomingMessage | None:
         content = ""
         from_user = ""
-        to_user = ""
         msg_id = ""
         msg_type = ""
 
         if isinstance(request_data, dict):
             content = request_data.get("Content", request_data.get("content", ""))
             from_user = request_data.get("FromUserName", request_data.get("from_user_name", ""))
-            to_user = request_data.get("ToUserName", request_data.get("to_user_name", ""))
             msg_id = request_data.get("MsgId", request_data.get("msg_id", ""))
             msg_type = request_data.get("MsgType", request_data.get("msg_type", "text"))
 

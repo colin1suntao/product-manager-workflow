@@ -4,12 +4,12 @@
 """
 
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 
 from pydantic import BaseModel, Field
 
 
-class ArtifactType(str, Enum):
+class ArtifactType(StrEnum):
     """产物类型"""
     PROTOTYPE = "prototype"  # 原型 HTML
     DOCUMENT = "document"    # 文档 Markdown
@@ -20,7 +20,7 @@ class ArtifactType(str, Enum):
     OTHER = "other"          # 其他
 
 
-class ArtifactStatus(str, Enum):
+class ArtifactStatus(StrEnum):
     """产物状态"""
     DRAFT = "draft"          # 草稿
     PUBLISHED = "published"  # 已发布

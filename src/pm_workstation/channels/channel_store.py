@@ -1,6 +1,7 @@
 """渠道配置存储"""
 
 import logging
+import threading
 
 from pm_workstation.channels.models import ChannelConfig
 
@@ -9,11 +10,14 @@ logger = logging.getLogger(__name__)
 
 class ChannelStore:
     _instance = None
+    _lock = threading.Lock()
 
     def __new__(cls):
         if cls._instance is None:
-            cls._instance = super().__new__(cls)
-            cls._instance._configs: dict[str, ChannelConfig] = {}
+            with cls._lock:
+                if cls._instance is None:
+                    cls._instance = super().__new__(cls)
+                    cls._instance._configs: dict[str, ChannelConfig] = {}
         return cls._instance
 
     async def create(self, config: ChannelConfig) -> ChannelConfig:

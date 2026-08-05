@@ -207,7 +207,7 @@ class WorkflowManager:
                 run.verification_report_url = self._save_artifact(
                     workflow_id, "report.json", report_content,
                 )
-            
+
             # 收集经验用于自我进化
             try:
                 evolution_manager = _get_evolution_manager()

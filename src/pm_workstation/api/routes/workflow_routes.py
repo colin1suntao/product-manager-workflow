@@ -51,14 +51,14 @@ async def list_workflows() -> dict:
     return {
         "workflows": [_workflow_to_template(w).model_dump() for w in workflows],
         "total": len(workflows),
-        "categories": list(set(w.category for w in workflows)),
+        "categories": list({w.category for w in workflows})
     }
 
 
 @router.get("/search", summary="搜索工作流")
 async def search_workflows_api(query: str) -> dict:
     """搜索工作流（无需认证）
-    
+
     Args:
         query: 搜索关键词
     """
@@ -124,7 +124,7 @@ async def execute_workflow(
     user_id: str = Depends(get_current_user),
 ) -> dict:
     """执行预定义工作流
-    
+
     Args:
         workflow_id: 工作流 ID
         body: 包含 initial_input（可选）、session_id（可选）
@@ -178,9 +178,12 @@ async def execute_workflow(
 
 
 @router.get("/execution/{execution_id}", summary="获取执行记录")
-async def get_execution(execution_id: str) -> dict:
+async def get_execution(
+    execution_id: str,
+    user_id: str = Depends(get_current_user),
+) -> dict:
     """获取工作流执行记录
-    
+
     Args:
         execution_id: 执行 ID
     """
@@ -208,9 +211,12 @@ async def get_execution(execution_id: str) -> dict:
 
 
 @router.get("/execution/{execution_id}/progress", summary="获取执行进度")
-async def get_execution_progress(execution_id: str) -> dict:
+async def get_execution_progress(
+    execution_id: str,
+    user_id: str = Depends(get_current_user),
+) -> dict:
     """获取工作流执行进度（用于轮询）
-    
+
     Args:
         execution_id: 执行 ID
     """
@@ -231,9 +237,12 @@ async def get_execution_progress(execution_id: str) -> dict:
 
 
 @router.get("/execution/{execution_id}/artifacts", summary="获取执行产物")
-async def get_execution_artifacts(execution_id: str) -> dict:
+async def get_execution_artifacts(
+    execution_id: str,
+    user_id: str = Depends(get_current_user),
+) -> dict:
     """获取工作流执行的产物列表
-    
+
     Args:
         execution_id: 执行 ID
     """

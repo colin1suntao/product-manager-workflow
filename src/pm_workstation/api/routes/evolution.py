@@ -4,8 +4,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from pm_workstation.agents.evolution.evolution_manager import AgentEvolutionManager
+from pm_workstation.auth.dependencies import get_current_user
 
-router = APIRouter(prefix="/v1/evolution", tags=["自我进化"])
+router = APIRouter(prefix="/evolution", tags=["自我进化"])
 
 
 # 全局 evolution manager 实例
@@ -50,7 +51,10 @@ class OptimizationSuggestion(BaseModel):
 
 
 @router.get("/status", summary="获取进化状态")
-async def get_evolution_status(manager: AgentEvolutionManager = Depends(get_evolution_manager)):
+async def get_evolution_status(
+    user_id: str = Depends(get_current_user),
+    manager: AgentEvolutionManager = Depends(get_evolution_manager),
+):
     """获取 Agent 自我进化系统的当前状态"""
     return manager.get_evolution_status()
 
@@ -58,30 +62,32 @@ async def get_evolution_status(manager: AgentEvolutionManager = Depends(get_evol
 @router.post("/trigger", summary="触发进化流程")
 async def trigger_evolution(
     request: EvolutionTriggerRequest,
+    user_id: str = Depends(get_current_user),
     manager: AgentEvolutionManager = Depends(get_evolution_manager),
 ):
     """手动触发 Agent 进化流程
-    
+
     会执行：
     1. 经验数据分析
     2. 知识提炼
     3. 应用优化规则
     """
     result = manager.trigger_evolution()
-    
+
     if result["status"] == "failed":
         raise HTTPException(status_code=500, detail=result.get("error"))
-    
+
     return result
 
 
 @router.get("/metrics", response_model=EvolutionMetricsResponse, summary="获取进化指标")
 async def get_evolution_metrics(
+    user_id: str = Depends(get_current_user),
     manager: AgentEvolutionManager = Depends(get_evolution_manager),
 ):
     """获取 Agent 进化相关指标"""
     metrics = manager.get_evolution_metrics()
-    
+
     return EvolutionMetricsResponse(
         total_experiences=metrics.total_experiences,
         excellent_count=metrics.excellent_count,
@@ -99,6 +105,7 @@ async def get_evolution_metrics(
 @router.get("/suggestions", summary="获取优化建议")
 async def get_optimization_suggestions(
     task_type: str = "",
+    user_id: str = Depends(get_current_user),
     manager: AgentEvolutionManager = Depends(get_evolution_manager),
 ):
     """获取当前任务的优化建议"""
@@ -108,6 +115,7 @@ async def get_optimization_suggestions(
 
 @router.get("/export", summary="导出进化数据")
 async def export_evolution_data(
+    user_id: str = Depends(get_current_user),
     manager: AgentEvolutionManager = Depends(get_evolution_manager),
 ):
     """导出完整的进化数据（用于分析或备份）"""
@@ -117,14 +125,15 @@ async def export_evolution_data(
 @router.post("/rollback/{rule_id}", summary="回滚优化")
 async def rollback_optimization(
     rule_id: str,
+    user_id: str = Depends(get_current_user),
     manager: AgentEvolutionManager = Depends(get_evolution_manager),
 ):
     """回滚指定的优化规则"""
     success = manager.optimizer.rollback_optimization(rule_id)
-    
+
     if not success:
         raise HTTPException(status_code=400, detail="Failed to rollback optimization")
-    
+
     return {"status": "success", "rule_id": rule_id}
 
 
@@ -134,25 +143,26 @@ async def list_experiences(
     task_type: str = "",
     quality: str = "",
     success: bool | None = None,
+    user_id: str = Depends(get_current_user),
     manager: AgentEvolutionManager = Depends(get_evolution_manager),
 ):
     """查询历史经验记录"""
     from pm_workstation.agents.evolution.evolution_models import ExperienceQuality
-    
+
     quality_filter = None
     if quality:
         try:
             quality_filter = ExperienceQuality(quality)
         except ValueError:
             raise HTTPException(status_code=400, detail=f"Invalid quality: {quality}")
-    
+
     experiences = manager.collector.list_experiences(
         task_type=task_type if task_type else None,
         quality=quality_filter,
         success=success,
         limit=limit,
     )
-    
+
     return {
         "count": len(experiences),
         "experiences": [
@@ -173,14 +183,15 @@ async def list_experiences(
 @router.get("/experiences/{experience_id}", summary="获取经验详情")
 async def get_experience(
     experience_id: str,
+    user_id: str = Depends(get_current_user),
     manager: AgentEvolutionManager = Depends(get_evolution_manager),
 ):
     """获取单个经验记录的详细信息"""
     experience = manager.collector.get_experience(experience_id)
-    
+
     if not experience:
         raise HTTPException(status_code=404, detail="Experience not found")
-    
+
     return experience.model_dump()
 
 
@@ -188,17 +199,18 @@ async def get_experience(
 async def submit_feedback(
     experience_id: str,
     feedback: dict,
+    user_id: str = Depends(get_current_user),
     manager: AgentEvolutionManager = Depends(get_evolution_manager),
 ):
     """为经验记录提交用户反馈"""
     experience = manager.collector.get_experience(experience_id)
-    
+
     if not experience:
         raise HTTPException(status_code=404, detail="Experience not found")
-    
+
     # 更新经验记录（这里简化处理，实际应该调用 collector 的更新方法）
     # 为了简化，我们只记录反馈，不修改原经验
-    
+
     return {
         "status": "success",
         "message": "反馈已记录，将用于后续进化分析",

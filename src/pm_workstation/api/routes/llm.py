@@ -3,6 +3,9 @@
 提供 LLM Provider 配置管理的 REST API 接口。
 """
 
+import asyncio
+import time
+
 from fastapi import APIRouter, Depends, HTTPException
 
 from pm_workstation.api.dependencies import get_provider_store
@@ -21,6 +24,7 @@ from pm_workstation.auth.dependencies import get_current_user
 from pm_workstation.llm.factory import LLMFactory
 from pm_workstation.llm.models import LLMProviderConfig, LLMProviderType
 from pm_workstation.llm.provider_store import LLMProviderStore
+from pm_workstation.model_router.base import LLMConfig, LLMMessage
 
 router = APIRouter(prefix="/llm", tags=["LLM 配置"])
 
@@ -109,9 +113,6 @@ async def test_provider(
 
     try:
         adapter = LLMFactory.create_adapter(config)
-        import time
-
-        from pm_workstation.model_router.base import LLMMessage
 
         start_time = time.time()
         response = await adapter.chat(
@@ -154,11 +155,6 @@ async def quick_test_connection(
     user_id: str = Depends(get_current_user),
 ) -> LLMTestResponse:
     """快速测试 LLM 连通性（无需保存配置）"""
-    import asyncio
-    import time
-
-    from pm_workstation.model_router.base import LLMConfig, LLMMessage
-
     config = LLMConfig(
         model=request.default_model or "gpt-4o",
         api_key=request.api_key,
@@ -227,8 +223,6 @@ async def list_models(
     user_id: str = Depends(get_current_user),
 ) -> LLMModelListResponse:
     """获取 LLM 提供商可用模型列表"""
-    from pm_workstation.model_router.base import LLMConfig
-
     config = LLMConfig(
         model="gpt-4o",
         api_key=request.api_key,

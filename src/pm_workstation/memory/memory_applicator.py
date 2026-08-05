@@ -99,29 +99,32 @@ class MemoryApplicator:
         memories: list[MemorySearchResult],
     ) -> str:
         """格式化为 Markdown"""
+        user_preferences = []
+        project_memories = []
+        session_memories = []
+
+        for m in memories:
+            level = m.memory.level.value
+            if level == "user_level":
+                user_preferences.append(m)
+            elif level == "project_level":
+                project_memories.append(m)
+            elif level == "session_level":
+                session_memories.append(m)
+
         sections = []
 
-        user_preferences = [m for m in memories if m.memory.level.value == "user_level"]
-        project_memories = [m for m in memories if m.memory.level.value == "project_level"]
-        session_memories = [m for m in memories if m.memory.level.value == "session_level"]
-
         if user_preferences:
-            section = "## User Preferences\n\n"
-            for m in user_preferences[:5]:
-                section += f"- {m.memory.content}\n"
-            sections.append(section)
+            items = [f"- {m.memory.content}" for m in user_preferences[:5]]
+            sections.append("## User Preferences\n\n" + "\n".join(items) + "\n")
 
         if project_memories:
-            section = "## Project Context\n\n"
-            for m in project_memories[:10]:
-                section += f"- {m.memory.summary}: {m.memory.content[:100]}\n"
-            sections.append(section)
+            items = [f"- {m.memory.summary}: {m.memory.content[:100]}" for m in project_memories[:10]]
+            sections.append("## Project Context\n\n" + "\n".join(items) + "\n")
 
         if session_memories:
-            section = "## Session Context\n\n"
-            for m in session_memories[:10]:
-                section += f"- {m.memory.content[:80]}\n"
-            sections.append(section)
+            items = [f"- {m.memory.content[:80]}" for m in session_memories[:10]]
+            sections.append("## Session Context\n\n" + "\n".join(items) + "\n")
 
         return "\n".join(sections)
 

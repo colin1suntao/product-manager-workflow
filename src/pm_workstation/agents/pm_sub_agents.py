@@ -242,10 +242,10 @@ PRD 核心结构：
 
 def get_agent_by_capability(capability: str) -> list[SubAgentConfig]:
     """根据能力获取 Agent
-    
+
     Args:
         capability: 能力标签
-    
+
     Returns:
         匹配的 Agent 列表
     """
@@ -255,10 +255,10 @@ def get_agent_by_capability(capability: str) -> list[SubAgentConfig]:
 
 def get_best_agent_for_task(task_type: str) -> SubAgentConfig | None:
     """获取最适合任务的 Agent
-    
+
     Args:
         task_type: 任务类型
-    
+
     Returns:
         最佳匹配的 Agent
     """

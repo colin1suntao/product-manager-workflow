@@ -4,12 +4,12 @@
 """
 
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 
 from pydantic import BaseModel, Field
 
 
-class WorkflowStatus(str, Enum):
+class WorkflowStatus(StrEnum):
     """工作流状态"""
     PENDING = "pending"
     RUNNING = "running"
@@ -19,7 +19,7 @@ class WorkflowStatus(str, Enum):
     CANCELLED = "cancelled"
 
 
-class StepStatus(str, Enum):
+class StepStatus(StrEnum):
     """步骤状态"""
     PENDING = "pending"
     WAITING = "waiting"  # 等待依赖完成
