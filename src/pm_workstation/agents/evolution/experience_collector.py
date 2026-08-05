@@ -2,6 +2,7 @@
 
 import json
 import logging
+import threading
 from datetime import datetime
 from pathlib import Path
 from uuid import uuid4
@@ -31,6 +32,8 @@ class ExperienceCollector:
         self.storage_dir.mkdir(parents=True, exist_ok=True)
         self.index_file = self.storage_dir / "experience_index.json"
         self._index: dict[str, str] = {}  # experience_id -> file_path
+        self._cache: dict[str, ExperienceRecord] = {}  # 内存缓存，避免重复读文件
+        self._lock = threading.Lock()
         self._load_index()
 
     def _load_index(self):
@@ -50,6 +53,10 @@ class ExperienceCollector:
                 json.dump(self._index, f, ensure_ascii=False, indent=2)
         except OSError as e:
             logger.error(f"Failed to save index: {e}")
+
+    def count_experiences(self) -> int:
+        """返回经验总数（使用索引，避免读取文件）"""
+        return len(self._index)
 
     def collect_from_workflow(self, state: WorkflowState, user_feedback: str | None = None) -> ExperienceRecord:
         """从工作流执行中收集经验
@@ -327,12 +334,17 @@ class ExperienceCollector:
             with open(file_path, "w", encoding="utf-8") as f:
                 json.dump(experience.model_dump(), f, ensure_ascii=False, indent=2, default=str)
             self._index[experience.id] = str(file_path)
+            self._cache[experience.id] = experience
             self._save_index()
         except OSError as e:
             logger.error(f"Failed to save experience {experience.id}: {e}")
 
     def get_experience(self, experience_id: str) -> ExperienceRecord | None:
         """获取经验"""
+        cached = self._cache.get(experience_id)
+        if cached is not None:
+            return cached
+
         if experience_id not in self._index:
             return None
 
@@ -348,7 +360,9 @@ class ExperienceCollector:
             return None
 
         try:
-            return ExperienceRecord(**data)
+            experience = ExperienceRecord(**data)
+            self._cache[experience_id] = experience
+            return experience
         except Exception as e:
             logger.error(f"Failed to deserialize experience {experience_id}: {e}")
             return None
@@ -373,21 +387,25 @@ class ExperienceCollector:
         """
         experiences = []
 
-        for exp_id in self._index:
-            exp = self.get_experience(exp_id)
-            if not exp:
-                continue
+        with self._lock:
+            index_ids = list(self._index.keys())
+            for exp_id in index_ids:
+                exp = self._cache.get(exp_id)
+                if exp is None:
+                    exp = self.get_experience(exp_id)
+                    if exp is None:
+                        continue
 
-            # 过滤
-            if task_type and exp.task_type != task_type:
-                continue
-            if quality and exp.quality != quality:
-                continue
-            if success is not None and exp.success != success:
-                continue
+                # 过滤
+                if task_type and exp.task_type != task_type:
+                    continue
+                if quality and exp.quality != quality:
+                    continue
+                if success is not None and exp.success != success:
+                    continue
 
-            experiences.append(exp)
-            if len(experiences) >= limit:
-                break
+                experiences.append(exp)
+                if len(experiences) >= limit:
+                    break
 
         return experiences

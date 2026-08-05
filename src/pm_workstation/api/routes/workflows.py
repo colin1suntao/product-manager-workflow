@@ -167,11 +167,12 @@ async def get_deliverables(
     if not deliverables:
         raise HTTPException(status_code=404, detail=f"No deliverables for workflow {workflow_id}")
 
+    verification_report = deliverables.get("verification_report")
     return DeliverablesResponse(
         workflow_id=workflow_id,
         prototype_url=deliverables.get("prototype_url"),
         prd_document_url=deliverables.get("prd_document_url"),
-        verification_report=deliverables.get("verification_report"),
+        verification_report=verification_report.model_dump() if verification_report else None,
     )
 
 

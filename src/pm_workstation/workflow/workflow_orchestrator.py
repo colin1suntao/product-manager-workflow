@@ -185,6 +185,7 @@ class WorkflowOrchestrator:
         step: Any,
         workflow: WorkflowDefinition,
         execution: WorkflowExecution,
+        result_map: dict[str, StepResult] | None = None,
     ) -> dict:
         """构建步骤输入参数
 
@@ -192,6 +193,7 @@ class WorkflowOrchestrator:
             step: 当前步骤
             workflow: 工作流定义
             execution: 执行记录
+            result_map: 步骤结果映射（step_id -> StepResult），避免线性扫描
 
         Returns:
             输入参数字典
@@ -200,13 +202,17 @@ class WorkflowOrchestrator:
 
         # 从依赖步骤获取输入
         if step.depends_on and step.input_from_dependency:
-            for result in execution.steps_results:
-                if result.step_id == step.depends_on:
-                    if result.output:
-                        input_params[step.input_from_dependency] = result.output
-                    if result.artifacts:
-                        input_params["artifacts"] = result.artifacts
-                    break
+            if result_map is not None:
+                result = result_map.get(step.depends_on)
+            else:
+                result = next(
+                    (r for r in execution.steps_results if r.step_id == step.depends_on),
+                    None,
+                )
+            if result and result.output:
+                input_params[step.input_from_dependency] = result.output
+                if result.artifacts:
+                    input_params["artifacts"] = result.artifacts
 
         return input_params
 
@@ -258,6 +264,7 @@ class WorkflowOrchestrator:
         skipped_steps: set[str] = set()
 
         step_map = {s.id: s for s in workflow.steps}
+        result_map: dict[str, StepResult] = {}
 
         start_time = time.monotonic()
 
@@ -290,6 +297,7 @@ class WorkflowOrchestrator:
                             workflow=workflow,
                             execution=execution,
                             handler=handler,
+                            result_map=result_map,
                         )
                     )
 
@@ -310,10 +318,12 @@ class WorkflowOrchestrator:
                                 error_message=str(result),
                             )
                             execution.steps_results.append(step_result)
+                            result_map[step_id] = step_result
                             failed_steps.add(step_id)
                             running_steps.discard(step_id)
                         else:
                             execution.steps_results.append(result)
+                            result_map[step_id] = result
                             running_steps.discard(step_id)
                             if result.status == StepStatus.COMPLETED:
                                 completed_steps.add(step_id)
@@ -325,6 +335,7 @@ class WorkflowOrchestrator:
                     # 单个步骤执行
                     result = await step_tasks[0]
                     execution.steps_results.append(result)
+                    result_map[ready_step_ids[0]] = result
                     running_steps.discard(ready_step_ids[0])
                     if result.status == StepStatus.COMPLETED:
                         completed_steps.add(ready_step_ids[0])
@@ -389,6 +400,7 @@ class WorkflowOrchestrator:
         workflow: WorkflowDefinition,
         execution: WorkflowExecution,
         handler: LLMBackend | None = None,
+        result_map: dict[str, StepResult] | None = None,
     ) -> StepResult:
         """执行单个步骤
 
@@ -397,6 +409,7 @@ class WorkflowOrchestrator:
             workflow: 工作流定义
             execution: 执行记录
             handler: LLM 处理器
+            result_map: 步骤结果映射（可选）
 
         Returns:
             步骤执行结果
@@ -407,7 +420,7 @@ class WorkflowOrchestrator:
         logger.info(f"Executing step: {step.id} ({step.name})")
 
         # 构建输入
-        input_params = self._build_step_input(step, workflow, execution)
+        input_params = self._build_step_input(step, workflow, execution, result_map)
 
         # 确定执行的 Agent
         agent_config = None
@@ -430,8 +443,8 @@ class WorkflowOrchestrator:
 
         try:
             if agent_config:
-                # 使用 Sub-Agent 执行
-                executor = SubAgentExecutor(handler)
+                # 使用 Sub-Agent 执行（复用实例）
+                executor = self.executor
 
                 for retry in range(step.retry_on_failure + 1):
                     sub_result = await asyncio.wait_for(

@@ -151,9 +151,8 @@ class AgentEvolutionManager:
 
     def _should_trigger_analysis(self) -> bool:
         """检查是否应该触发分析"""
-        # 检查经验数量
-        all_experiences = self.collector.list_experiences(limit=self.config.min_experiences_for_analysis + 1)
-        if len(all_experiences) < self.config.min_experiences_for_analysis:
+        # 检查经验数量（用索引计数，避免读取文件）
+        if self.collector.count_experiences() < self.config.min_experiences_for_analysis:
             return False
 
         # 检查时间间隔
