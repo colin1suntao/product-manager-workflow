@@ -333,9 +333,10 @@ class ExperienceCollector:
         try:
             with open(file_path, "w", encoding="utf-8") as f:
                 json.dump(experience.model_dump(), f, ensure_ascii=False, indent=2, default=str)
-            self._index[experience.id] = str(file_path)
-            self._cache[experience.id] = experience
-            self._save_index()
+            with self._lock:
+                self._index[experience.id] = str(file_path)
+                self._cache[experience.id] = experience
+                self._save_index()
         except OSError as e:
             logger.error(f"Failed to save experience {experience.id}: {e}")
 

@@ -235,11 +235,11 @@ async def stream_message(
 
             # 执行生成
             if sub_agent_config and llm_handler:
-                # 使用 Sub-Agent 执行
+                # 使用 Sub-Agent 执行（流式）
                 executor = SubAgentExecutor(llm_handler=llm_handler)
 
                 thinking_step_id = 0
-                for event in await executor.execute(
+                async for event in executor.execute_streaming(
                     agent_config=sub_agent_config,
                     task_params={
                         "input": content,
