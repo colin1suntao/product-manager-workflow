@@ -4,6 +4,7 @@
 """
 
 import asyncio
+import logging
 import time
 import uuid
 
@@ -22,6 +23,7 @@ from pm_workstation.chat.chat_models import (
 )
 from pm_workstation.chat.task_router import TaskRouter
 from pm_workstation.component_library.store import ComponentTemplateStore
+from pm_workstation.knowledge_base.rag_engine import get_rag_engine
 from pm_workstation.knowledge_base.store import TemplateStore
 from pm_workstation.llm.token_usage import TokenUsageStore
 from pm_workstation.memory.memory_manager import MemoryManager
@@ -29,6 +31,8 @@ from pm_workstation.memory.memory_retriever import MemoryRetriever
 from pm_workstation.memory.soul_manager import SoulManager
 
 router = APIRouter(prefix="/chat", tags=["会话交互"])
+
+logger = logging.getLogger(__name__)
 
 # 全局实例
 _chat_manager = ChatManager()
@@ -153,6 +157,50 @@ async def _load_template_context(
         pass
 
     return context, None
+
+
+async def _load_rag_context(
+    session_id: str,
+    content: str,
+    context: list[ChatMessage],
+    top_k: int = 3,
+    max_chars: int = 3000,
+) -> tuple[list[ChatMessage], list[dict]]:
+    """从向量索引检索与用户消息相关的文档片段，注入为系统上下文
+
+    Args:
+        session_id: 会话 ID
+        content: 用户消息内容
+        context: 当前上下文
+        top_k: 检索结果数量
+        max_chars: 注入上下文最大字符数
+
+    Returns:
+        (更新后的上下文, 检索来源列表)
+    """
+    try:
+        rag = get_rag_engine()
+        if rag.chunk_count == 0:
+            return context, []
+
+        ctx = rag.retrieve_context(content, top_k=top_k, max_chars=max_chars)
+        if not ctx.context:
+            return context, []
+
+        rag_context = ChatMessage(
+            id="rag_ctx",
+            session_id=session_id,
+            role="system",
+            content=f"[知识库参考]\n{ctx.context}",
+        )
+        sources = [
+            {"doc_id": s.doc_id, "score": s.score}
+            for s in ctx.sources
+        ]
+        return [*context, rag_context], sources
+    except Exception as e:
+        logger.warning(f"RAG context retrieval failed: {e}")
+        return context, []
 
 
 async def _process_coordinator_response(
@@ -420,6 +468,9 @@ async def send_message(
     context = await manager.get_context_messages(session_id, limit=10)
     context, template_info = await _load_template_context(session_id, template_id, context)
 
+    # RAG 检索：从向量索引检索相关文档片段注入上下文
+    context, rag_sources = await _load_rag_context(session_id, content, context)
+
     # 计算上下文长度（使用已获取的 context 消息，避免重复查询）
     context_length = sum(len(m.content) for m in context) + len(content)
     context_limit = 128000
@@ -451,6 +502,7 @@ async def send_message(
     return {
         "user_message": _serialize_message(user_message),
         "assistant_message": _serialize_message(assistant_message),
+        "rag_sources": rag_sources,
     }
 
 

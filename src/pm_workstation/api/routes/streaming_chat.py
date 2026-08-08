@@ -30,6 +30,7 @@ from pm_workstation.chat.chat_models import (
     TaskStatus,
 )
 from pm_workstation.component_library.store import ComponentTemplateStore
+from pm_workstation.knowledge_base.rag_engine import get_rag_engine
 from pm_workstation.knowledge_base.store import TemplateStore
 from pm_workstation.model_router.base import LLMMessage
 
@@ -232,6 +233,23 @@ async def stream_message(
                             yield f"event: template_loaded\ndata: {json.dumps({'template': comp.name, 'type': 'prototype'})}\n\n"
                 except Exception as e:
                     logger.warning(f"Template loading error: {e}")
+
+            # RAG 检索：从向量索引检索相关文档片段注入上下文
+            try:
+                rag = get_rag_engine()
+                if rag.chunk_count > 0:
+                    rag_ctx = rag.retrieve_context(content, top_k=3, max_chars=3000)
+                    if rag_ctx.context:
+                        rag_context = ChatMessage(
+                            id="rag_ctx",
+                            session_id=session_id,
+                            role="system",
+                            content=f"[知识库参考]\n{rag_ctx.context}",
+                        )
+                        context_messages = [*context_messages, rag_context]
+                        yield f"event: rag_loaded\ndata: {json.dumps({'source_count': len(rag_ctx.sources)})}\n\n"
+            except Exception as e:
+                logger.warning(f"RAG retrieval error: {e}")
 
             # 执行生成
             if sub_agent_config and llm_handler:
