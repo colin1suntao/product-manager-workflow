@@ -53,7 +53,7 @@ def get_provider_store(request: Request) -> LLMProviderStore:
 async def get_db_session(request: Request) -> AsyncGenerator[AsyncSession, None]:
     """获取数据库会话"""
     engine = _get_engine()
-    async with AsyncSession(engine) as session:
+    async with AsyncSession(engine, expire_on_commit=False) as session:
         yield session
 
 

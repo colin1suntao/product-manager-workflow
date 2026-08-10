@@ -4,13 +4,16 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { authApi } from "@/lib/auth-api";
+import { orgApi } from "@/lib/org-api";
 import { workflowApi } from "@/lib/api";
 
 interface NavItem {
   href: string;
   label: string;
   icon: string;
-  children?: { href: string; label: string; icon: string }[];
+  key?: string;
+  adminOnly?: boolean;
+  children?: { href: string; label: string; icon: string; key?: string; adminOnly?: boolean }[];
 }
 
 interface WorkflowSummary {
@@ -22,33 +25,46 @@ interface WorkflowSummary {
 }
 
 const navItems: NavItem[] = [
-  { href: "/chat", label: "AI 会话", icon: "💬" },
+  { href: "/chat", label: "AI 会话", icon: "💬", key: "chat" },
   {
     href: "/workflows",
     label: "工作流管理",
     icon: "📊",
+    key: "workflows",
     children: [
-      { href: "/requirements", label: "需求输入", icon: "📝" },
-      { href: "/workflows", label: "工作流列表", icon: "📋" },
-      { href: "/prototypes", label: "原型预览", icon: "🎨" },
-      { href: "/documents", label: "文档查看", icon: "📄" },
-      { href: "/reports", label: "校验报告", icon: "✅" },
+      { href: "/requirements", label: "需求输入", icon: "📝", key: "workflows.requirements" },
+      { href: "/workflows", label: "工作流列表", icon: "📋", key: "workflows.list" },
+      { href: "/prototypes", label: "原型预览", icon: "🎨", key: "workflows.prototypes" },
+      { href: "/documents", label: "文档查看", icon: "📄", key: "workflows.documents" },
+      { href: "/reports", label: "校验报告", icon: "✅", key: "workflows.reports" },
     ],
   },
-  { href: "/market-research", label: "市场调研", icon: "🔍" },
-  { href: "/channels", label: "渠道接入", icon: "📡" },
-  { href: "/usage", label: "模型用量", icon: "📈" },
-  { href: "/skills", label: "PM Skills", icon: "🎯" },
-  { href: "/knowledge-base", label: "知识库", icon: "📚" },
-  { href: "/component-library", label: "组件库", icon: "🧩" },
+  { href: "/market-research", label: "市场调研", icon: "🔍", key: "market-research" },
+  { href: "/channels", label: "渠道接入", icon: "📡", key: "channels" },
+  { href: "/usage", label: "模型用量", icon: "📈", key: "usage" },
+  { href: "/skills", label: "PM Skills", icon: "🎯", key: "skills" },
+  { href: "/knowledge-base", label: "知识库", icon: "📚", key: "knowledge-base" },
+  { href: "/component-library", label: "组件库", icon: "🧩", key: "component-library" },
   {
     href: "/settings",
     label: "系统设置",
     icon: "⚙️",
+    key: "settings",
     children: [
-      { href: "/memory", label: "记忆管理", icon: "🧠" },
-      { href: "/integrations", label: "集成配置", icon: "🔗" },
-      { href: "/settings/llm", label: "供应商配置", icon: "🤖" },
+      { href: "/memory", label: "记忆管理", icon: "🧠", key: "settings.memory" },
+      { href: "/integrations", label: "集成配置", icon: "🔗", key: "settings.integrations" },
+      { href: "/settings/llm", label: "供应商配置", icon: "🤖", key: "settings.llm" },
+    ],
+  },
+  {
+    href: "/org",
+    label: "组织管理",
+    icon: "🏢",
+    key: "org",
+    adminOnly: true,
+    children: [
+      { href: "/org/groups", label: "用户组管理", icon: "👥", key: "org.groups" },
+      { href: "/org/permissions", label: "权限设置", icon: "🔐", key: "org.permissions" },
     ],
   },
 ];
@@ -84,6 +100,44 @@ export default function Sidebar() {
   const [expandedItems, setExpandedItems] = useState<string[]>(["/workflows", "/settings"]);
   const [recentWorkflows, setRecentWorkflows] = useState<WorkflowSummary[]>([]);
   const [workflowsLoading, setWorkflowsLoading] = useState(false);
+  const [allowedMenuKeys, setAllowedMenuKeys] = useState<string[] | null>(null);
+  const [userRole, setUserRole] = useState<string>("member");
+
+  useEffect(() => {
+    const fetchPermissions = async () => {
+      try {
+        const [menuData, userData] = await Promise.all([
+          orgApi.getMyMenus(),
+          orgApi.getMyMenus().catch(() => null),
+        ]);
+        setAllowedMenuKeys(menuData.menu_keys);
+        const token = localStorage.getItem("pm_access_token");
+        if (token) {
+          try {
+            const payload = JSON.parse(atob(token.split(".")[1]));
+            setUserRole(payload.role || "member");
+          } catch {}
+        }
+      } catch {
+        setAllowedMenuKeys(null);
+      }
+    };
+    fetchPermissions();
+  }, []);
+
+  const filteredNavItems = allowedMenuKeys
+    ? navItems.filter((item) => {
+        if (item.adminOnly) return userRole === "admin";
+        if (!allowedMenuKeys.includes(item.key || item.href.replace("/", ""))) return false;
+        if (item.children) {
+          const filteredChildren = item.children.filter(
+            (child) => allowedMenuKeys.includes(child.key || child.href.replace("/", "")) || child.adminOnly
+          );
+          return filteredChildren.length > 0;
+        }
+        return true;
+      })
+    : navItems.filter((item) => !item.adminOnly);
 
   // 加载最近工作流
   useEffect(() => {
@@ -131,7 +185,7 @@ export default function Sidebar() {
     return pathname === href || pathname.startsWith(`${href}/`);
   };
 
-  const isChildActive = (children: { href: string }[]) => {
+  const isChildActive = (children: { href: string; }[]) => {
     return children.some((child) => pathname === child.href || pathname.startsWith(`${child.href}/`));
   };
 
@@ -146,8 +200,13 @@ export default function Sidebar() {
 
   const renderNavItem = (item: NavItem) => {
     if (item.children) {
+      const visibleChildren = item.children.filter(
+        (child) => !child.adminOnly || userRole === "admin"
+      );
+      if (visibleChildren.length === 0) return null;
+
       const expanded = expandedItems.includes(item.href);
-      const active = isActive(item.href) || isChildActive(item.children);
+      const active = isActive(item.href) || isChildActive(visibleChildren);
 
       return (
         <li key={item.href}>
@@ -172,7 +231,7 @@ export default function Sidebar() {
           </button>
           {expanded && (
             <ul className="ml-4 mt-1 space-y-1">
-              {item.children.map((child) => (
+              {visibleChildren.map((child) => (
                 <li key={child.href}>
                   <Link
                     href={child.href}
@@ -260,7 +319,7 @@ export default function Sidebar() {
       </div>
       <nav className="flex-1 p-3 overflow-y-auto">
         <ul className="space-y-1">
-          {navItems.map(renderNavItem)}
+          {filteredNavItems.map(renderNavItem)}
         </ul>
       </nav>
       <div className="p-3 border-t border-gray-200 space-y-1">

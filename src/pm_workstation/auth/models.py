@@ -1,15 +1,22 @@
 """用户模型和认证相关的 Pydantic 模型"""
 
+import enum
 import uuid
 from datetime import datetime
 
 from pydantic import BaseModel, EmailStr, Field, field_validator
-from sqlalchemy import Boolean, DateTime, String, func
+from sqlalchemy import Boolean, DateTime, Enum, String, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
 class Base(DeclarativeBase):
     """SQLAlchemy 声明基类"""
+
+
+class UserRole(enum.StrEnum):
+    """用户角色"""
+    admin = "admin"
+    member = "member"
 
 
 class User(Base):
@@ -19,7 +26,10 @@ class User(Base):
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
+    username: Mapped[str | None] = mapped_column(String(255), nullable=True)
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
+    org_id: Mapped[str | None] = mapped_column(String(36), nullable=True, index=True)
+    role: Mapped[str] = mapped_column(Enum(UserRole), default=UserRole.member, nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now(), nullable=False)
@@ -32,6 +42,7 @@ class UserCreate(BaseModel):
 
     email: EmailStr
     password: str = Field(min_length=8, max_length=128)
+    username: str | None = Field(default=None, max_length=64)
 
     @field_validator("password")
     @classmethod
@@ -46,11 +57,23 @@ class UserResponse(BaseModel):
 
     id: str
     email: str
+    username: str | None = None
+    org_id: str | None = None
+    role: str = "member"
     is_active: bool
     created_at: datetime
     updated_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class UserInfo(BaseModel):
+    """当前用户信息（JWT 解码，无需查库）"""
+    id: str
+    email: str
+    username: str = ""
+    org_id: str = ""
+    role: str = "member"
 
 
 class TokenPair(BaseModel):

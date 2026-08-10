@@ -37,12 +37,13 @@ class UserStore:
     def __init__(self, db_session: AsyncSession):
         self.db = db_session
 
-    async def create_user(self, email: str, password: str) -> User:
+    async def create_user(self, email: str, password: str, username: str | None = None) -> User:
         """创建新用户
 
         Args:
             email: 用户邮箱
             password: 明文密码（会自动哈希）
+            username: 用户名（可选）
 
         Returns:
             创建的用户对象
@@ -50,6 +51,7 @@ class UserStore:
         user = User(
             id=str(uuid.uuid4()),
             email=email,
+            username=username or email.split("@")[0],
             password_hash=hash_password(password),
             is_active=True,
         )

@@ -203,3 +203,49 @@ export interface Issue {
   suggestion: string;
   location?: string;
 }
+
+/** 组织 */
+export interface Organization {
+  id: string;
+  name: string;
+  owner_id: string;
+  created_at: string;
+  updated_at: string;
+}
+
+/** 用户组 */
+export interface UserGroup {
+  id: string;
+  org_id: string;
+  name: string;
+  description?: string | null;
+  created_at: string;
+  member_count: number;
+}
+
+/** 组成员 */
+export interface GroupMember {
+  id: string;
+  user_id: string;
+  email: string;
+  username: string;
+  created_at: string;
+}
+
+/** 菜单权限 */
+export interface MenuPermission {
+  id: string;
+  group_id: string;
+  menu_key: string;
+  can_access: boolean;
+  created_at: string;
+}
+
+/** 菜单注册项 */
+export interface MenuItem {
+  key: string;
+  label: string;
+  icon: string;
+  href: string;
+  children?: MenuItem[];
+}

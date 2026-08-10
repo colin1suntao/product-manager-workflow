@@ -12,11 +12,14 @@ from jose import JWTError, jwt
 from pm_workstation.config import settings
 
 
-def create_access_token(user_id: str) -> str:
+def create_access_token(user_id: str, org_id: str = "", role: str = "member", username: str = "") -> str:
     """创建 Access Token
 
     Args:
         user_id: 用户唯一标识
+        org_id: 组织 ID
+        role: 用户角色
+        username: 用户名
 
     Returns:
         JWT Access Token 字符串
@@ -26,6 +29,9 @@ def create_access_token(user_id: str) -> str:
 
     payload = {
         "sub": user_id,
+        "org_id": org_id,
+        "role": role,
+        "username": username,
         "type": "access",
         "iat": now,
         "exp": expire,
@@ -34,11 +40,13 @@ def create_access_token(user_id: str) -> str:
     return str(jwt.encode(payload, settings.jwt_secret_key, algorithm=settings.jwt_algorithm))
 
 
-def create_refresh_token(user_id: str) -> tuple[str, str]:
+def create_refresh_token(user_id: str, org_id: str = "", role: str = "member") -> tuple[str, str]:
     """创建 Refresh Token
 
     Args:
         user_id: 用户唯一标识
+        org_id: 组织 ID
+        role: 用户角色
 
     Returns:
         (token, jti) 元组，jti 用于 Token 撤销
@@ -49,6 +57,8 @@ def create_refresh_token(user_id: str) -> tuple[str, str]:
 
     payload = {
         "sub": user_id,
+        "org_id": org_id,
+        "role": role,
         "type": "refresh",
         "jti": jti,
         "iat": now,

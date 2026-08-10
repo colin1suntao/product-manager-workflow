@@ -26,6 +26,7 @@ from pm_workstation.api.routes.layered_memory import router as layered_memory_ro
 from pm_workstation.api.routes.llm import router as llm_router
 from pm_workstation.api.routes.market_research import router as market_research_router
 from pm_workstation.api.routes.memory import router as memory_router
+from pm_workstation.api.routes.org import router as org_router
 from pm_workstation.api.routes.persistent_memory import router as persistent_memory_router
 from pm_workstation.api.routes.skills import router as skills_router
 from pm_workstation.api.routes.streaming_chat import router as streaming_chat_router
@@ -161,6 +162,7 @@ def create_app() -> FastAPI:
     app.include_router(token_usage_router, prefix="/api/v1", tags=["模型用量"])
     app.include_router(sandbox_router, prefix="/api/v1", tags=["Sandbox 执行环境"])
     app.include_router(evolution_router, prefix="/api/v1", tags=["自我进化"])
+    app.include_router(org_router, prefix="/api/v1", tags=["组织管理"])
 
     # 健康检查
     @app.get("/health", tags=["健康检查"])
