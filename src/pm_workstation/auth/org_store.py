@@ -14,6 +14,19 @@ from pm_workstation.auth.org_models import (
 )
 
 
+def filter_accessible_keys(allowed_keys: set[str]) -> set[str]:
+    """级联过滤：若父菜单 key 不被允许，则其子 key（`parent.child`）也不应被允许"""
+    accessible: set[str] = set()
+    for key in allowed_keys:
+        parts = key.split(".")
+        parent_allowed = all(
+            ".".join(parts[:i]) in allowed_keys for i in range(1, len(parts))
+        )
+        if parent_allowed:
+            accessible.add(key)
+    return accessible
+
+
 class OrgStore:
     def __init__(self, db_session: AsyncSession):
         self.db = db_session
@@ -194,7 +207,7 @@ class OrgStore:
             if p.can_access:
                 allowed_keys.add(p.menu_key)
 
-        return sorted(allowed_keys)
+        return sorted(filter_accessible_keys(allowed_keys))
 
     async def init_default_permissions(self, group_id: str) -> int:
         """为新建组初始化所有菜单的默认权限"""

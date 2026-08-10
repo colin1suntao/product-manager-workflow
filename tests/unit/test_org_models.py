@@ -148,3 +148,39 @@ class TestOrgModels:
         found = db_session.query(GroupMember).filter_by(group_id=group.id).all()
         assert len(found) == 1
         assert found[0].user_id == user.id
+
+    def test_menu_permission_parent_cascade(self):
+        allowed = {"chat", "market-research", "workflows", "workflows.list"}
+        from pm_workstation.auth.org_store import filter_accessible_keys
+        accessible = filter_accessible_keys(allowed)
+        assert "workflows" in accessible
+        assert "workflows.list" in accessible
+
+        allowed_denied = {"chat", "market-research"}
+        accessible2 = filter_accessible_keys(allowed_denied)
+        assert "chat" in accessible2
+        assert "market-research" in accessible2
+        assert "workflows" not in accessible2
+        assert "workflows.list" not in accessible2
+
+    def test_menu_permission_deep_cascade(self):
+        allowed = {"settings", "settings.llm", "settings.memory"}
+        from pm_workstation.auth.org_store import filter_accessible_keys
+        accessible = filter_accessible_keys(allowed)
+        assert "settings" in accessible
+        assert "settings.llm" in accessible
+        assert "settings.memory" in accessible
+
+        allowed_no_parent = {"settings.llm"}
+        accessible2 = filter_accessible_keys(allowed_no_parent)
+        assert "settings.llm" not in accessible2
+        assert "settings" not in accessible2
+
+    def test_menu_permission_partial_deny(self):
+        allowed = {"chat", "workflows", "workflows.requirements"}
+        from pm_workstation.auth.org_store import filter_accessible_keys
+        accessible = filter_accessible_keys(allowed)
+        assert "chat" in accessible
+        assert "workflows" in accessible
+        assert "workflows.requirements" in accessible
+        assert "settings" not in accessible
